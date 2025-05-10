@@ -7,6 +7,7 @@ import { OwnerInformationSignup } from "@/components/auth/OwnerInformationSignup
 import { VehicleInformationSignup } from "@/components/auth/VehicleInformationSignup";
 import { cn } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 // Define the steps for the signup process
 enum SignupStep {
@@ -174,34 +175,42 @@ export default function Page() {
   };
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 relative">
+    <div className="flex flex-col min-h-svh w-full relative">
+      {/* Logo at the top */}
+      <div className="absolute top-0 left-0 z-10">
+        <Logo />
+      </div>
+
       {/* Theme toggle button */}
       <div className="fixed bottom-6 right-6 z-50">
         <ModeToggle />
       </div>
 
-      <div className="w-full max-w-md flex flex-col">
-        {/* Step indicator */}
-        <StepIndicator currentStep={currentStep} />
+      {/* Main content */}
+      <div className="flex flex-1 items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-md flex flex-col">
+          {/* Step indicator */}
+          <StepIndicator currentStep={currentStep} />
 
-        {/* Render the appropriate component based on the current step */}
-        {currentStep === SignupStep.LOGIN_INFO && (
-          <LoginInformationSignup onNext={handleLoginInfoNext} />
-        )}
+          {/* Render the appropriate component based on the current step */}
+          {currentStep === SignupStep.LOGIN_INFO && (
+            <LoginInformationSignup onNext={handleLoginInfoNext} />
+          )}
 
-        {currentStep === SignupStep.OWNER_INFO && (
-          <OwnerInformationSignup
-            onNext={handleOwnerInfoNext}
-            onBack={handleOwnerInfoBack}
-          />
-        )}
+          {currentStep === SignupStep.OWNER_INFO && (
+            <OwnerInformationSignup
+              onNext={handleOwnerInfoNext}
+              onBack={handleOwnerInfoBack}
+            />
+          )}
 
-        {currentStep === SignupStep.VEHICLE_INFO && (
-          <VehicleInformationSignup
-            onSubmit={handleVehicleInfoSubmit}
-            onBack={handleVehicleInfoBack}
-          />
-        )}
+          {currentStep === SignupStep.VEHICLE_INFO && (
+            <VehicleInformationSignup
+              onSubmit={handleVehicleInfoSubmit}
+              onBack={handleVehicleInfoBack}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

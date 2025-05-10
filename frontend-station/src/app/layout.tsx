@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "station.quota.app",
-  description: "Manage your vehicle fleet efficiently with Quota.app",
 };
 
 export default function RootLayout({

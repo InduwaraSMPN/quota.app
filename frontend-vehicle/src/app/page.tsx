@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Logo } from "@/components/logo";
 
 export default function Home() {
   return (
@@ -16,16 +17,7 @@ export default function Home() {
         {/* Left side - Graphic elements */}
         <div className="w-full md:w-1/2 bg-background flex flex-col">
           {/* Logo */}
-          <div className="p-6 md:p-8">
-            <Image
-              src="/quota.app.logo.svg"
-              alt="Quota.app Logo"
-              width={200}
-              height={40}
-              className="h-auto"
-              priority
-            />
-          </div>
+          <Logo />
 
           {/* Buttons container - centered vertically and horizontally */}
           <div className="flex-1 flex flex-col justify-center px-6 md:px-12 lg:px-16">
