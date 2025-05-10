@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/logo";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export default function TestBackendConnection() {
   const [publicResponse, setPublicResponse] = useState<string>("");
@@ -86,110 +88,122 @@ export default function TestBackendConnection() {
   };
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
-      <h1 className="text-3xl font-bold">Test Spring Boot Backend Connection</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Login Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>
-              Login to get a JWT token
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input 
-                id="username" 
-                value={username} 
-                onChange={(e) => setUsername(e.target.value)} 
-                placeholder="Username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder="Password"
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={login} disabled={loading}>
-              {loading ? "Loading..." : "Login"}
-            </Button>
-          </CardFooter>
-          {loginResponse && (
-            <CardContent>
-              <div className="mt-4">
-                <h3 className="text-sm font-medium">Response:</h3>
-                <pre className="mt-2 bg-slate-100 p-4 rounded-md overflow-auto text-xs">
-                  {loginResponse}
-                </pre>
+    <div className="flex flex-col min-h-svh w-full relative">
+      {/* Logo at the top */}
+      <div className="absolute top-0 left-0 z-10">
+        <Logo />
+      </div>
+
+      {/* Theme toggle button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <ModeToggle />
+      </div>
+
+      <div className="container mx-auto py-10 space-y-8 pt-24">
+        <h1 className="text-3xl font-bold">Test Spring Boot Backend Connection</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Login Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Login</CardTitle>
+              <CardDescription>
+                Login to get a JWT token
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                />
               </div>
             </CardContent>
-          )}
-        </Card>
-
-        {/* Public Endpoint Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Public Endpoint</CardTitle>
-            <CardDescription>
-              Test the public endpoint (no authentication required)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={testPublicEndpoint} disabled={loading}>
-              {loading ? "Loading..." : "Test Public Endpoint"}
-            </Button>
-          </CardContent>
-          {publicResponse && (
-            <CardContent>
-              <div className="mt-4">
-                <h3 className="text-sm font-medium">Response:</h3>
-                <pre className="mt-2 bg-slate-100 p-4 rounded-md overflow-auto text-xs">
-                  {publicResponse}
-                </pre>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Protected Endpoint Card */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Protected Endpoint</CardTitle>
-            <CardDescription>
-              Test the protected endpoint (authentication required)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={testProtectedEndpoint} disabled={loading || !token}>
-              {loading ? "Loading..." : "Test Protected Endpoint"}
-            </Button>
-            {!token && (
-              <p className="text-sm text-red-500 mt-2">
-                Please login first to get a token
-              </p>
+            <CardFooter>
+              <Button onClick={login} disabled={loading}>
+                {loading ? "Loading..." : "Login"}
+              </Button>
+            </CardFooter>
+            {loginResponse && (
+              <CardContent>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium">Response:</h3>
+                  <pre className="mt-2 bg-slate-100 p-4 rounded-md overflow-auto text-xs">
+                    {loginResponse}
+                  </pre>
+                </div>
+              </CardContent>
             )}
-          </CardContent>
-          {protectedResponse && (
+          </Card>
+
+          {/* Public Endpoint Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Public Endpoint</CardTitle>
+              <CardDescription>
+                Test the public endpoint (no authentication required)
+              </CardDescription>
+            </CardHeader>
             <CardContent>
-              <div className="mt-4">
-                <h3 className="text-sm font-medium">Response:</h3>
-                <pre className="mt-2 bg-slate-100 p-4 rounded-md overflow-auto text-xs">
-                  {protectedResponse}
-                </pre>
-              </div>
+              <Button onClick={testPublicEndpoint} disabled={loading}>
+                {loading ? "Loading..." : "Test Public Endpoint"}
+              </Button>
             </CardContent>
-          )}
-        </Card>
+            {publicResponse && (
+              <CardContent>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium">Response:</h3>
+                  <pre className="mt-2 bg-slate-100 p-4 rounded-md overflow-auto text-xs">
+                    {publicResponse}
+                  </pre>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Protected Endpoint Card */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Protected Endpoint</CardTitle>
+              <CardDescription>
+                Test the protected endpoint (authentication required)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={testProtectedEndpoint} disabled={loading || !token}>
+                {loading ? "Loading..." : "Test Protected Endpoint"}
+              </Button>
+              {!token && (
+                <p className="text-sm text-red-500 mt-2">
+                  Please login first to get a token
+                </p>
+              )}
+            </CardContent>
+            {protectedResponse && (
+              <CardContent>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium">Response:</h3>
+                  <pre className="mt-2 bg-slate-100 p-4 rounded-md overflow-auto text-xs">
+                    {protectedResponse}
+                  </pre>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );
