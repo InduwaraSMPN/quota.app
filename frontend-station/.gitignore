@@ -30,6 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# package manager lock files (using bun only)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # env files (can opt-in for committing if needed)
 .env*
 
