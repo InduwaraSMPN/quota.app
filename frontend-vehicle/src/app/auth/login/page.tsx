@@ -1,4 +1,4 @@
-import { LoginForm } from "@/components/login-form"
+import { LoginForm } from "@/components/auth/LoginForm"
 import { ModeToggle } from "@/components/mode-toggle"
 
 export default function Page() {
