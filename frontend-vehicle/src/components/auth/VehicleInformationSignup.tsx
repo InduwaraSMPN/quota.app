@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -322,10 +323,12 @@ export function VehicleInformationSignup({
                     <FormItem className="flex flex-col h-full justify-end">
                       <FormLabel>Date of First Registration</FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
-                          max={new Date().toISOString().split("T")[0]}
-                          {...field}
+                        <DatePicker
+                          date={field.value ? new Date(field.value) : undefined}
+                          setDate={(date) => {
+                            field.onChange(date ? date.toISOString().split("T")[0] : "");
+                          }}
+                          placeholder="Pick a date"
                         />
                       </FormControl>
                       <FormMessage />
