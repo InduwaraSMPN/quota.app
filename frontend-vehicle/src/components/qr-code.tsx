@@ -159,7 +159,7 @@ export function QRCodeGenerator() {
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
             <QrCode className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
-            <CardTitle className="text-2xl sm:text-3xl font-bold">Your QR as you like it</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl font-bold">Your QR just as you like it...</CardTitle>
           </div>
           <CardDescription className="text-sm sm:text-base pt-1">
             Customize, and download your QR code effortlessly.
