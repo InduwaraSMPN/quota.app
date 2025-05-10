@@ -39,13 +39,9 @@ const formSchema = z.object({
       },
       { message: "Invalid NIC number format" }
     ),
-  address: z
+  mobileNumber: z
     .string()
-    .min(5, { message: "Address must be at least 5 characters" })
-    .max(200, { message: "Address must be less than 200 characters" }),
-  contactNumber: z
-    .string()
-    .min(1, { message: "Contact number is required" })
+    .min(1, { message: "Mobile number is required" })
     .refine(
       (value) => {
         // Validate Sri Lankan phone numbers (e.g., +94XXXXXXXXX or 0XXXXXXXXX)
@@ -76,8 +72,7 @@ export function OwnerInformationSignup({
     defaultValues: {
       fullName: "",
       nicNumber: "",
-      address: "",
-      contactNumber: "",
+      mobileNumber: "",
     },
   });
 
@@ -92,7 +87,7 @@ export function OwnerInformationSignup({
         <CardHeader>
           <CardTitle>Owner Information</CardTitle>
           <CardDescription>
-            Please provide your personal details as per your NIC
+            Please provide your personal details as per your national identification documents
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -138,29 +133,12 @@ export function OwnerInformationSignup({
               />
               <FormField
                 control={form.control}
-                name="address"
+                name="mobileNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="123 Main St, Colombo"
-                        autoComplete="street-address"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Number</FormLabel>
+                    <FormLabel>Mobile Number</FormLabel>
                     <FormDescription>
-                      Enter your phone number in the format +94XXXXXXXXX or
+                      Enter your primary contact number in the format +94XXXXXXXXX or
                       0XXXXXXXXX
                     </FormDescription>
                     <FormControl>

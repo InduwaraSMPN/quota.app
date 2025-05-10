@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LoginInformationSignup } from "@/components/auth/LoginInformationSignup";
 import { OwnerInformationSignup } from "@/components/auth/OwnerInformationSignup";
-import { VehicleInformationSignup } from "@/components/auth/VehicleInformationSignup";
+import { BusinessInformationSignup } from "@/components/auth/BusinessInformationSignup";
 import { cn } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/logo";
@@ -13,14 +13,14 @@ import { Logo } from "@/components/logo";
 enum SignupStep {
   LOGIN_INFO = 0,
   OWNER_INFO = 1,
-  VEHICLE_INFO = 2,
+  BUSINESS_INFO = 2,
 }
 
 // Step information for the indicator
 const STEPS = [
   { id: SignupStep.LOGIN_INFO, label: "Login Information" },
   { id: SignupStep.OWNER_INFO, label: "Owner Information" },
-  { id: SignupStep.VEHICLE_INFO, label: "Vehicle Information" },
+  { id: SignupStep.BUSINESS_INFO, label: "Business Information" },
 ];
 
 // Step indicator component
@@ -128,7 +128,7 @@ export default function Page() {
   const [formData, setFormData] = useState({
     loginInfo: {},
     ownerInfo: {},
-    vehicleInfo: {},
+    businessInfo: {},
   });
 
   // Handle completion of login information step
@@ -140,7 +140,7 @@ export default function Page() {
   // Handle completion of owner information step
   const handleOwnerInfoNext = (data: any) => {
     setFormData((prev) => ({ ...prev, ownerInfo: data }));
-    setCurrentStep(SignupStep.VEHICLE_INFO);
+    setCurrentStep(SignupStep.BUSINESS_INFO);
   };
 
   // Handle going back from owner information step
@@ -148,9 +148,9 @@ export default function Page() {
     setCurrentStep(SignupStep.LOGIN_INFO);
   };
 
-  // Handle completion of vehicle information step
-  const handleVehicleInfoSubmit = async (data: any) => {
-    setFormData((prev) => ({ ...prev, vehicleInfo: data }));
+  // Handle completion of business information step
+  const handleBusinessInfoSubmit = async (data: any) => {
+    setFormData((prev) => ({ ...prev, businessInfo: data }));
 
     // Combine all form data
     const completeFormData = {
@@ -165,12 +165,12 @@ export default function Page() {
     // For now, just log the data
     alert("Signup successful! Check console for form data.");
 
-    // In a Todo,would handle the API response here
+    // In a Todo, would handle the API response here
     // and redirect the user to a success page or login page
   };
 
-  // Handle going back from vehicle information step
-  const handleVehicleInfoBack = () => {
+  // Handle going back from business information step
+  const handleBusinessInfoBack = () => {
     setCurrentStep(SignupStep.OWNER_INFO);
   };
 
@@ -204,10 +204,10 @@ export default function Page() {
             />
           )}
 
-          {currentStep === SignupStep.VEHICLE_INFO && (
-            <VehicleInformationSignup
-              onSubmit={handleVehicleInfoSubmit}
-              onBack={handleVehicleInfoBack}
+          {currentStep === SignupStep.BUSINESS_INFO && (
+            <BusinessInformationSignup
+              onSubmit={handleBusinessInfoSubmit}
+              onBack={handleBusinessInfoBack}
             />
           )}
         </div>
