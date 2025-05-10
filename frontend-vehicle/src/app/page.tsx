@@ -44,8 +44,8 @@ export default function Home() {
                 variant="default"
                 className="h-16 text-3xl font-normal w-full bg-primary text-primary-foreground"
               >
-                <Link href="/auth/register" className="flex items-center justify-center">
-                  Register
+                <Link href="/auth/signup" className="flex items-center justify-center">
+                  Signup
                 </Link>
               </Button>
             </div>
