@@ -66,7 +66,7 @@ export function ForgotPasswordForm({
     setError(null);
 
     try {
-      // In a real application, you would call an API endpoint here
+      // In a Todo, would call an API endpoint here
       // For now, we'll simulate a successful response after a short delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
       

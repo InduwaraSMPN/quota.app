@@ -163,7 +163,7 @@ export default function Page() {
     // For now, just log the data
     alert("Signup successful! Check console for form data.");
 
-    // In a real application, you would handle the API response here
+    // Todo would handle the API response here
     // and redirect the user to a success page or login page
   };
 

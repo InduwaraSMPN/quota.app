@@ -89,7 +89,7 @@ export default function Dashboard() {
 
   // Use the auth hook to check authentication
   useEffect(() => {
-    // In a real application, we would use the useAuth hook
+    // In a Todo, we would use the useAuth hook
     // For now, we'll simulate authentication
     const checkAuth = async () => {
       try {
@@ -120,13 +120,13 @@ export default function Dashboard() {
   // Redirect if not authenticated
   useEffect(() => {
     if (isClient && !isAuthenticated) {
-      // In a real application, redirect to login page
+      // In a Todo, redirect to login page
       // Uncomment the following line to enable redirection
       // window.location.href = "/auth/login";
     }
   }, [isClient, isAuthenticated]);
 
-  // In a real application, we would fetch data from the API
+  // In a Todo, we would fetch data from the API
   // For example:
   // useEffect(() => {
   //   const fetchDashboardData = async () => {

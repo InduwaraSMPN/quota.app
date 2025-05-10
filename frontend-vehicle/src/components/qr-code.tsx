@@ -68,14 +68,14 @@ export function QRCodeGenerator() {
         URL.revokeObjectURL(blobUrl);
       } catch (error) {
         console.error("Error downloading SVG:", error);
-        // TODO: Implement user-facing error notification
+        // Todo: Implement user-facing error notification
       } finally {
         setTimeout(() => setIsDownloadingSVG(false), 300); // Reset button state
       }
     } else {
       console.error("SVG element not found for download.");
       setIsDownloadingSVG(false);
-      // TODO: Implement user-facing error notification
+      // Todo: Implement user-facing error notification
     }
   };
 
@@ -87,7 +87,7 @@ export function QRCodeGenerator() {
     if (!svgElement) {
       console.error("SVG element not found for PNG conversion.");
       setIsDownloadingPNG(false);
-      // TODO: Implement user-facing error notification
+      // Todo: Implement user-facing error notification
       return;
     }
 
@@ -100,7 +100,7 @@ export function QRCodeGenerator() {
       if (!ctx) {
         console.error("Could not get canvas context.");
         setIsDownloadingPNG(false);
-        // TODO: Implement user-facing error notification
+        // Todo: Implement user-facing error notification
         return;
       }
 
@@ -138,14 +138,14 @@ export function QRCodeGenerator() {
         console.error("Error loading SVG image for PNG conversion:", error);
         setIsDownloadingPNG(false);
         URL.revokeObjectURL(svgUrl);
-        // TODO: Implement user-facing error notification
+        // Todo: Implement user-facing error notification
       };
       img.src = svgUrl;
 
     } catch (error) {
       console.error("Error generating PNG:", error);
       setIsDownloadingPNG(false);
-      // TODO: Implement user-facing error notification
+      // Todo: Implement user-facing error notification
     }
   };
 
