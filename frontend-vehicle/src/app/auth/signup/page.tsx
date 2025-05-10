@@ -47,8 +47,8 @@ function StepIndicator({ currentStep }: StepIndicatorProps) {
                     className={cn(
                       "h-5 w-5 sm:h-6 sm:w-6 rounded-full border-2",
                       isActive
-                        ? "border-primary bg-primary/20"
-                        : "border-muted-foreground bg-transparent"
+                        ? "border-primary bg-primary"
+                        : "border-muted-foreground bg-background"
                     )}
                   >
                     {isActive && (
