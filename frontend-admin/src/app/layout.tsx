@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "quota.app",
+  title: "admin.quota.app",
   description: "Manage your vehicle fleet efficiently with Quota.app",
 };
 

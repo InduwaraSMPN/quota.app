@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --port 3002",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 3002",
     "lint": "next lint",
-    "bun:dev": "bun --bun run dev",
+    "bun:dev": "bun --bun next dev --turbopack --port 3002",
     "bun:build": "bun --bun run build",
     "bun:install": "bun install"
   },
