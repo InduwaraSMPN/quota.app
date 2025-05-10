@@ -1,5 +1,6 @@
 import { ModeToggle } from "@/components/mode-toggle"
 import { Logo } from "@/components/logo"
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm"
 
 export default function Page() {
   return (
@@ -16,8 +17,8 @@ export default function Page() {
 
       {/* Main content */}
       <div className="flex flex-1 items-center justify-center p-6 md:p-10">
-        <div>
-          this is forgot password page
+        <div className="w-full max-w-sm">
+          <ForgotPasswordForm />
         </div>
       </div>
     </div>
