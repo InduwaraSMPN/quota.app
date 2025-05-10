@@ -57,10 +57,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));  // Allow all origins
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",  // Vehicle frontend
+            "http://localhost:3001",  // Station frontend
+            "http://localhost:3002"   // Admin frontend
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
-        configuration.setAllowCredentials(false);  // Must be false if using "*" for allowed origins
+        configuration.setAllowCredentials(true);  // Can be true when specific origins are listed
+        configuration.setMaxAge(3600L);  // 1 hour cache for preflight requests
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
