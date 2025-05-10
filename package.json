@@ -1,0 +1,22 @@
+{
+  "name": "quota-app",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend-vehicle",
+    "frontend-station",
+    "frontend-admin"
+  ],
+  "scripts": {
+    "dev:vehicle": "cd frontend-vehicle && bun run dev",
+    "dev:station": "cd frontend-station && bun run dev",
+    "dev:admin": "cd frontend-admin && bun run dev",
+    "dev:all": "concurrently \"bun run dev:vehicle\" \"bun run dev:station\" \"bun run dev:admin\"",
+    "dev:vs": "concurrently \"bun run dev:vehicle\" \"bun run dev:station\"",
+    "dev:va": "concurrently \"bun run dev:vehicle\" \"bun run dev:admin\"",
+    "dev:sa": "concurrently \"bun run dev:station\" \"bun run dev:admin\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
