@@ -1,0 +1,18 @@
+# Bun configuration file
+# See https://bun.sh/docs/runtime/bunfig for more information
+
+# Use exact versions for dependencies
+[install]
+exact = true
+
+# Set registry
+registry = "https://registry.npmjs.org"
+
+# Cache settings
+[install.cache]
+dir = ".bun/cache"
+disable = false
+
+# Set default package manager
+[install.lockfile]
+save = true

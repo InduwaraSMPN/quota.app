@@ -1,14 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Theme toggle button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <ModeToggle />
+      </div>
+
       {/* Main content with split design */}
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Left side - Graphic elements */}
-        <div className="w-full md:w-1/2 bg-white flex flex-col">
+        <div className="w-full md:w-1/2 bg-background flex flex-col">
           {/* Logo */}
           <div className="p-6 md:p-8">
             <Image
