@@ -188,3 +188,20 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+@layer components {
+  input[type="range"] {
+    &::-webkit-slider-thumb {
+      border-color: var(--thumb-color);
+    }
+    &::-moz-range-thumb {
+      border-color: var(--thumb-color);
+    }
+    &::-webkit-slider-runnable-track {
+      background: var(--track-color);
+    }
+    &::-moz-range-track {
+      background: var(--track-color);
+    }
+  }
+}
