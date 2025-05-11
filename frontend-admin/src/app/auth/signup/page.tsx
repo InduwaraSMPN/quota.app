@@ -27,7 +27,7 @@ interface StepIndicatorProps {
 
 function StepIndicator({ currentStep }: StepIndicatorProps) {
   return (
-    <div className="w-full bg-card p-4 mb-8 rounded-lg">
+    <div className="w-full bg-background p-4 mb-8 rounded-lg">
       <div className="flex justify-center items-center">
         <div className="flex items-center w-full max-w-md">
           {STEPS.map((step, index) => {
@@ -55,7 +55,7 @@ function StepIndicator({ currentStep }: StepIndicatorProps) {
                 </div>
 
                 {/* Step label */}
-                <div className="flex flex-col items-center mt-2 text-center">
+                <div className="flex flex-col items-center mt-2 text-center w-full">
                   <span
                     className={cn(
                       "text-xs font-medium",
@@ -66,23 +66,28 @@ function StepIndicator({ currentStep }: StepIndicatorProps) {
                   >
                     Step {step.id + 1}
                   </span>
-                  <span
-                    className={cn(
-                      "text-sm font-medium mt-1",
-                      isActive || isCompleted
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {step.label}
-                  </span>
+                  <div className="flex flex-col items-center">
+                    {step.label.split(" ").map((word, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "text-sm font-medium px-1 leading-tight",
+                          isActive || isCompleted
+                            ? "text-primary"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Connector line between steps */}
                 {index < STEPS.length - 1 && (
                   <div
                     className={cn(
-                      "absolute top-3 left-1/2 h-[2px] w-full",
+                      "absolute top-3 left-1/2 h-[2px] w-[calc(100%-1rem)]",
                       isCompleted ? "bg-primary" : "bg-muted-foreground/30"
                     )}
                   />
