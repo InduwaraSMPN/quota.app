@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
 import Link from "next/link";
 
 // Define the form schema with Zod
@@ -92,7 +92,7 @@ export function ForgotPasswordForm({
         <CardContent>
           {isSuccess ? (
             <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
               <AlertTitle>Email sent!</AlertTitle>
               <AlertDescription>
                 If an account exists with the email you entered, we've sent instructions to reset your password. Please check your inbox.
