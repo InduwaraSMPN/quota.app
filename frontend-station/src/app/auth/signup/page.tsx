@@ -294,11 +294,11 @@ export default function Page() {
       } as SignupFormData);
 
       if (result.success) {
-        toast.success("Registration successful!");
+        toast.success("Registration submitted successfully!");
 
-        // Redirect to login page after successful registration
+        // Redirect to verification status page after successful registration
         setTimeout(() => {
-          router.push('/auth/login');
+          router.push(`/auth/verification-status?email=${encodeURIComponent(formData.loginInfo.email || '')}`);
         }, 2000);
       } else {
         toast.error(result.message || "Registration failed");

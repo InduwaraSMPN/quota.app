@@ -235,12 +235,27 @@ CREATE TABLE fuel_stations (
     closing_time TIME NOT NULL,
     fuel_retail_license_number VARCHAR(50) NOT NULL UNIQUE,
     is_active BOOLEAN DEFAULT TRUE,
+    verification_status verification_status NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_fuel_stations_owner FOREIGN KEY (owner_id) REFERENCES station_owners(id) ON DELETE CASCADE,
     CONSTRAINT fk_fuel_stations_province FOREIGN KEY (province_id) REFERENCES provinces(id),
     CONSTRAINT fk_fuel_stations_district FOREIGN KEY (district_id) REFERENCES districts(id),
     CONSTRAINT check_district_province FOREIGN KEY (province_id, district_id) REFERENCES districts(province_id, id)
+);
+
+-- Create station_verification_requests table to track verification status
+CREATE TABLE station_verification_requests (
+    id SERIAL PRIMARY KEY,
+    station_id INTEGER NOT NULL,
+    status verification_status NOT NULL DEFAULT 'PENDING',
+    verification_date TIMESTAMP WITH TIME ZONE,
+    rejection_reason TEXT,
+    verified_by INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_station_verification_requests_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_station_verification_requests_admin FOREIGN KEY (verified_by) REFERENCES admin_users(id) ON DELETE SET NULL
 );
 
 -- Create station_fuel_types table (many-to-many relationship)
@@ -379,7 +394,8 @@ INSERT INTO system_settings (setting_key, setting_value, description, is_public)
     ('max_vehicles_per_owner', '3', 'Maximum number of vehicles per owner', true),
     ('enable_sms_notifications', 'true', 'Whether SMS notifications are enabled', false),
     ('enable_email_notifications', 'true', 'Whether email notifications are enabled', false),
-    ('maintenance_mode', 'false', 'Whether the system is in maintenance mode', true);
+    ('maintenance_mode', 'false', 'Whether the system is in maintenance mode', true),
+    ('require_station_verification', 'true', 'Whether fuel stations require admin verification before becoming active', true);
 
 -- =============================================
 -- TRANSACTION RELATED TABLES
@@ -400,6 +416,33 @@ CREATE TABLE fuel_transactions (
     CONSTRAINT fk_fuel_transactions_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
     CONSTRAINT fk_fuel_transactions_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
 );
+
+-- =============================================
+-- VERIFICATION TRIGGERS
+-- =============================================
+
+-- Create function to update station verification status when a verification request is processed
+CREATE OR REPLACE FUNCTION update_station_verification_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- If the status of the verification request has changed
+    IF OLD.status != NEW.status THEN
+        -- Update the station's verification status to match the request status
+        UPDATE fuel_stations
+        SET verification_status = NEW.status,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.station_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to update station verification status
+CREATE TRIGGER update_station_status_on_verification
+AFTER UPDATE ON station_verification_requests
+FOR EACH ROW
+WHEN (OLD.status IS DISTINCT FROM NEW.status)
+EXECUTE FUNCTION update_station_verification_status();
 
 -- =============================================
 -- EMAIL VERIFICATION SYSTEM

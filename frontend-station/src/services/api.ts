@@ -63,6 +63,26 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
  */
 export const apiService = {
   /**
+   * Check station verification status
+   */
+  checkStationVerificationStatus: async (data: { email: string }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/verification-status`, {
+        method: 'POST',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+  /**
    * Send email verification code
    */
   sendVerificationCode: async (data: { email: string }): Promise<ApiResponse<any>> => {

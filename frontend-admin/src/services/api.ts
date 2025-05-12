@@ -263,4 +263,52 @@ export const apiService = {
       };
     }
   },
+
+  /**
+   * Get station verifications
+   */
+  getStationVerifications: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/station-verifications`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update station verification status
+   */
+  updateStationVerificationStatus: async (data: {
+    verificationId: string;
+    status: string;
+    rejectionReason?: string;
+  }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/station-verifications/${data.verificationId}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify({
+          status: data.status,
+          rejectionReason: data.rejectionReason
+        }),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
 };
