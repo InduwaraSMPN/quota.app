@@ -7,8 +7,9 @@
 -- =============================================
 
 -- Create enum types for better data integrity
-CREATE TYPE user_role AS ENUM ('VEHICLE_OWNER', 'STATION_OWNER', 'ADMIN');
+CREATE TYPE user_role AS ENUM ('VEHICLE_OWNER', 'STATION_OWNER', 'ADMIN', 'STATION_OPERATOR');
 CREATE TYPE fuel_type AS ENUM ('92 OCTANE PETROL', '95 OCTANE PETROL', 'AUTO DIESEL', 'SUPER DIESEL', 'KEROSENE');
+CREATE TYPE verification_status AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
 
 -- Create function for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_modified_column()
@@ -579,6 +580,110 @@ CREATE TRIGGER update_refresh_tokens_modtime
     FOR EACH ROW
     EXECUTE FUNCTION update_modified_column();
 
+CREATE TRIGGER update_dmt_vehicle_records_modtime
+    BEFORE UPDATE ON dmt_vehicle_records
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+CREATE TRIGGER update_vehicle_verification_requests_modtime
+    BEFORE UPDATE ON vehicle_verification_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+CREATE TRIGGER update_station_operators_modtime
+    BEFORE UPDATE ON station_operators
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();
+
+-- =============================================
+-- DEPARTMENT OF MOTOR TRAFFIC INTEGRATION
+-- =============================================
+
+-- Create dmt_vehicle_records table to simulate the Department of Motor Traffic database
+CREATE TABLE dmt_vehicle_records (
+    id SERIAL PRIMARY KEY,
+    registration_number VARCHAR(10) NOT NULL UNIQUE,
+    engine_number VARCHAR(50) NOT NULL,
+    chassis_number VARCHAR(50) NOT NULL,
+    make VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year_of_manufacture INTEGER NOT NULL,
+    vehicle_class_code VARCHAR(5) NOT NULL,
+    owner_nic VARCHAR(12) NOT NULL,
+    owner_name VARCHAR(100) NOT NULL,
+    date_of_registration DATE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for faster lookups in DMT records
+CREATE INDEX idx_dmt_vehicle_records_registration ON dmt_vehicle_records(registration_number);
+CREATE INDEX idx_dmt_vehicle_records_engine ON dmt_vehicle_records(engine_number);
+CREATE INDEX idx_dmt_vehicle_records_chassis ON dmt_vehicle_records(chassis_number);
+CREATE INDEX idx_dmt_vehicle_records_owner_nic ON dmt_vehicle_records(owner_nic);
+
+-- Create vehicle_verification_requests table to track verification status
+CREATE TABLE vehicle_verification_requests (
+    id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER NOT NULL,
+    status verification_status NOT NULL DEFAULT 'PENDING',
+    verification_date TIMESTAMP WITH TIME ZONE,
+    rejection_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_vehicle_verification_requests_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+);
+
+-- Create index for faster verification lookups
+CREATE INDEX idx_vehicle_verification_requests_vehicle ON vehicle_verification_requests(vehicle_id);
+CREATE INDEX idx_vehicle_verification_requests_status ON vehicle_verification_requests(status);
+
+-- =============================================
+-- STATION OPERATORS
+-- =============================================
+
+-- Create station_operators table
+CREATE TABLE station_operators (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE,
+    station_id INTEGER NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    employee_id VARCHAR(50) NOT NULL,
+    contact_number VARCHAR(15) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_station_operators_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_station_operators_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
+    CONSTRAINT uq_station_operator_employee_id UNIQUE (station_id, employee_id)
+);
+
+-- Create indexes for faster lookups
+CREATE INDEX idx_station_operators_station ON station_operators(station_id);
+CREATE INDEX idx_station_operators_employee_id ON station_operators(employee_id);
+
+-- =============================================
+-- SMS NOTIFICATION SYSTEM
+-- =============================================
+
+-- Create sms_notifications table to track SMS messages sent via Twilio
+CREATE TABLE sms_notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    phone_number VARCHAR(15) NOT NULL,
+    message TEXT NOT NULL,
+    twilio_sid VARCHAR(50),
+    status VARCHAR(20) NOT NULL,
+    sent_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sms_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create index for faster SMS notification lookups
+CREATE INDEX idx_sms_notifications_user ON sms_notifications(user_id);
+CREATE INDEX idx_sms_notifications_status ON sms_notifications(status);
+CREATE INDEX idx_sms_notifications_sent_at ON sms_notifications(sent_at);
+
 -- =============================================
 -- COMMENTS
 -- =============================================
@@ -611,3 +716,8 @@ COMMENT ON TABLE system_settings IS 'System-wide configuration settings';
 
 COMMENT ON TABLE fuel_transactions IS 'Record of fuel transactions between vehicles and stations';
 COMMENT ON TABLE refresh_tokens IS 'JWT refresh tokens for authentication';
+
+COMMENT ON TABLE dmt_vehicle_records IS 'Mock database for Department of Motor Traffic vehicle records';
+COMMENT ON TABLE vehicle_verification_requests IS 'Requests for verification of vehicle details against DMT records';
+COMMENT ON TABLE station_operators IS 'Operators who work at fuel stations and use the mobile app';
+COMMENT ON TABLE sms_notifications IS 'SMS notifications sent via Twilio to users';
