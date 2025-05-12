@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { MagicBackButton } from "@/components/ui/magic-back-button";
 
 // Define the form schema with Zod
 const formSchema = z
@@ -78,8 +79,12 @@ export function LoginInformationSignup({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+    <div className={cn("relative flex flex-col", className)} {...props}>
+      <div className="absolute top-1 -left-12 z-10">
+        <MagicBackButton backLink="/" />
+      </div>
+
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
           <CardDescription>

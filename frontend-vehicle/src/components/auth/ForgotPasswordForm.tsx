@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Check } from "lucide-react";
 import Link from "next/link";
+import { MagicBackButton } from "@/components/ui/magic-back-button";
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -69,7 +70,7 @@ export function ForgotPasswordForm({
       // In a Todo, would call an API endpoint here
       // For now, we'll simulate a successful response after a short delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
       console.log("Password reset requested for:", data.email);
       setIsSuccess(true);
     } catch (err) {
@@ -81,8 +82,12 @@ export function ForgotPasswordForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+    <div className={cn("relative flex flex-col", className)} {...props}>
+      <div className="absolute top-1 -left-12 z-10">
+        <MagicBackButton backLink="/auth/login" />
+      </div>
+
+      <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Reset your password</CardTitle>
           <CardDescription>

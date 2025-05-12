@@ -126,10 +126,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
-      {/* Logo at the top */}
-      <div className="absolute top-0 left-0 z-10">
-        <Logo />
-      </div>
 
       {/* Theme toggle button */}
       <div className="fixed bottom-6 right-6 z-50">
