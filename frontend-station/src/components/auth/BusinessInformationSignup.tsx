@@ -29,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Define the form schema with Zod
@@ -95,11 +94,11 @@ const provinces = [
 
 // Fuel types available
 const fuelTypes = [
-  { id: "petrol92", label: "Petrol 92 Octane" },
-  { id: "petrol95", label: "Petrol 95 Octane" },
-  { id: "diesel", label: "Diesel" },
-  { id: "superDiesel", label: "Super Diesel" },
-  { id: "kerosene", label: "Kerosene" },
+  { id: "petrol92", label: "92 OCTANE PETROL" },
+  { id: "petrol95", label: "95 OCTANE PETROL" },
+  { id: "autoDiesel", label: "AUTO DIESEL" },
+  { id: "superDiesel", label: "SUPER DIESEL" },
+  { id: "kerosene", label: "KEROSENE" },
 ];
 
 export function BusinessInformationSignup({
