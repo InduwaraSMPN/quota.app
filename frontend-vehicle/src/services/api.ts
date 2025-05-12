@@ -63,6 +63,32 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
  */
 export const apiService = {
   /**
+   * Validate vehicle information against DMT database
+   */
+  validateVehicleWithDMT: async (vehicleData: any, ownerData: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/dmt/validate`, {
+        method: 'POST',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify({
+          registrationNumber: vehicleData.registrationNumber,
+          engineNumber: vehicleData.engineNumber,
+          chassisNumber: vehicleData.chassisNumber,
+          ownerNIC: ownerData.nicNumber,
+          ownerName: ownerData.fullName
+        }),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+  /**
    * Login user
    */
   login: async (username: string, password: string): Promise<ApiResponse<any>> => {

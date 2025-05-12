@@ -107,6 +107,8 @@ interface VehicleInformationSignupProps {
   onBack: () => void;
   initialData?: Partial<FormValues>; // Use Partial for flexibility
   isSubmitting?: boolean;
+  dmtValidationFailed?: boolean;
+  dmtValidationErrors?: string[];
 }
 
 export function VehicleInformationSignup({
@@ -115,6 +117,8 @@ export function VehicleInformationSignup({
   onBack,
   initialData,
   isSubmitting = false,
+  dmtValidationFailed = false,
+  dmtValidationErrors = [],
   ...props
 }: VehicleInformationSignupProps) {
   // Initialize the form with correct defaults matching schema types
@@ -177,6 +181,21 @@ export function VehicleInformationSignup({
             Please provide your vehicle details as per the registration
             certificate
           </CardDescription>
+          {dmtValidationFailed && (
+            <div className="mt-4 p-3 border border-destructive/50 bg-destructive/10 rounded-md">
+              <h4 className="text-sm font-semibold text-destructive mb-2">
+                Vehicle Validation Failed
+              </h4>
+              <ul className="text-xs text-destructive space-y-1 list-disc pl-4">
+                {dmtValidationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+              <p className="text-xs mt-2 text-muted-foreground">
+                Please ensure your vehicle details match the Department of Motor Traffic records.
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -487,7 +506,6 @@ export function VehicleInformationSignup({
                               field.onChange(date ? date.toISOString().split("T")[0] : "");
                             }}
                             placeholder="Pick a date"
-                            toDate={new Date()} // Prevent future dates
                           />
                         </FormControl>
                         <FormMessage />
