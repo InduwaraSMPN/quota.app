@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,15 +63,17 @@ interface OwnerInformationSignupProps {
   className?: string;
   onNext: (data: FormValues) => void;
   onBack: () => void;
+  initialData?: FormValues;
 }
 
 export function OwnerInformationSignup({
   className,
   onNext,
   onBack,
+  initialData,
   ...props
 }: OwnerInformationSignupProps) {
-  // Initialize the form
+  // Initialize the form with empty defaults first
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -80,6 +83,19 @@ export function OwnerInformationSignup({
       contactNumber: "",
     },
   });
+
+  // Update form values when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      // Reset the form with initialData
+      Object.keys(initialData).forEach((key) => {
+        const fieldKey = key as keyof FormValues;
+        if (initialData[fieldKey]) {
+          form.setValue(fieldKey, initialData[fieldKey]);
+        }
+      });
+    }
+  }, [form, initialData]);
 
   // Handle form submission
   function onSubmit(data: FormValues) {
