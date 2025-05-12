@@ -10,14 +10,19 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MagicBackButton } from "@/components/ui/magic-back-button";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+    <div className={cn("relative flex flex-col", className)} {...props}>
+      <div className="absolute top-1 -left-12 z-10">
+        <MagicBackButton backLink="/" />
+      </div>
+
+      <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
           <CardDescription>
@@ -48,7 +53,7 @@ export function LoginForm({
                 </div>
                 <Input id="password" type="password" required />
               </div>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 pt-2">
                 <Button type="submit" className="w-full">
                   Login
                 </Button>
