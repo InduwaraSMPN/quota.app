@@ -112,7 +112,11 @@ CREATE TABLE vehicles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_vehicles_owner FOREIGN KEY (owner_id) REFERENCES vehicle_owners(id) ON DELETE CASCADE,
-    CONSTRAINT fk_vehicles_vehicle_class FOREIGN KEY (vehicle_class_id) REFERENCES vehicle_classes(id)
+    CONSTRAINT fk_vehicles_vehicle_class FOREIGN KEY (vehicle_class_id) REFERENCES vehicle_classes(id),
+    CONSTRAINT valid_year_of_manufacture CHECK (year_of_manufacture BETWEEN 1900 AND EXTRACT(YEAR FROM CURRENT_DATE)),
+    CONSTRAINT positive_engine_capacity CHECK (engine_capacity > 0),
+    CONSTRAINT positive_gross_vehicle_weight CHECK (gross_vehicle_weight > 0),
+    CONSTRAINT valid_date_of_first_registration CHECK (date_of_first_registration <= CURRENT_DATE)
 );
 
 -- Create fuel_quotas table to track quota allocations
@@ -125,7 +129,10 @@ CREATE TABLE fuel_quotas (
     expiry_date DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_fuel_quotas_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+    CONSTRAINT fk_fuel_quotas_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+    CONSTRAINT positive_quota_amount CHECK (allocated_amount > 0),
+    CONSTRAINT positive_remaining_amount CHECK (remaining_amount >= 0),
+    CONSTRAINT valid_quota_dates CHECK (allocation_date <= expiry_date)
 );
 
 -- Create qr_codes table to store QR code information for vehicles
@@ -241,7 +248,8 @@ CREATE TABLE fuel_stations (
     CONSTRAINT fk_fuel_stations_owner FOREIGN KEY (owner_id) REFERENCES station_owners(id) ON DELETE CASCADE,
     CONSTRAINT fk_fuel_stations_province FOREIGN KEY (province_id) REFERENCES provinces(id),
     CONSTRAINT fk_fuel_stations_district FOREIGN KEY (district_id) REFERENCES districts(id),
-    CONSTRAINT check_district_province FOREIGN KEY (province_id, district_id) REFERENCES districts(province_id, id)
+    CONSTRAINT check_district_province FOREIGN KEY (province_id, district_id) REFERENCES districts(province_id, id),
+    CONSTRAINT valid_business_hours CHECK (opening_time != closing_time)
 );
 
 -- Create station_verification_requests table to track verification status
@@ -414,7 +422,11 @@ CREATE TABLE fuel_transactions (
     transaction_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_fuel_transactions_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
-    CONSTRAINT fk_fuel_transactions_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+    CONSTRAINT fk_fuel_transactions_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+    CONSTRAINT positive_transaction_amount CHECK (amount > 0),
+    CONSTRAINT positive_unit_price CHECK (unit_price > 0),
+    CONSTRAINT positive_total_price CHECK (total_price > 0),
+    CONSTRAINT valid_total_price CHECK (ROUND(amount * unit_price, 2) = total_price)
 );
 
 -- =============================================
@@ -444,6 +456,29 @@ FOR EACH ROW
 WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION update_station_verification_status();
 
+-- Create function to update vehicle verification status when a verification request is processed
+CREATE OR REPLACE FUNCTION update_vehicle_verification_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- If the status of the verification request has changed
+    IF OLD.status != NEW.status THEN
+        -- Update the vehicle's verification status
+        UPDATE vehicles
+        SET is_active = CASE WHEN NEW.status = 'VERIFIED' THEN TRUE ELSE FALSE END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.vehicle_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to update vehicle status on verification
+CREATE TRIGGER update_vehicle_status_on_verification
+AFTER UPDATE ON vehicle_verification_requests
+FOR EACH ROW
+WHEN (OLD.status IS DISTINCT FROM NEW.status)
+EXECUTE FUNCTION update_vehicle_verification_status();
+
 -- =============================================
 -- EMAIL VERIFICATION SYSTEM
 -- =============================================
@@ -456,8 +491,30 @@ CREATE TABLE email_verification_tokens (
     is_used BOOLEAN DEFAULT FALSE,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_email_verification_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_email_verification_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT valid_expiry_date CHECK (expires_at > created_at)
 );
+
+-- Create function to update user email_verified status when token is used
+CREATE OR REPLACE FUNCTION update_user_email_verified_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.is_used = TRUE AND OLD.is_used = FALSE THEN
+        UPDATE users
+        SET email_verified = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.user_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to update user email_verified status
+CREATE TRIGGER update_user_email_verified
+AFTER UPDATE ON email_verification_tokens
+FOR EACH ROW
+WHEN (NEW.is_used = TRUE AND OLD.is_used = FALSE)
+EXECUTE FUNCTION update_user_email_verified_status();
 
 -- =============================================
 -- SMS NOTIFICATION SYSTEM
