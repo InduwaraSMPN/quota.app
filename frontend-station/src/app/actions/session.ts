@@ -9,6 +9,11 @@ export type LoginInfoData = {
   confirmPassword: string;
 };
 
+export type EmailVerificationData = {
+  verificationCode: string;
+  verified?: boolean;
+};
+
 export type OwnerInfoData = {
   fullName: string;
   nicNumber: string;
@@ -30,6 +35,7 @@ export type BusinessInfoData = {
 
 export type SignupFormData = {
   loginInfo: LoginInfoData;
+  emailVerification?: EmailVerificationData;
   ownerInfo: OwnerInfoData;
   businessInfo: BusinessInfoData;
   currentStep: number;
@@ -41,11 +47,11 @@ const SESSION_COOKIE_NAME = 'station_signup_session';
 // Save form data to session
 export async function saveFormDataToSession(formData: SignupFormData): Promise<void> {
   const cookieStore = cookies();
-  
+
   // Encrypt sensitive data in a real application
   // For now, we'll just stringify the data
   const serializedData = JSON.stringify(formData);
-  
+
   // Set the cookie with a 1-hour expiration
   cookieStore.set({
     name: SESSION_COOKIE_NAME,
@@ -61,11 +67,11 @@ export async function saveFormDataToSession(formData: SignupFormData): Promise<v
 export async function getFormDataFromSession(): Promise<SignupFormData | null> {
   const cookieStore = cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
-  
+
   if (!sessionCookie?.value) {
     return null;
   }
-  
+
   try {
     return JSON.parse(sessionCookie.value) as SignupFormData;
   } catch (error) {
@@ -115,24 +121,24 @@ export async function submitSignupForm(formData: SignupFormData): Promise<{ succ
 
     if (!response.ok) {
       const errorData = await response.json();
-      return { 
-        success: false, 
-        message: errorData.message || 'Registration failed. Please try again.' 
+      return {
+        success: false,
+        message: errorData.message || 'Registration failed. Please try again.'
       };
     }
 
     // Clear session data after successful submission
     await clearSessionData();
-    
-    return { 
-      success: true, 
-      message: 'Registration successful!' 
+
+    return {
+      success: true,
+      message: 'Registration successful!'
     };
   } catch (error) {
     console.error('Error submitting form:', error);
-    return { 
-      success: false, 
-      message: 'An unexpected error occurred. Please try again.' 
+    return {
+      success: false,
+      message: 'An unexpected error occurred. Please try again.'
     };
   }
 }

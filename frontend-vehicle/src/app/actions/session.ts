@@ -10,6 +10,11 @@ export type LoginInfoData = {
   confirmPassword: string;
 };
 
+export type EmailVerificationData = {
+  verificationCode: string;
+  verified?: boolean;
+};
+
 export type OwnerInfoData = {
   fullName: string;
   nicNumber: string;
@@ -36,6 +41,7 @@ export type VehicleInfoData = {
 
 export type SignupFormData = {
   loginInfo: LoginInfoData;
+  emailVerification?: EmailVerificationData;
   ownerInfo: OwnerInfoData;
   vehicleInfo: VehicleInfoData;
   currentStep: number;

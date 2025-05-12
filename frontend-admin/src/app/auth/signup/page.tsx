@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LoginInformationSignup } from "@/components/auth/LoginInformationSignup";
+import { EmailVerificationSignup } from "@/components/auth/EmailVerificationSignup";
 import { PersonalInformationSignup } from "@/components/auth/PersonalInformationSignup";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -14,20 +15,24 @@ import {
   submitSignupForm,
   type SignupFormData,
   type LoginInfoData,
+  type EmailVerificationData,
   type AdminInfoData
 } from "@/app/actions/session";
+import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
 // Define the steps for the signup process
 enum SignupStep {
   LOGIN_INFO = 0,
-  PERSONAL_INFO = 1,
+  EMAIL_VERIFICATION = 1,
+  PERSONAL_INFO = 2,
 }
 
 // Step information for the indicator
 const STEPS = [
   { id: SignupStep.LOGIN_INFO, label: "Login Information" },
+  { id: SignupStep.EMAIL_VERIFICATION, label: "Email Verification" },
   { id: SignupStep.PERSONAL_INFO, label: "Personal Information" },
 ];
 
@@ -123,9 +128,11 @@ export default function Page() {
   // State to store form data from each step
   const [formData, setFormData] = useState<{
     loginInfo: Partial<LoginInfoData>;
+    emailVerification: Partial<EmailVerificationData>;
     adminInfo: Partial<AdminInfoData>;
   }>({
     loginInfo: {},
+    emailVerification: {},
     adminInfo: {},
   });
 
@@ -139,6 +146,7 @@ export default function Page() {
       if (sessionData) {
         setFormData({
           loginInfo: sessionData.loginInfo || {},
+          emailVerification: sessionData.emailVerification || {},
           adminInfo: sessionData.adminInfo || {},
         });
         setCurrentStep(sessionData.currentStep as SignupStep);
@@ -156,15 +164,33 @@ export default function Page() {
     };
 
     setFormData(updatedFormData);
-    setCurrentStep(SignupStep.PERSONAL_INFO);
+    setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save to session
     await saveFormDataToSession({
       ...updatedFormData,
-      currentStep: SignupStep.PERSONAL_INFO,
+      currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
 
-    toast.success("Login information saved");
+    // Send verification code to the email
+    try {
+      // In a real implementation, this would call the API to send the verification code
+      // For now, we'll simulate a successful send after a short delay
+      toast.success("Verification code sent to your email");
+
+      // Uncomment this for real implementation
+      /*
+      const response = await apiService.sendVerificationCode({ email: data.email });
+      if (response.data && response.data.sent) {
+        toast.success("Verification code sent to your email");
+      } else {
+        toast.error(response.error || "Failed to send verification code");
+      }
+      */
+    } catch (error) {
+      console.error("Error sending verification code:", error);
+      toast.error("Failed to send verification code. Please try again.");
+    }
   };
 
   // Handle completion of personal information step
@@ -182,6 +208,14 @@ export default function Page() {
         ...updatedFormData,
         currentStep: SignupStep.PERSONAL_INFO,
       } as SignupFormData);
+
+      // Make sure email is verified before submitting
+      if (!updatedFormData.emailVerification?.verified) {
+        toast.error("Email verification is required before registration");
+        setIsSubmitting(false);
+        setCurrentStep(SignupStep.EMAIL_VERIFICATION);
+        return;
+      }
 
       // Submit the complete form data to the backend
       const result = await submitSignupForm({
@@ -207,14 +241,47 @@ export default function Page() {
     }
   };
 
-  // Handle going back from personal information step
-  const handlePersonalInfoBack = async () => {
+  // Handle completion of email verification step
+  const handleEmailVerificationNext = async (data: EmailVerificationData) => {
+    const updatedFormData = {
+      ...formData,
+      emailVerification: {
+        ...data,
+        verified: true,
+      },
+    };
+
+    setFormData(updatedFormData);
+    setCurrentStep(SignupStep.PERSONAL_INFO);
+
+    // Save to session
+    await saveFormDataToSession({
+      ...updatedFormData,
+      currentStep: SignupStep.PERSONAL_INFO,
+    } as SignupFormData);
+
+    toast.success("Email verified successfully");
+  };
+
+  // Handle going back from email verification step
+  const handleEmailVerificationBack = async () => {
     setCurrentStep(SignupStep.LOGIN_INFO);
 
     // Save current step to session
     await saveFormDataToSession({
       ...formData,
       currentStep: SignupStep.LOGIN_INFO,
+    } as SignupFormData);
+  };
+
+  // Handle going back from personal information step
+  const handlePersonalInfoBack = async () => {
+    setCurrentStep(SignupStep.EMAIL_VERIFICATION);
+
+    // Save current step to session
+    await saveFormDataToSession({
+      ...formData,
+      currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
   };
 
@@ -241,6 +308,15 @@ export default function Page() {
             <LoginInformationSignup
               onNext={handleLoginInfoNext}
               initialData={formData.loginInfo as LoginInfoData}
+            />
+          )}
+
+          {currentStep === SignupStep.EMAIL_VERIFICATION && (
+            <EmailVerificationSignup
+              onNext={handleEmailVerificationNext}
+              onBack={handleEmailVerificationBack}
+              initialData={formData.emailVerification as EmailVerificationData}
+              email={formData.loginInfo.email || ""}
             />
           )}
 

@@ -103,32 +103,7 @@ export const apiService = {
       };
     }
   },
-  /**
-   * Validate vehicle information against DMT database
-   */
-  validateVehicleWithDMT: async (vehicleData: any, ownerData: any): Promise<ApiResponse<any>> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/dmt/validate`, {
-        method: 'POST',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify({
-          registrationNumber: vehicleData.registrationNumber,
-          engineNumber: vehicleData.engineNumber,
-          chassisNumber: vehicleData.chassisNumber,
-          ownerNIC: ownerData.nicNumber,
-          ownerName: ownerData.fullName
-        }),
-      });
 
-      return handleResponse(response);
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Network error',
-        status: 0,
-      };
-    }
-  },
   /**
    * Login user
    */
@@ -171,71 +146,11 @@ export const apiService = {
   },
 
   /**
-   * Get vehicle details
+   * Get station details
    */
-  getVehicleDetails: async (): Promise<ApiResponse<any>> => {
+  getStationDetails: async (): Promise<ApiResponse<any>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/vehicle/details`, {
-        method: 'GET',
-        headers: getAuthHeader(),
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Network error',
-        status: 0,
-      };
-    }
-  },
-
-  /**
-   * Get fuel quota information
-   */
-  getFuelQuota: async (): Promise<ApiResponse<any>> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/quota/details`, {
-        method: 'GET',
-        headers: getAuthHeader(),
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Network error',
-        status: 0,
-      };
-    }
-  },
-
-  /**
-   * Get consumption history
-   */
-  getConsumptionHistory: async (): Promise<ApiResponse<any>> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/consumption/history`, {
-        method: 'GET',
-        headers: getAuthHeader(),
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Network error',
-        status: 0,
-      };
-    }
-  },
-
-  /**
-   * Get notifications
-   */
-  getNotifications: async (): Promise<ApiResponse<any>> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+      const response = await fetch(`${API_BASE_URL}/api/station/details`, {
         method: 'GET',
         headers: getAuthHeader(),
       });
@@ -259,27 +174,6 @@ export const apiService = {
         method: 'PUT',
         headers: getAuthHeader(),
         body: JSON.stringify(profileData),
-      });
-
-      return handleResponse(response);
-    } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error.message : 'Network error',
-        status: 0,
-      };
-    }
-  },
-
-  /**
-   * Update vehicle details
-   */
-  updateVehicleDetails: async (vehicleData: any): Promise<ApiResponse<any>> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/vehicle/details`, {
-        method: 'PUT',
-        headers: getAuthHeader(),
-        body: JSON.stringify(vehicleData),
       });
 
       return handleResponse(response);
