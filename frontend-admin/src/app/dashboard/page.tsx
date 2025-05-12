@@ -353,7 +353,7 @@ export default function Dashboard() {
                       <CardTitle className="text-lg">Pending Approvals</CardTitle>
                     </div>
                     <Button variant="ghost" size="sm" className="gap-1" asChild>
-                      <Link href="/dashboard/approvals">
+                      <Link href="/dashboard/station-verifications">
                         <span>View All</span>
                         <ChevronRight className="h-4 w-4" />
                       </Link>
@@ -443,6 +443,12 @@ export default function Dashboard() {
                       <Link href="/dashboard/stations">
                         <Building className="h-5 w-5" />
                         <span>Manage Stations</span>
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
+                      <Link href="/dashboard/station-verifications">
+                        <FileText className="h-5 w-5" />
+                        <span>Station Verifications</span>
                       </Link>
                     </Button>
                     <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
