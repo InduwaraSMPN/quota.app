@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -39,35 +40,6 @@ const departments = [
   { id: "admin", label: "Administration" },
 ];
 
-// Role options by department
-const rolesByDepartment: Record<string, { id: string; label: string }[]> = {
-  operations: [
-    { id: "manager", label: "Operations Manager" },
-    { id: "supervisor", label: "Operations Supervisor" },
-    { id: "analyst", label: "Operations Analyst" },
-  ],
-  monitoring: [
-    { id: "manager", label: "Monitoring Manager" },
-    { id: "analyst", label: "Data Analyst" },
-    { id: "specialist", label: "Surveillance Specialist" },
-  ],
-  distribution: [
-    { id: "manager", label: "Distribution Manager" },
-    { id: "coordinator", label: "Logistics Coordinator" },
-    { id: "planner", label: "Supply Chain Planner" },
-  ],
-  support: [
-    { id: "manager", label: "Support Manager" },
-    { id: "specialist", label: "Technical Specialist" },
-    { id: "engineer", label: "Systems Engineer" },
-  ],
-  admin: [
-    { id: "manager", label: "Administrative Manager" },
-    { id: "officer", label: "Administrative Officer" },
-    { id: "assistant", label: "Administrative Assistant" },
-  ],
-};
-
 // Define the form schema with Zod
 const formSchema = z.object({
   fullName: z
@@ -81,9 +53,6 @@ const formSchema = z.object({
   department: z
     .string()
     .min(1, { message: "Department is required" }),
-  role: z
-    .string()
-    .min(1, { message: "Role is required" }),
   contactNumber: z
     .string()
     .min(1, { message: "Contact number is required" })
@@ -108,53 +77,54 @@ const formSchema = z.object({
     .string()
     .min(5, { message: "Address must be at least 5 characters" })
     .max(200, { message: "Address must be less than 200 characters" }),
-  securityClearanceLevel: z
-    .string()
-    .min(1, { message: "Security clearance level is required" }),
 });
 
 // Define the form values type
 type FormValues = z.infer<typeof formSchema>;
 
-// Security clearance levels
-const securityClearanceLevels = [
-  { id: "level1", label: "Level 1 - Basic" },
-  { id: "level2", label: "Level 2 - Intermediate" },
-  { id: "level3", label: "Level 3 - Advanced" },
-  { id: "level4", label: "Level 4 - Restricted" },
-  { id: "level5", label: "Level 5 - Confidential" },
-];
+
 
 interface PersonalInformationSignupProps {
   className?: string;
   onNext: (data: FormValues) => void;
   onBack: () => void;
+  initialData?: FormValues;
+  isSubmitting?: boolean;
 }
 
 export function PersonalInformationSignup({
   className,
   onNext,
   onBack,
+  initialData,
+  isSubmitting = false,
   ...props
 }: PersonalInformationSignupProps) {
-  // Initialize the form
+  // Initialize the form with empty defaults first
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: "",
       employeeId: "",
       department: "",
-      role: "",
       contactNumber: "",
       emergencyContactNumber: "",
       address: "",
-      securityClearanceLevel: "",
     },
   });
 
-  // Get the selected department to filter roles
-  const selectedDepartment = form.watch("department");
-  const availableRoles = rolesByDepartment[selectedDepartment] || [];
+  // Update form values when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      // Reset the form with initialData
+      Object.keys(initialData).forEach((key) => {
+        const fieldKey = key as keyof FormValues;
+        if (initialData[fieldKey]) {
+          form.setValue(fieldKey, initialData[fieldKey]);
+        }
+      });
+    }
+  }, [form, initialData]);
 
   // Handle form submission
   function onSubmit(data: FormValues) {
@@ -209,67 +179,33 @@ export function PersonalInformationSignup({
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          // Reset role when department changes
-                          form.setValue("role", "");
-                        }}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select department" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {departments.map((department) => (
-                            <SelectItem key={department.id} value={department.id}>
-                              {department.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={!selectedDepartment}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {availableRoles.map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
-                              {role.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>Department</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {departments.map((department) => (
+                          <SelectItem key={department.id} value={department.id}>
+                            {department.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="contactNumber"
@@ -329,45 +265,21 @@ export function PersonalInformationSignup({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="securityClearanceLevel"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Security Clearance Level</FormLabel>
-                    <FormDescription>
-                      Select your assigned security clearance level
-                    </FormDescription>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select security clearance level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {securityClearanceLevels.map((level) => (
-                          <SelectItem key={level.id} value={level.id}>
-                            {level.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full">
-                  Submit
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   className="w-full"
                   onClick={onBack}
+                  disabled={isSubmitting}
                 >
                   Back
                 </Button>
