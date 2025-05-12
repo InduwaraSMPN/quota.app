@@ -417,7 +417,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     {mockConsumptionHistory.map((item, index) => (
                       <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
-                        <div className="bg-primary/10 rounded-full p-2 mt-1">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
                           <Droplet className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 space-y-1">
@@ -449,7 +449,7 @@ export default function Dashboard() {
                     {mockNotifications.length > 0 ? (
                       mockNotifications.map((notification) => (
                         <div key={notification.id} className="flex gap-3 pb-3 border-b last:border-0 last:pb-0">
-                          <div className={`rounded-full p-2 mt-1 ${
+                          <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
                             notification.type === "warning" ? "bg-yellow-100 text-yellow-600" : "bg-blue-100 text-blue-600"
                           }`}>
                             {notification.type === "warning" ? (
