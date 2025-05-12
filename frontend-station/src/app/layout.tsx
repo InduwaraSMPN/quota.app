@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageTracker } from "react-page-tracker";
+import { ScreenSize } from "@/components/ui/screen-size";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
         >
           <PageTracker />
           {children}
+          {process.env.NODE_ENV === "development" && <ScreenSize />}
         </ThemeProvider>
       </body>
     </html>
