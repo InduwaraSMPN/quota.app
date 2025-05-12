@@ -138,6 +138,10 @@ export default function Page() {
   // State to track loading status
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // State to track DMT validation errors
+  const [dmtValidationErrors, setDmtValidationErrors] = useState<string[]>([]);
+  const [dmtValidationFailed, setDmtValidationFailed] = useState(false);
+
   // Load saved form data from session on initial render
   useEffect(() => {
     const loadSessionData = async () => {
@@ -207,6 +211,9 @@ export default function Page() {
   // Handle completion of vehicle information step
   const handleVehicleInfoSubmit = async (data: VehicleInfoData) => {
     setIsSubmitting(true);
+    // Reset validation errors
+    setDmtValidationErrors([]);
+    setDmtValidationFailed(false);
 
     try {
       const updatedFormData = {
@@ -220,25 +227,36 @@ export default function Page() {
         currentStep: SignupStep.VEHICLE_INFO,
       } as SignupFormData);
 
-      // Submit the complete form data to the backend
+      // Submit the complete form data to the backend (includes DMT validation)
       const result = await submitSignupForm({
         ...updatedFormData,
         currentStep: SignupStep.VEHICLE_INFO,
       } as SignupFormData);
 
       if (result.success) {
-        toast.success("Registration successful!");
+        toast.success("Registration successful! Your vehicle details have been verified.");
 
         // Redirect to login page after successful registration
         setTimeout(() => {
           router.push('/auth/login');
         }, 2000);
       } else {
-        toast.error(result.message || "Registration failed");
+        // Check if the failure is due to DMT validation
+        if (result.dmtValidationFailed) {
+          // Set DMT validation errors
+          setDmtValidationFailed(true);
+          setDmtValidationErrors(result.validationErrors || []);
+
+          // Show error toast with DMT validation failure message
+          toast.error(result.message || "Vehicle validation failed");
+        } else {
+          // Show general error toast
+          toast.error(result.message || "Registration failed");
+        }
       }
     } catch (error) {
       console.error("Error during form submission:", error);
-      toast.error("Registration failed");
+      toast.error("Registration failed. The service might be unavailable.");
     } finally {
       setIsSubmitting(false);
     }
@@ -295,6 +313,8 @@ export default function Page() {
               onBack={handleVehicleInfoBack}
               initialData={formData.vehicleInfo as VehicleInfoData}
               isSubmitting={isSubmitting}
+              dmtValidationFailed={dmtValidationFailed}
+              dmtValidationErrors={dmtValidationErrors}
             />
           )}
         </div>
