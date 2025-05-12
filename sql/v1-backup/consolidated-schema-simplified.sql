@@ -36,9 +36,6 @@ CREATE TABLE users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create index on email for faster login queries
-CREATE INDEX idx_users_email ON users(email);
-
 -- Create refresh_tokens table for JWT authentication
 CREATE TABLE refresh_tokens (
     id SERIAL PRIMARY KEY,
@@ -48,10 +45,6 @@ CREATE TABLE refresh_tokens (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Create index for faster token lookups
-CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
 
 -- =============================================
 -- VEHICLE OWNER RELATED TABLES
@@ -96,10 +89,6 @@ CREATE TABLE vehicle_owners (
     CONSTRAINT fk_vehicle_owners_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Create indexes for faster lookups
-CREATE INDEX idx_vehicle_owners_nic ON vehicle_owners(nic_number);
-CREATE INDEX idx_vehicle_owners_contact ON vehicle_owners(contact_number);
-
 -- Create vehicles table
 CREATE TABLE vehicles (
     id SERIAL PRIMARY KEY,
@@ -125,13 +114,6 @@ CREATE TABLE vehicles (
     CONSTRAINT fk_vehicles_vehicle_class FOREIGN KEY (vehicle_class_id) REFERENCES vehicle_classes(id)
 );
 
--- Create indexes for faster lookups
-CREATE INDEX idx_vehicles_registration ON vehicles(registration_number);
-CREATE INDEX idx_vehicles_owner ON vehicles(owner_id);
-CREATE INDEX idx_vehicles_make_model ON vehicles(make, model);
-CREATE INDEX idx_vehicles_class ON vehicles(vehicle_class_id);
-CREATE INDEX idx_vehicles_fuel_type ON vehicles(fuel_type);
-
 -- Create fuel_quotas table to track quota allocations
 CREATE TABLE fuel_quotas (
     id SERIAL PRIMARY KEY,
@@ -145,10 +127,6 @@ CREATE TABLE fuel_quotas (
     CONSTRAINT fk_fuel_quotas_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
 );
 
--- Create index for faster quota lookups
-CREATE INDEX idx_fuel_quotas_vehicle ON fuel_quotas(vehicle_id);
-CREATE INDEX idx_fuel_quotas_dates ON fuel_quotas(allocation_date, expiry_date);
-
 -- Create qr_codes table to store QR code information for vehicles
 CREATE TABLE qr_codes (
     id SERIAL PRIMARY KEY,
@@ -159,9 +137,6 @@ CREATE TABLE qr_codes (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_qr_codes_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
 );
-
--- Create index for faster QR code lookups
-CREATE INDEX idx_qr_codes_vehicle ON qr_codes(vehicle_id);
 
 -- Create vehicle_notifications table for vehicle owner notifications
 CREATE TABLE vehicle_notifications (
@@ -174,9 +149,17 @@ CREATE TABLE vehicle_notifications (
     CONSTRAINT fk_vehicle_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Create index for faster notification lookups
-CREATE INDEX idx_vehicle_notifications_user ON vehicle_notifications(user_id);
-CREATE INDEX idx_vehicle_notifications_unread ON vehicle_notifications(user_id, is_read) WHERE is_read = FALSE;
+-- Create vehicle_verification_requests table to track verification status
+CREATE TABLE vehicle_verification_requests (
+    id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER NOT NULL,
+    status verification_status NOT NULL DEFAULT 'PENDING',
+    verification_date TIMESTAMP WITH TIME ZONE,
+    rejection_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_vehicle_verification_requests_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+);
 
 -- =============================================
 -- STATION OWNER RELATED TABLES
@@ -194,10 +177,6 @@ CREATE TABLE station_owners (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_station_owners_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Create indexes for faster lookups
-CREATE INDEX idx_station_owners_nic ON station_owners(nic_number);
-CREATE INDEX idx_station_owners_contact ON station_owners(contact_number);
 
 -- Create provinces table
 CREATE TABLE provinces (
@@ -264,12 +243,6 @@ CREATE TABLE fuel_stations (
     CONSTRAINT check_district_province FOREIGN KEY (province_id, district_id) REFERENCES districts(province_id, id)
 );
 
--- Create indexes for faster lookups
-CREATE INDEX idx_fuel_stations_owner ON fuel_stations(owner_id);
-CREATE INDEX idx_fuel_stations_location ON fuel_stations(province_id, district_id);
-CREATE INDEX idx_fuel_stations_brn ON fuel_stations(business_registration_number);
-CREATE INDEX idx_fuel_stations_license ON fuel_stations(fuel_retail_license_number);
-
 -- Create station_fuel_types table (many-to-many relationship)
 CREATE TABLE station_fuel_types (
     id SERIAL PRIMARY KEY,
@@ -282,11 +255,6 @@ CREATE TABLE station_fuel_types (
     CONSTRAINT fk_station_fuel_types_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
     CONSTRAINT uq_station_fuel_type UNIQUE (station_id, fuel_type)
 );
-
--- Create index for faster lookups
-CREATE INDEX idx_station_fuel_types_station ON station_fuel_types(station_id);
-CREATE INDEX idx_station_fuel_types_fuel_type ON station_fuel_types(fuel_type);
-CREATE INDEX idx_station_fuel_types_availability ON station_fuel_types(is_available);
 
 -- Create fuel_inventory table to track fuel stock at stations
 CREATE TABLE fuel_inventory (
@@ -303,11 +271,6 @@ CREATE TABLE fuel_inventory (
     CONSTRAINT uq_station_fuel_inventory UNIQUE (station_id, fuel_type)
 );
 
--- Create index for faster lookups
-CREATE INDEX idx_fuel_inventory_station ON fuel_inventory(station_id);
-CREATE INDEX idx_fuel_inventory_fuel_type ON fuel_inventory(fuel_type);
-CREATE INDEX idx_fuel_inventory_refill ON fuel_inventory(next_refill_date);
-
 -- Create station_notifications table for station-specific notifications
 CREATE TABLE station_notifications (
     id SERIAL PRIMARY KEY,
@@ -319,9 +282,21 @@ CREATE TABLE station_notifications (
     CONSTRAINT fk_station_notifications_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE
 );
 
--- Create index for faster notification lookups
-CREATE INDEX idx_station_notifications_station ON station_notifications(station_id);
-CREATE INDEX idx_station_notifications_unread ON station_notifications(station_id, is_read) WHERE is_read = FALSE;
+-- Create station_operators table
+CREATE TABLE station_operators (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE,
+    station_id INTEGER NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    employee_id VARCHAR(50) NOT NULL,
+    contact_number VARCHAR(15) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_station_operators_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_station_operators_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
+    CONSTRAINT uq_station_operator_employee_id UNIQUE (station_id, employee_id)
+);
 
 -- =============================================
 -- ADMIN RELATED TABLES
@@ -361,10 +336,6 @@ CREATE TABLE admin_users (
     CONSTRAINT fk_admin_users_department FOREIGN KEY (department_id) REFERENCES departments(id)
 );
 
--- Create indexes for faster lookups
-CREATE INDEX idx_admin_users_employee_id ON admin_users(employee_id);
-CREATE INDEX idx_admin_users_department ON admin_users(department_id);
-
 -- Create admin_permissions table
 CREATE TABLE admin_permissions (
     id SERIAL PRIMARY KEY,
@@ -403,10 +374,6 @@ CREATE TABLE admin_user_permissions (
     CONSTRAINT uq_admin_user_permission UNIQUE (admin_user_id, permission_id)
 );
 
--- Create index for faster lookups
-CREATE INDEX idx_admin_user_permissions_user ON admin_user_permissions(admin_user_id);
-CREATE INDEX idx_admin_user_permissions_permission ON admin_user_permissions(permission_id);
-
 -- Create admin_activity_logs table
 CREATE TABLE admin_activity_logs (
     id SERIAL PRIMARY KEY,
@@ -419,11 +386,6 @@ CREATE TABLE admin_activity_logs (
     CONSTRAINT fk_admin_activity_logs_admin FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE
 );
 
--- Create index for faster lookups
-CREATE INDEX idx_admin_activity_logs_admin ON admin_activity_logs(admin_id);
-CREATE INDEX idx_admin_activity_logs_action ON admin_activity_logs(action);
-CREATE INDEX idx_admin_activity_logs_created_at ON admin_activity_logs(created_at);
-
 -- Create admin_notifications table
 CREATE TABLE admin_notifications (
     id SERIAL PRIMARY KEY,
@@ -434,10 +396,6 @@ CREATE TABLE admin_notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_admin_notifications_admin FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE
 );
-
--- Create index for faster notification lookups
-CREATE INDEX idx_admin_notifications_admin ON admin_notifications(admin_id);
-CREATE INDEX idx_admin_notifications_unread ON admin_notifications(admin_id, is_read) WHERE is_read = FALSE;
 
 -- Create system_settings table
 CREATE TABLE system_settings (
@@ -479,189 +437,6 @@ CREATE TABLE fuel_transactions (
     CONSTRAINT fk_fuel_transactions_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
 );
 
--- Create indexes for faster lookups
-CREATE INDEX idx_fuel_transactions_station ON fuel_transactions(station_id);
-CREATE INDEX idx_fuel_transactions_vehicle ON fuel_transactions(vehicle_id);
-CREATE INDEX idx_fuel_transactions_date ON fuel_transactions(transaction_date);
-CREATE INDEX idx_fuel_transactions_fuel_type ON fuel_transactions(fuel_type);
-
--- =============================================
--- TRIGGERS FOR UPDATED_AT TIMESTAMPS
--- =============================================
-
--- Create triggers for all tables with updated_at column
-CREATE TRIGGER update_users_modtime
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_vehicle_owners_modtime
-    BEFORE UPDATE ON vehicle_owners
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_vehicles_modtime
-    BEFORE UPDATE ON vehicles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_vehicle_classes_modtime
-    BEFORE UPDATE ON vehicle_classes
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_fuel_quotas_modtime
-    BEFORE UPDATE ON fuel_quotas
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_qr_codes_modtime
-    BEFORE UPDATE ON qr_codes
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_station_owners_modtime
-    BEFORE UPDATE ON station_owners
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_provinces_modtime
-    BEFORE UPDATE ON provinces
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_districts_modtime
-    BEFORE UPDATE ON districts
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_fuel_stations_modtime
-    BEFORE UPDATE ON fuel_stations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_station_fuel_types_modtime
-    BEFORE UPDATE ON station_fuel_types
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_fuel_inventory_modtime
-    BEFORE UPDATE ON fuel_inventory
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_departments_modtime
-    BEFORE UPDATE ON departments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_admin_users_modtime
-    BEFORE UPDATE ON admin_users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_admin_permissions_modtime
-    BEFORE UPDATE ON admin_permissions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_admin_user_permissions_modtime
-    BEFORE UPDATE ON admin_user_permissions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_system_settings_modtime
-    BEFORE UPDATE ON system_settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_refresh_tokens_modtime
-    BEFORE UPDATE ON refresh_tokens
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_dmt_vehicle_records_modtime
-    BEFORE UPDATE ON dmt_vehicle_records
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_vehicle_verification_requests_modtime
-    BEFORE UPDATE ON vehicle_verification_requests
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
-CREATE TRIGGER update_station_operators_modtime
-    BEFORE UPDATE ON station_operators
-    FOR EACH ROW
-    EXECUTE FUNCTION update_modified_column();
-
--- =============================================
--- DEPARTMENT OF MOTOR TRAFFIC INTEGRATION
--- =============================================
-
--- Create dmt_vehicle_records table to simulate the Department of Motor Traffic database
-CREATE TABLE dmt_vehicle_records (
-    id SERIAL PRIMARY KEY,
-    registration_number VARCHAR(10) NOT NULL UNIQUE,
-    engine_number VARCHAR(50) NOT NULL,
-    chassis_number VARCHAR(50) NOT NULL,
-    make VARCHAR(50) NOT NULL,
-    model VARCHAR(50) NOT NULL,
-    year_of_manufacture INTEGER NOT NULL,
-    vehicle_class_code VARCHAR(5) NOT NULL,
-    owner_nic VARCHAR(12) NOT NULL,
-    owner_name VARCHAR(100) NOT NULL,
-    date_of_registration DATE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create indexes for faster lookups in DMT records
-CREATE INDEX idx_dmt_vehicle_records_registration ON dmt_vehicle_records(registration_number);
-CREATE INDEX idx_dmt_vehicle_records_engine ON dmt_vehicle_records(engine_number);
-CREATE INDEX idx_dmt_vehicle_records_chassis ON dmt_vehicle_records(chassis_number);
-CREATE INDEX idx_dmt_vehicle_records_owner_nic ON dmt_vehicle_records(owner_nic);
-
--- Create vehicle_verification_requests table to track verification status
-CREATE TABLE vehicle_verification_requests (
-    id SERIAL PRIMARY KEY,
-    vehicle_id INTEGER NOT NULL,
-    status verification_status NOT NULL DEFAULT 'PENDING',
-    verification_date TIMESTAMP WITH TIME ZONE,
-    rejection_reason TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_vehicle_verification_requests_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
-);
-
--- Create index for faster verification lookups
-CREATE INDEX idx_vehicle_verification_requests_vehicle ON vehicle_verification_requests(vehicle_id);
-CREATE INDEX idx_vehicle_verification_requests_status ON vehicle_verification_requests(status);
-
--- =============================================
--- STATION OPERATORS
--- =============================================
-
--- Create station_operators table
-CREATE TABLE station_operators (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE,
-    station_id INTEGER NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
-    employee_id VARCHAR(50) NOT NULL,
-    contact_number VARCHAR(15) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_station_operators_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_station_operators_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
-    CONSTRAINT uq_station_operator_employee_id UNIQUE (station_id, employee_id)
-);
-
--- Create indexes for faster lookups
-CREATE INDEX idx_station_operators_station ON station_operators(station_id);
-CREATE INDEX idx_station_operators_employee_id ON station_operators(employee_id);
-
 -- =============================================
 -- SMS NOTIFICATION SYSTEM
 -- =============================================
@@ -678,46 +453,3 @@ CREATE TABLE sms_notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sms_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Create index for faster SMS notification lookups
-CREATE INDEX idx_sms_notifications_user ON sms_notifications(user_id);
-CREATE INDEX idx_sms_notifications_status ON sms_notifications(status);
-CREATE INDEX idx_sms_notifications_sent_at ON sms_notifications(sent_at);
-
--- =============================================
--- COMMENTS
--- =============================================
-
-COMMENT ON DATABASE "database.quota.app" IS 'Consolidated database for the quota.app fuel management system';
-
-COMMENT ON TABLE users IS 'Central users table for all user types (vehicle owners, station owners, admins)';
-COMMENT ON TABLE vehicle_owners IS 'Information about vehicle owners';
-COMMENT ON TABLE vehicles IS 'Information about registered vehicles';
-COMMENT ON TABLE vehicle_classes IS 'Predefined vehicle classes as per government regulations';
-COMMENT ON TABLE fuel_quotas IS 'Fuel quota allocations for vehicles';
-COMMENT ON TABLE qr_codes IS 'QR codes associated with vehicles for identification';
-COMMENT ON TABLE vehicle_notifications IS 'Notifications for vehicle owners';
-
-COMMENT ON TABLE station_owners IS 'Information about fuel station owners';
-COMMENT ON TABLE provinces IS 'Provinces in Sri Lanka';
-COMMENT ON TABLE districts IS 'Districts in Sri Lanka, organized by province';
-COMMENT ON TABLE fuel_stations IS 'Information about fuel stations';
-COMMENT ON TABLE station_fuel_types IS 'Types of fuel available at each station';
-COMMENT ON TABLE fuel_inventory IS 'Fuel inventory levels at stations';
-COMMENT ON TABLE station_notifications IS 'Notifications for station owners';
-
-COMMENT ON TABLE departments IS 'Administrative departments';
-COMMENT ON TABLE admin_users IS 'Information about administrative users';
-COMMENT ON TABLE admin_permissions IS 'Available permissions for admin users';
-COMMENT ON TABLE admin_user_permissions IS 'Permissions assigned to admin users';
-COMMENT ON TABLE admin_activity_logs IS 'Logs of admin user activities';
-COMMENT ON TABLE admin_notifications IS 'Notifications for admin users';
-COMMENT ON TABLE system_settings IS 'System-wide configuration settings';
-
-COMMENT ON TABLE fuel_transactions IS 'Record of fuel transactions between vehicles and stations';
-COMMENT ON TABLE refresh_tokens IS 'JWT refresh tokens for authentication';
-
-COMMENT ON TABLE dmt_vehicle_records IS 'Mock database for Department of Motor Traffic vehicle records';
-COMMENT ON TABLE vehicle_verification_requests IS 'Requests for verification of vehicle details against DMT records';
-COMMENT ON TABLE station_operators IS 'Operators who work at fuel stations and use the mobile app';
-COMMENT ON TABLE sms_notifications IS 'SMS notifications sent via Twilio to users';
