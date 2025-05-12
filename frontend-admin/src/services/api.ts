@@ -63,6 +63,47 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
  */
 export const apiService = {
   /**
+   * Send email verification code
+   */
+  sendVerificationCode: async (data: { email: string }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
+        method: 'POST',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Verify email code
+   */
+  verifyEmailCode: async (data: { email: string, code: string }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-email-code`, {
+        method: 'POST',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+  /**
    * Login user
    */
   login: async (username: string, password: string): Promise<ApiResponse<any>> => {

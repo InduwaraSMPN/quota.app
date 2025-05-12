@@ -9,6 +9,11 @@ export type LoginInfoData = {
   confirmPassword: string;
 };
 
+export type EmailVerificationData = {
+  verificationCode: string;
+  verified?: boolean;
+};
+
 export type AdminInfoData = {
   fullName: string;
   employeeId: string;
@@ -20,6 +25,7 @@ export type AdminInfoData = {
 
 export type SignupFormData = {
   loginInfo: LoginInfoData;
+  emailVerification?: EmailVerificationData;
   adminInfo: AdminInfoData;
   currentStep: number;
 };
