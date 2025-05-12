@@ -18,16 +18,13 @@ import {
   User,
   Fuel,
   History,
-  Bell,
   QrCode,
   Settings,
-  AlertTriangle,
   ChevronRight,
   Droplet,
   Clock,
   MapPin,
-  Edit,
-  HelpCircle
+  Edit
 } from "lucide-react";
 // Import the API service (commented out for now as we're using mock data)
 // import { apiService } from "@/services/api";
@@ -75,11 +72,7 @@ const mockConsumptionHistory = [
   { date: "2023-05-01", amount: 3.0, station: "Fuel Station C", location: "Galle" },
 ];
 
-const mockNotifications = [
-  { id: 1, type: "info", message: "Your fuel quota will be refilled on July 1st", date: "2023-06-20" },
-  { id: 2, type: "warning", message: "You have used 60% of your monthly quota", date: "2023-06-18" },
-  { id: 3, type: "info", message: "New fuel station added in your area", date: "2023-06-15" },
-];
+
 
 export default function Dashboard() {
   const [isClient, setIsClient] = useState(false);
@@ -213,7 +206,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Button asChild className="flex items-center gap-2">
-              <Link href="/dashboard/qrcode">
+              <Link href="/dashboard/download-your-qr-code">
                 <QrCode className="h-4 w-4" />
                 View Full QR Code
               </Link>
@@ -390,7 +383,7 @@ export default function Dashboard() {
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href="/dashboard/qrcode">
+                    <Link href="/dashboard/download-your-qr-code">
                       Customize & Download
                     </Link>
                   </Button>
@@ -439,78 +432,11 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Notifications Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Notifications</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {mockNotifications.length > 0 ? (
-                      mockNotifications.map((notification) => (
-                        <div key={notification.id} className="flex gap-3 pb-3 border-b last:border-0 last:pb-0">
-                          <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                            notification.type === "warning" ? "bg-yellow-100 text-yellow-600" : "bg-blue-100 text-blue-600"
-                          }`}>
-                            {notification.type === "warning" ? (
-                              <AlertTriangle className="h-4 w-4" />
-                            ) : (
-                              <Bell className="h-4 w-4" />
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm">{notification.message}</p>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              <span>{notification.date}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-6">
-                        <p className="text-muted-foreground">No notifications</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="pt-4">
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2" asChild>
-                <Link href="/dashboard/profile">
-                  <Settings className="h-5 w-5" />
-                  <span>Update Profile</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2" asChild>
-                <Link href="/dashboard/vehicle">
-                  <Car className="h-5 w-5" />
-                  <span>Update Vehicle</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2" asChild>
-                <Link href="/dashboard/stations">
-                  <MapPin className="h-5 w-5" />
-                  <span>Find Stations</span>
-                </Link>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2" asChild>
-                <Link href="/dashboard/support">
-                  <HelpCircle className="h-5 w-5" />
-                  <span>Get Support</span>
-                </Link>
-              </Button>
-            </div>
-          </div>
+
         </div>
       </div>
       )}
