@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Logo } from "@/components/logo";
 import { QRCodeSVG } from "qrcode.react";
+import { MagicBackButton } from "@/components/ui/magic-back-button";
 import {
   Card,
   CardContent,
@@ -205,9 +205,12 @@ export default function Dashboard() {
         <div className="w-full max-w-7xl mx-auto space-y-6">
           {/* Dashboard Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-              <p className="text-muted-foreground">Manage your fuel quota and vehicle information</p>
+            <div className="flex items-center gap-3">
+              <MagicBackButton backLink="/" />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+                <p className="text-muted-foreground">Manage your fuel quota and vehicle information</p>
+              </div>
             </div>
             <Button asChild className="flex items-center gap-2">
               <Link href="/dashboard/qrcode">
