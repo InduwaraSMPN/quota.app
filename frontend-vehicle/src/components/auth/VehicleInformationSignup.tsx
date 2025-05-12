@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -229,11 +236,46 @@ export function VehicleInformationSignup({
                   control={form.control}
                   name="vehicleClass"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col h-full justify-end">
-                      <FormLabel>Vehicle Class</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Car, Van, SUV, etc." {...field} />
-                      </FormControl>
+                    <FormItem className="flex flex-col h-full justify-end md:col-span-2">
+                      <div className="flex justify-between items-center">
+                        <FormLabel>Vehicle Class</FormLabel>
+                        <a
+                          href="https://dmt.gov.lk/index.php?option=com_content&view=article&id=46&Itemid=163&lang=en#"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Reference
+                        </a>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        As per Section 122 of Motor Traffic Act amended by Act no.08 of 2009
+                      </p>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select vehicle class" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="A1: Light motor cycles">A1: Light motor cycles</SelectItem>
+                          <SelectItem value="A: Motorcycles">A: Motorcycles</SelectItem>
+                          <SelectItem value="B1: Motor Tricycle or van">B1: Motor Tricycle or van</SelectItem>
+                          <SelectItem value="B: Dual purpose Motor vehicle">B: Dual purpose Motor vehicle</SelectItem>
+                          <SelectItem value="C1: Light Motor Lorry">C1: Light Motor Lorry</SelectItem>
+                          <SelectItem value="C: Motor Lorry">C: Motor Lorry</SelectItem>
+                          <SelectItem value="CE: Heavy Motor Lorry combination">CE: Heavy Motor Lorry combination</SelectItem>
+                          <SelectItem value="D1: Light Motor Coach">D1: Light Motor Coach</SelectItem>
+                          <SelectItem value="D: Motor Coach">D: Motor Coach</SelectItem>
+                          <SelectItem value="DE: Heavy Motor Coach combination">DE: Heavy Motor Coach combination</SelectItem>
+                          <SelectItem value="G1: Hand Tractors">G1: Hand Tractors</SelectItem>
+                          <SelectItem value="G: Land Vehicle">G: Land Vehicle</SelectItem>
+                          <SelectItem value="J: Special purpose Vehicle">J: Special purpose Vehicle</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -256,13 +298,40 @@ export function VehicleInformationSignup({
                 />
                 <FormField
                   control={form.control}
-                  name="fuelType"
+                  name="countryOfOrigin"
                   render={({ field }) => (
                     <FormItem className="flex flex-col h-full justify-end">
-                      <FormLabel>Fuel Type</FormLabel>
+                      <FormLabel>Country of Origin</FormLabel>
                       <FormControl>
-                        <Input placeholder="Petrol, Diesel, etc." {...field} />
+                        <Input placeholder="Japan, Germany, etc." {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="fuelType"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col h-full justify-end md:col-span-2">
+                      <FormLabel>Fuel Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select fuel type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="92 OCTANE PETROL">92 OCTANE PETROL</SelectItem>
+                          <SelectItem value="95 OCTANE PETROL">95 OCTANE PETROL</SelectItem>
+                          <SelectItem value="AUTO DIESEL">AUTO DIESEL</SelectItem>
+                          <SelectItem value="SUPER DIESEL">SUPER DIESEL</SelectItem>
+                          <SelectItem value="KEROSENE">KEROSENE</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -330,19 +399,6 @@ export function VehicleInformationSignup({
                           }}
                           placeholder="Pick a date"
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="countryOfOrigin"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col h-full justify-end">
-                      <FormLabel>Country of Origin</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Japan, Germany, etc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
