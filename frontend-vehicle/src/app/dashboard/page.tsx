@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { QRCodeSVG } from "qrcode.react";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle
@@ -19,10 +17,8 @@ import {
   Fuel,
   History,
   QrCode,
-  Settings,
   ChevronRight,
   Droplet,
-  Clock,
   MapPin,
   Edit
 } from "lucide-react";
@@ -42,28 +38,55 @@ const mockUserData = {
   email: "john.doe@example.com"
 };
 
-const mockVehicleData = {
-  registrationNumber: "ABC-1234",
-  engineNumber: "ENG123456",
-  chassisNumber: "CHS123456",
-  make: "Toyota",
-  model: "Corolla",
-  yearOfManufacture: "2020",
-  vehicleClass: "Car",
-  typeOfBody: "Sedan",
-  fuelType: "Petrol",
-  engineCapacity: "1500",
-  color: "White",
-  dateOfFirstRegistration: "2020-01-15"
-};
+// Mock data for multiple vehicles
+const mockVehiclesData = [
+  {
+    id: "1",
+    registrationNumber: "ABC-1234",
+    engineNumber: "ENG123456",
+    chassisNumber: "CHS123456",
+    make: "Toyota",
+    model: "Corolla",
+    yearOfManufacture: "2020",
+    vehicleClass: "Car",
+    typeOfBody: "Sedan",
+    fuelType: "Petrol",
+    engineCapacity: "1500",
+    color: "White",
+    dateOfFirstRegistration: "2020-01-15",
+    quota: {
+      totalQuota: 20,
+      remainingQuota: 12.5,
+      quotaUnit: "liters",
+      lastUpdated: "2023-06-15",
+      nextRefill: "2023-07-01"
+    }
+  },
+  {
+    id: "2",
+    registrationNumber: "XYZ-5678",
+    engineNumber: "ENG789012",
+    chassisNumber: "CHS789012",
+    make: "Honda",
+    model: "Civic",
+    yearOfManufacture: "2021",
+    vehicleClass: "Car",
+    typeOfBody: "Sedan",
+    fuelType: "Petrol",
+    engineCapacity: "1800",
+    color: "Blue",
+    dateOfFirstRegistration: "2021-03-20",
+    quota: {
+      totalQuota: 25,
+      remainingQuota: 18.2,
+      quotaUnit: "liters",
+      lastUpdated: "2023-06-18",
+      nextRefill: "2023-07-01"
+    }
+  }
+];
 
-const mockQuotaData = {
-  totalQuota: 20,
-  remainingQuota: 12.5,
-  quotaUnit: "liters",
-  lastUpdated: "2023-06-15",
-  nextRefill: "2023-07-01"
-};
+// We'll use the mockVehiclesData directly in the components
 
 const mockConsumptionHistory = [
   { date: "2023-06-10", amount: 3.5, station: "Fuel Station A", location: "Colombo" },
@@ -163,9 +186,7 @@ export default function Dashboard() {
   //   }
   // }, [isAuthenticated]);
 
-  // Calculate quota percentage
-  const quotaPercentage = (mockQuotaData.remainingQuota / mockQuotaData.totalQuota) * 100;
-  const quotaColor = quotaPercentage > 50 ? "bg-green-500" : quotaPercentage > 25 ? "bg-yellow-500" : "bg-red-500";
+  // We'll calculate quota percentages directly in the components
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
@@ -205,12 +226,6 @@ export default function Dashboard() {
                 <p className="text-muted-foreground">Manage your fuel quota and vehicle information</p>
               </div>
             </div>
-            <Button asChild className="flex items-center gap-2">
-              <Link href="/dashboard/download-your-qr-code">
-                <QrCode className="h-4 w-4" />
-                View Full QR Code
-              </Link>
-            </Button>
           </div>
 
           {/* Main Dashboard Grid */}
@@ -258,137 +273,64 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Vehicle Information Card */}
+              {/* Vehicles Information Card */}
               <Card>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Car className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">Vehicle Information</CardTitle>
+                      <CardTitle className="text-lg">Your Vehicles</CardTitle>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                      <Link href="/dashboard/vehicle/edit">
-                        <Edit className="h-4 w-4" />
+                      <Link href="/dashboard/vehicles">
+                        <ChevronRight className="h-4 w-4" />
                       </Link>
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Registration Number</p>
-                      <p>{mockVehicleData.registrationNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Make & Model</p>
-                      <p>{mockVehicleData.make} {mockVehicleData.model}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Year of Manufacture</p>
-                      <p>{mockVehicleData.yearOfManufacture}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Fuel Type</p>
-                      <p>{mockVehicleData.fuelType}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Engine Capacity</p>
-                      <p>{mockVehicleData.engineCapacity} cc</p>
-                    </div>
+                  <div className="space-y-4">
+                    {mockVehiclesData.slice(0, 2).map((vehicle, index) => (
+                      <div key={vehicle.id} className={`pb-3 ${index < mockVehiclesData.slice(0, 2).length - 1 ? 'border-b border-border' : ''}`}>
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-medium">{vehicle.make} {vehicle.model}</p>
+                          <p className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{vehicle.fuelType}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {vehicle.registrationNumber}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Fuel className="h-3 w-3" />
+                          <span>{vehicle.quota.remainingQuota} / {vehicle.quota.totalQuota} {vehicle.quota.quotaUnit}</span>
+                        </div>
+                      </div>
+                    ))}
+
+                    {mockVehiclesData.length > 2 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        +{mockVehiclesData.length - 2} more vehicles
+                      </p>
+                    )}
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-2">
+                  <Button variant="default" size="sm" className="w-full" asChild>
+                    <Link href="/dashboard/vehicles">
+                      Manage Vehicles
+                    </Link>
+                  </Button>
                   <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link href="/dashboard/vehicle">
-                      View Full Vehicle Details
+                    <Link href="/dashboard/vehicles/add">
+                      Add New Vehicle
                     </Link>
                   </Button>
                 </CardFooter>
               </Card>
             </div>
 
-            {/* Middle Column - Quota and QR Code */}
+            {/* Middle Column - Empty */}
             <div className="md:col-span-1 space-y-6">
-              {/* Fuel Quota Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <Fuel className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Fuel Quota</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Current allocation for {mockVehicleData.fuelType}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Remaining Quota</span>
-                      <span className="text-lg font-bold">{mockQuotaData.remainingQuota} {mockQuotaData.quotaUnit}</span>
-                    </div>
-
-                    {/* Quota Progress Bar */}
-                    <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
-                      <div
-                        className={`${quotaColor} h-full transition-all duration-500 ease-in-out`}
-                        style={{ width: `${quotaPercentage}%` }}
-                      ></div>
-                    </div>
-
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>0 {mockQuotaData.quotaUnit}</span>
-                      <span>{mockQuotaData.totalQuota} {mockQuotaData.quotaUnit}</span>
-                    </div>
-
-                    <div className="pt-2 space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Total Allocation</span>
-                        <span>{mockQuotaData.totalQuota} {mockQuotaData.quotaUnit}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Last Updated</span>
-                        <span>{mockQuotaData.lastUpdated}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Next Refill</span>
-                        <span>{mockQuotaData.nextRefill}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* QR Code Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Your QR Code</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Present this at fuel stations
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center">
-                  <div className="bg-white p-4 rounded-lg border border-border">
-                    <QRCodeSVG
-                      value={`VEHICLE:${mockVehicleData.registrationNumber}`}
-                      size={180}
-                      level="M"
-                    />
-                  </div>
-                  <p className="mt-3 text-center text-sm text-muted-foreground">
-                    Vehicle ID: {mockVehicleData.registrationNumber}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/dashboard/download-your-qr-code">
-                      Customize & Download
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+              {/* This column is intentionally left empty after removing the Fuel Quota and QR Code cards */}
             </div>
 
             {/* Right Column - Consumption History and Notifications */}
@@ -418,7 +360,7 @@ export default function Dashboard() {
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex justify-between">
-                            <p className="font-medium">{item.amount} {mockQuotaData.quotaUnit}</p>
+                            <p className="font-medium">{item.amount} liters</p>
                             <p className="text-sm text-muted-foreground">{item.date}</p>
                           </div>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
