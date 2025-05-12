@@ -56,25 +56,26 @@ CREATE TABLE vehicle_classes (
     code VARCHAR(5) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
     description TEXT,
+    fuel_quota_amount DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert predefined vehicle classes
-INSERT INTO vehicle_classes (code, name, description) VALUES
-    ('A1', 'Light motor cycles', 'Light motor cycles with engine capacity not exceeding 100cc'),
-    ('A', 'Motorcycles', 'Motorcycles with engine capacity exceeding 100cc'),
-    ('B1', 'Motor Tricycle or van', 'Three-wheeled vehicles and light vans'),
-    ('B', 'Dual purpose Motor vehicle', 'Dual purpose vehicles like cars and jeeps'),
-    ('C1', 'Light Motor Lorry', 'Light motor lorries with gross vehicle weight less than 17,000 kg'),
-    ('C', 'Motor Lorry', 'Motor lorries with gross vehicle weight 17,000 kg or more'),
-    ('CE', 'Heavy Motor Lorry combination', 'Heavy motor lorry combinations'),
-    ('D1', 'Light Motor Coach', 'Light motor coaches with seating capacity not exceeding 33 passengers'),
-    ('D', 'Motor Coach', 'Motor coaches with seating capacity exceeding 33 passengers'),
-    ('DE', 'Heavy Motor Coach combination', 'Heavy motor coach combinations'),
-    ('G1', 'Hand Tractors', 'Hand tractors'),
-    ('G', 'Land Vehicle', 'Land vehicles including agricultural tractors'),
-    ('J', 'Special purpose Vehicle', 'Special purpose vehicles');
+-- Insert predefined vehicle classes with their fuel quota amounts
+INSERT INTO vehicle_classes (code, name, description, fuel_quota_amount) VALUES
+    ('A1', 'Light motor cycles', 'Light motor cycles with engine capacity not exceeding 100cc', 14.0),
+    ('A', 'Motorcycles', 'Motorcycles with engine capacity exceeding 100cc', 14.0),
+    ('B1', 'Motor Tricycle or van', 'Three-wheeled vehicles and light vans', 14.0),
+    ('B', 'Dual purpose Motor vehicle', 'Dual purpose vehicles like cars and jeeps', 40.0),
+    ('C1', 'Light Motor Lorry', 'Light motor lorries with gross vehicle weight less than 17,000 kg', 125.0),
+    ('C', 'Motor Lorry', 'Motor lorries with gross vehicle weight 17,000 kg or more', 125.0),
+    ('CE', 'Heavy Motor Lorry combination', 'Heavy motor lorry combinations', 125.0),
+    ('D1', 'Light Motor Coach', 'Light motor coaches with seating capacity not exceeding 33 passengers', 125.0),
+    ('D', 'Motor Coach', 'Motor coaches with seating capacity exceeding 33 passengers', 125.0),
+    ('DE', 'Heavy Motor Coach combination', 'Heavy motor coach combinations', 125.0),
+    ('G1', 'Hand Tractors', 'Hand tractors', 15.0),
+    ('G', 'Land Vehicle', 'Land vehicles including agricultural tractors', 15.0),
+    ('J', 'Special purpose Vehicle', 'Special purpose vehicles', 30.0);
 
 -- Create vehicle_owners table (renamed from owners for clarity)
 CREATE TABLE vehicle_owners (
@@ -171,7 +172,6 @@ CREATE TABLE station_owners (
     user_id INTEGER NOT NULL UNIQUE,
     full_name VARCHAR(100) NOT NULL,
     nic_number VARCHAR(12) NOT NULL UNIQUE,
-    address TEXT NOT NULL,
     contact_number VARCHAR(15) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -336,43 +336,7 @@ CREATE TABLE admin_users (
     CONSTRAINT fk_admin_users_department FOREIGN KEY (department_id) REFERENCES departments(id)
 );
 
--- Create admin_permissions table
-CREATE TABLE admin_permissions (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert basic permissions
-INSERT INTO admin_permissions (name, description) VALUES
-    ('view_users', 'View user accounts'),
-    ('create_users', 'Create new user accounts'),
-    ('edit_users', 'Edit existing user accounts'),
-    ('delete_users', 'Delete user accounts'),
-    ('view_vehicles', 'View vehicle information'),
-    ('edit_vehicles', 'Edit vehicle information'),
-    ('view_stations', 'View fuel station information'),
-    ('edit_stations', 'Edit fuel station information'),
-    ('view_quotas', 'View fuel quota information'),
-    ('edit_quotas', 'Edit fuel quota allocations'),
-    ('view_transactions', 'View fuel transactions'),
-    ('generate_reports', 'Generate system reports'),
-    ('system_settings', 'Modify system settings'),
-    ('manage_admins', 'Manage admin users');
-
--- Create admin_user_permissions table (many-to-many relationship)
-CREATE TABLE admin_user_permissions (
-    id SERIAL PRIMARY KEY,
-    admin_user_id INTEGER NOT NULL,
-    permission_id INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_admin_user_permissions_admin_user FOREIGN KEY (admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_admin_user_permissions_permission FOREIGN KEY (permission_id) REFERENCES admin_permissions(id) ON DELETE CASCADE,
-    CONSTRAINT uq_admin_user_permission UNIQUE (admin_user_id, permission_id)
-);
+-- Note: Admin permissions tables have been removed since all admins have full control
 
 -- Create admin_activity_logs table
 CREATE TABLE admin_activity_logs (
@@ -435,6 +399,21 @@ CREATE TABLE fuel_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_fuel_transactions_station FOREIGN KEY (station_id) REFERENCES fuel_stations(id) ON DELETE CASCADE,
     CONSTRAINT fk_fuel_transactions_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+);
+
+-- =============================================
+-- EMAIL VERIFICATION SYSTEM
+-- =============================================
+
+-- Create email_verification_tokens table to store verification codes
+CREATE TABLE email_verification_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    is_used BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_email_verification_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- =============================================
