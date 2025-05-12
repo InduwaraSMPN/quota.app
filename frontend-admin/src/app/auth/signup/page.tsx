@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LoginInformationSignup } from "@/components/auth/LoginInformationSignup";
 import { PersonalInformationSignup } from "@/components/auth/PersonalInformationSignup";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { Logo } from "@/components/logo";
+import {
+  saveFormDataToSession,
+  getFormDataFromSession,
+  submitSignupForm,
+  type SignupFormData,
+  type LoginInfoData,
+  type AdminInfoData
+} from "@/app/actions/session";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 // Define the steps for the signup process
 enum SignupStep {
@@ -102,46 +113,109 @@ function StepIndicator({ currentStep }: StepIndicatorProps) {
 }
 
 export default function Page() {
+  const router = useRouter();
+
   // State to track the current step
   const [currentStep, setCurrentStep] = useState<SignupStep>(
     SignupStep.LOGIN_INFO
   );
 
   // State to store form data from each step
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    loginInfo: Partial<LoginInfoData>;
+    adminInfo: Partial<AdminInfoData>;
+  }>({
     loginInfo: {},
-    personalInfo: {},
+    adminInfo: {},
   });
 
+  // State to track loading status
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load saved form data from session on initial render
+  useEffect(() => {
+    const loadSessionData = async () => {
+      const sessionData = await getFormDataFromSession();
+      if (sessionData) {
+        setFormData({
+          loginInfo: sessionData.loginInfo || {},
+          adminInfo: sessionData.adminInfo || {},
+        });
+        setCurrentStep(sessionData.currentStep as SignupStep);
+      }
+    };
+
+    loadSessionData();
+  }, []);
+
   // Handle completion of login information step
-  const handleLoginInfoNext = (data: any) => {
-    setFormData((prev) => ({ ...prev, loginInfo: data }));
+  const handleLoginInfoNext = async (data: LoginInfoData) => {
+    const updatedFormData = {
+      ...formData,
+      loginInfo: data,
+    };
+
+    setFormData(updatedFormData);
     setCurrentStep(SignupStep.PERSONAL_INFO);
+
+    // Save to session
+    await saveFormDataToSession({
+      ...updatedFormData,
+      currentStep: SignupStep.PERSONAL_INFO,
+    } as SignupFormData);
+
+    toast.success("Login information saved");
   };
 
   // Handle completion of personal information step
-  const handlePersonalInfoSubmit = async (data: any) => {
-    setFormData((prev) => ({ ...prev, personalInfo: data }));
+  const handlePersonalInfoSubmit = async (data: AdminInfoData) => {
+    setIsSubmitting(true);
 
-    // Combine all form data
-    const completeFormData = {
-      ...formData.loginInfo,
-      ...data,
-    };
+    try {
+      const updatedFormData = {
+        ...formData,
+        adminInfo: data,
+      };
 
-    // Here you would typically send the data to your backend API
-    console.log("Complete form data:", completeFormData);
+      // Save to session first
+      await saveFormDataToSession({
+        ...updatedFormData,
+        currentStep: SignupStep.PERSONAL_INFO,
+      } as SignupFormData);
 
-    // For now, just log the data
-    alert("Signup successful! Check console for form data.");
+      // Submit the complete form data to the backend
+      const result = await submitSignupForm({
+        ...updatedFormData,
+        currentStep: SignupStep.PERSONAL_INFO,
+      } as SignupFormData);
 
-    // Todo would handle the API response here
-    // and redirect the user to a success page or login page
+      if (result.success) {
+        toast.success("Registration successful!");
+
+        // Redirect to login page after successful registration
+        setTimeout(() => {
+          router.push('/auth/login');
+        }, 2000);
+      } else {
+        toast.error(result.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Error during form submission:", error);
+      toast.error("Registration failed");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle going back from personal information step
-  const handlePersonalInfoBack = () => {
+  const handlePersonalInfoBack = async () => {
     setCurrentStep(SignupStep.LOGIN_INFO);
+
+    // Save current step to session
+    await saveFormDataToSession({
+      ...formData,
+      currentStep: SignupStep.LOGIN_INFO,
+    } as SignupFormData);
   };
 
   return (
@@ -164,17 +238,25 @@ export default function Page() {
 
           {/* Render the appropriate component based on the current step */}
           {currentStep === SignupStep.LOGIN_INFO && (
-            <LoginInformationSignup onNext={handleLoginInfoNext} />
+            <LoginInformationSignup
+              onNext={handleLoginInfoNext}
+              initialData={formData.loginInfo as LoginInfoData}
+            />
           )}
 
           {currentStep === SignupStep.PERSONAL_INFO && (
             <PersonalInformationSignup
               onNext={handlePersonalInfoSubmit}
               onBack={handlePersonalInfoBack}
+              initialData={formData.adminInfo as AdminInfoData}
+              isSubmitting={isSubmitting}
             />
           )}
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }

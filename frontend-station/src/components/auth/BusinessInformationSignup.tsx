@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { JollyTimeField } from "@/components/ui/timefield";
+import { Time } from "@internationalized/date";
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -73,10 +76,18 @@ const formSchema = z.object({
 // Define the form values type
 type FormValues = z.infer<typeof formSchema>;
 
+// Helper function to parse time string (HH:MM) to Time object
+function parseTimeString(timeString: string): Time {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  return new Time(hours, minutes);
+}
+
 interface BusinessInformationSignupProps {
   className?: string;
   onSubmit: (data: FormValues) => void;
   onBack: () => void;
+  initialData?: FormValues;
+  isSubmitting?: boolean;
 }
 
 // Sri Lanka provinces and districts
@@ -105,9 +116,11 @@ export function BusinessInformationSignup({
   className,
   onSubmit: onSubmitProp,
   onBack,
+  initialData,
+  isSubmitting = false,
   ...props
 }: BusinessInformationSignupProps) {
-  // Initialize the form
+  // Initialize the form with empty defaults first
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -123,6 +136,24 @@ export function BusinessInformationSignup({
       fuelRetailLicenseNumber: "",
     },
   });
+
+  // Update form values when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      // Reset the form with initialData
+      Object.keys(initialData).forEach((key) => {
+        const fieldKey = key as keyof FormValues;
+        if (fieldKey === 'fuelTypes') {
+          // Handle array field separately
+          if (initialData.fuelTypes && initialData.fuelTypes.length > 0) {
+            form.setValue('fuelTypes', initialData.fuelTypes);
+          }
+        } else if (initialData[fieldKey]) {
+          form.setValue(fieldKey, initialData[fieldKey]);
+        }
+      });
+    }
+  }, [form, initialData]);
 
   // Get the selected province to filter districts
   const selectedProvince = form.watch("province");
@@ -329,13 +360,16 @@ export function BusinessInformationSignup({
                   name="openingTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Opening Time</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="time"
-                          {...field}
-                        />
-                      </FormControl>
+                      <JollyTimeField
+                        label="Opening Time"
+                        value={field.value ? parseTimeString(field.value) : undefined}
+                        onChange={(value) => {
+                          const timeString = value ?
+                            `${value.hour.toString().padStart(2, '0')}:${value.minute.toString().padStart(2, '0')}` :
+                            '';
+                          field.onChange(timeString);
+                        }}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -345,13 +379,16 @@ export function BusinessInformationSignup({
                   name="closingTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Closing Time</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="time"
-                          {...field}
-                        />
-                      </FormControl>
+                      <JollyTimeField
+                        label="Closing Time"
+                        value={field.value ? parseTimeString(field.value) : undefined}
+                        onChange={(value) => {
+                          const timeString = value ?
+                            `${value.hour.toString().padStart(2, '0')}:${value.minute.toString().padStart(2, '0')}` :
+                            '';
+                          field.onChange(timeString);
+                        }}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -374,14 +411,19 @@ export function BusinessInformationSignup({
                 )}
               />
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full">
-                  Submit
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   className="w-full"
                   onClick={onBack}
+                  disabled={isSubmitting}
                 >
                   Back
                 </Button>

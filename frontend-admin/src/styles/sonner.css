@@ -1,0 +1,29 @@
+[data-sonner-toaster] {
+  font-family: var(--font-geist-sans), var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+}
+
+[data-sonner-toast] {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-sonner-toast][data-type="success"] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+[data-sonner-toast][data-type="error"] {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+[data-sonner-toast][data-type="info"] {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+[data-sonner-toast][data-type="warning"] {
+  background-color: oklch(0.8 0.2 85);
+  color: var(--background);
+}
