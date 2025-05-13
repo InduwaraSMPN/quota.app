@@ -1,5 +1,6 @@
 package com.quotaapp.backend.dto.signup;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.Min;
@@ -17,7 +18,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class VehicleInfoDTO {
+public class VehicleInfoDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @NotBlank(message = "Registration number is required")
     @Size(max = 10, message = "Registration number must be less than 10 characters")

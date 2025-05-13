@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.quotaapp.backend.exception.InvalidVerificationCodeException;
 import com.quotaapp.backend.model.EmailVerificationToken;
+import com.quotaapp.backend.model.Role;
 import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.repository.primary.EmailVerificationTokenRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
@@ -129,6 +130,10 @@ public class EmailVerificationService {
                 .email(email)
                 .password("temporary") // Will be updated during registration
                 .emailVerified(false)
+                .role(Role.VEHICLE_OWNER) // Set a default role to avoid null constraint violation
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         return userRepository.save(user);
