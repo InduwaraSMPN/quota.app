@@ -19,9 +19,12 @@ import com.quotaapp.backend.dto.signup.VehicleInfoDTO;
 import com.quotaapp.backend.exception.InvalidRegistrationDataException;
 import com.quotaapp.backend.exception.InvalidVerificationCodeException;
 import com.quotaapp.backend.model.User;
+import com.quotaapp.backend.repository.primary.UserRepository;
 import com.quotaapp.backend.service.EmailVerificationService;
 import com.quotaapp.backend.service.RegistrationService;
 import com.quotaapp.backend.service.SessionService;
+
+import java.util.Optional;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class RegistrationController {
     private final RegistrationService registrationService;
     private final EmailVerificationService emailVerificationService;
     private final SessionService sessionService;
+    private final UserRepository userRepository;
 
     /**
      * Step 1: Process login information
@@ -315,13 +319,17 @@ public class RegistrationController {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Vehicle information validation failed", vehicleErrors));
             }
 
+            // Check if email is verified
+            Optional<User> userOpt = userRepository.findByEmail(loginInfoDTO.getEmail());
+            boolean emailVerified = userOpt.isPresent() && userOpt.get().isEmailVerified();
+
             // Complete registration
             registrationService.completeRegistration(
                 loginInfoDTO,
                 passwordSetupDTO,
                 ownerInfoDTO,
                 vehicleInfoDTO,
-                true // Assume email is verified since we've already validated with DMT
+                emailVerified // Use actual verification status instead of assuming true
             );
 
             return ResponseEntity.ok(ApiResponse.success("Registration completed successfully"));

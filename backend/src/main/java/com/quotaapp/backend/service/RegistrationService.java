@@ -146,7 +146,8 @@ public class RegistrationService {
 
         // Validate email is verified
         if (!emailVerified) {
-            throw new InvalidRegistrationDataException("Email must be verified before registration");
+            log.warn("Attempted to complete registration with unverified email: {}", loginInfoDTO.getEmail());
+            throw new InvalidRegistrationDataException("Email must be verified before registration. Please complete the email verification step.");
         }
 
         // Create or update the user
@@ -157,7 +158,7 @@ public class RegistrationService {
 
         user.setPassword(passwordEncoder.encode(passwordSetupDTO.getPassword()));
         user.setRole(Role.VEHICLE_OWNER);
-        user.setEmailVerified(true);
+        user.setEmailVerified(emailVerified); // Use the parameter value instead of hardcoding true
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
