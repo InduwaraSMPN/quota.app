@@ -30,27 +30,27 @@ public class DMTController {
 
     /**
      * Validate vehicle information against DMT database
-     * 
+     *
      * @param validationDTO the validation data
      * @return the response
      */
     @PostMapping("/validate")
     public ResponseEntity<ApiResponse<Map<String, Object>>> validateVehicle(@Valid @RequestBody DMTValidationDTO validationDTO) {
         log.info("Validating vehicle: {}", validationDTO.getRegistrationNumber());
-        
+
         List<String> validationErrors = dmtValidationService.validateVehicleInformation(validationDTO);
-        
+
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("valid", validationErrors.isEmpty());
-        
+
         if (!validationErrors.isEmpty()) {
             responseData.put("errors", validationErrors);
-            return ResponseEntity.ok(ApiResponse.error("Vehicle validation failed", validationErrors));
+            return ResponseEntity.ok(ApiResponse.success("Vehicle validation failed", responseData));
         }
-        
+
         // Get vehicle details from DMT
         Optional<DMTVehicleRecord> vehicleRecord = dmtValidationService.getVehicleDetails(validationDTO.getRegistrationNumber());
-        
+
         if (vehicleRecord.isPresent()) {
             DMTVehicleRecord record = vehicleRecord.get();
             Map<String, Object> vehicleDetails = new HashMap<>();
@@ -62,10 +62,10 @@ public class DMTController {
             vehicleDetails.put("engineCapacity", record.getEngineCapacity());
             vehicleDetails.put("grossVehicleWeight", record.getGrossVehicleWeight());
             vehicleDetails.put("dateOfRegistration", record.getDateOfRegistration());
-            
+
             responseData.put("vehicleDetails", vehicleDetails);
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success("Vehicle validation successful", responseData));
     }
 }

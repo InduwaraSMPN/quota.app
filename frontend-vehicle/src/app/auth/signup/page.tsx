@@ -333,6 +333,8 @@ export default function Page() {
         currentStep: SignupStep.VEHICLE_INFO,
       } as SignupFormData);
 
+      console.log("Form submission result:", result);
+
       if (result.success) {
         toast.success("Registration successful! Your vehicle details have been verified.");
 
@@ -350,8 +352,9 @@ export default function Page() {
           // Show error toast with DMT validation failure message
           toast.error(result.message || "Vehicle validation failed");
         } else {
-          // Show general error toast
-          toast.error(result.message || "Registration failed");
+          // Show general error toast with specific message from backend if available
+          toast.error(result.message || "An unexpected error occurred. Please try again later.");
+          console.error("Registration failed:", result);
         }
       }
     } catch (error) {
