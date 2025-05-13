@@ -14,7 +14,7 @@ import java.util.Map;
 
 import jakarta.annotation.PostConstruct;
 
-@Component
+@Component("inMemoryUserDetailsService")
 public class InMemoryUserDetailsService implements UserDetailsService {
 
     private final Map<String, UserDetails> users = new HashMap<>();
