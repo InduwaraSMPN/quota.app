@@ -352,7 +352,36 @@ export const apiService = {
         ...getCredentialOptions(),
       });
 
-      return handleResponse(response);
+      const result = await handleResponse(response);
+
+      // Check for specific error conditions
+      if (!result.data && response.status === 401) {
+        return {
+          data: null,
+          error: 'Invalid email or password',
+          status: 401,
+        };
+      }
+
+      // Check if the user is inactive
+      if (result.data && result.data.isActive === false) {
+        return {
+          data: null,
+          error: 'Your account is inactive. Please contact support.',
+          status: 403,
+        };
+      }
+
+      // Check if the email is not verified
+      if (result.data && result.data.emailVerified === false) {
+        return {
+          data: null,
+          error: 'Your email is not verified. Please verify your email first.',
+          status: 403,
+        };
+      }
+
+      return result;
     } catch (error) {
       return {
         data: null,
