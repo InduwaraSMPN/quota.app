@@ -101,7 +101,7 @@ export function LoginInformationSignup({
                     </FormDescription>
                     <FormControl>
                       <Input
-                        placeholder="m@example.com"
+                        placeholder="abc@example.com"
                         type="email"
                         autoComplete="email"
                         {...field}

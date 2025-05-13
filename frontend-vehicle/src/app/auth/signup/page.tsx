@@ -12,9 +12,6 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { Logo } from "@/components/logo";
 import {
-  saveFormDataToSession,
-  getFormDataFromSession,
-  submitSignupForm,
   type SignupFormData,
   type LoginInfoData,
   type EmailVerificationData,
@@ -22,6 +19,7 @@ import {
   type OwnerInfoData,
   type VehicleInfoData
 } from "@/app/actions/session";
+import { sessionService } from "@/services/sessionService";
 import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -158,7 +156,7 @@ export default function Page() {
   // Load saved form data from session on initial render
   useEffect(() => {
     const loadSessionData = async () => {
-      const sessionData = await getFormDataFromSession();
+      const sessionData = await sessionService.getRegistrationData();
       if (sessionData) {
         setFormData({
           loginInfo: sessionData.loginInfo || {},
@@ -185,7 +183,7 @@ export default function Page() {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
@@ -218,7 +216,7 @@ export default function Page() {
     setCurrentStep(SignupStep.VEHICLE_INFO);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.VEHICLE_INFO,
     } as SignupFormData);
@@ -240,7 +238,7 @@ export default function Page() {
     setCurrentStep(SignupStep.PASSWORD_SETUP);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);
@@ -253,7 +251,7 @@ export default function Page() {
     setCurrentStep(SignupStep.LOGIN_INFO);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.LOGIN_INFO,
     } as SignupFormData);
@@ -270,7 +268,7 @@ export default function Page() {
     setCurrentStep(SignupStep.OWNER_INFO);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.OWNER_INFO,
     } as SignupFormData);
@@ -283,7 +281,7 @@ export default function Page() {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
@@ -294,7 +292,7 @@ export default function Page() {
     setCurrentStep(SignupStep.PASSWORD_SETUP);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);
@@ -314,7 +312,7 @@ export default function Page() {
       };
 
       // Save to session first
-      await saveFormDataToSession({
+      await sessionService.saveRegistrationData({
         ...updatedFormData,
         currentStep: SignupStep.VEHICLE_INFO,
       } as SignupFormData);
@@ -328,14 +326,89 @@ export default function Page() {
       }
 
       // Submit the complete form data to the backend (includes DMT validation)
-      const result = await submitSignupForm({
-        ...updatedFormData,
-        currentStep: SignupStep.VEHICLE_INFO,
-      } as SignupFormData);
+      // First validate with DMT
+      const dmtValidationResponse = await apiService.validateVehicleWithDMT(
+        updatedFormData.vehicleInfo,
+        updatedFormData.ownerInfo
+      );
+
+      // Check if DMT validation failed
+      if (dmtValidationResponse.data && dmtValidationResponse.data.valid === false) {
+        const errors = dmtValidationResponse.data.errors || ['The provided vehicle details do not match DMT records.'];
+        setDmtValidationFailed(true);
+        setDmtValidationErrors(errors);
+        toast.error("Vehicle validation failed. Please check your details and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If DMT validation passes, proceed with registration
+      // Log DMT validation response for debugging
+      console.log("DMT validation response:", dmtValidationResponse);
+      console.log("Parsed DMT validation result:", dmtValidationResponse.data);
+
+      // Extract vehicle class code from the full vehicle class string
+      const vehicleClassFull = updatedFormData.vehicleInfo.vehicleClass;
+
+      const completeFormData = {
+        email: updatedFormData.loginInfo.email,
+        password: updatedFormData.passwordSetup?.password || '',
+        fullName: updatedFormData.ownerInfo.fullName,
+        nicNumber: updatedFormData.ownerInfo.nicNumber,
+        address: updatedFormData.ownerInfo.address,
+        contactNumber: updatedFormData.ownerInfo.contactNumber,
+        vehicle: {
+          registrationNumber: updatedFormData.vehicleInfo.registrationNumber,
+          engineNumber: updatedFormData.vehicleInfo.engineNumber,
+          chassisNumber: updatedFormData.vehicleInfo.chassisNumber,
+          make: updatedFormData.vehicleInfo.make,
+          model: updatedFormData.vehicleInfo.model,
+          yearOfManufacture: updatedFormData.vehicleInfo.yearOfManufacture,
+          vehicleClass: vehicleClassFull, // Backend will extract the code part
+          typeOfBody: updatedFormData.vehicleInfo.typeOfBody,
+          fuelType: updatedFormData.vehicleInfo.fuelType,
+          engineCapacity: updatedFormData.vehicleInfo.engineCapacity,
+          color: updatedFormData.vehicleInfo.color,
+          grossVehicleWeight: updatedFormData.vehicleInfo.grossVehicleWeight,
+          dateOfFirstRegistration: updatedFormData.vehicleInfo.dateOfFirstRegistration,
+          countryOfOrigin: updatedFormData.vehicleInfo.countryOfOrigin
+        }
+      };
+
+      // Log the complete form data for debugging
+      console.log("Sending registration data to backend:", completeFormData);
+
+      // Make API call to backend
+      const response = await fetch('http://localhost:8888/api/auth/register/vehicle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(completeFormData),
+        credentials: 'include',
+      });
+
+      // Log the response status for debugging
+      console.log("Registration response status:", response.status);
+
+      // Clone the response before reading it
+      const responseClone = response.clone();
+      const responseText = await responseClone.text();
+      console.log("Registration response text:", responseText);
+
+      // Parse the original response
+      const result = await response.json();
+      const success = response.ok;
+
+      // Log the parsed response for debugging
+      console.log("Parsed registration response:", result);
 
       console.log("Form submission result:", result);
 
-      if (result.success) {
+      if (success) {
+        // Clear session data after successful submission
+        await sessionService.clearRegistrationData();
+
         toast.success("Registration successful! Your vehicle details have been verified.");
 
         // Redirect to login page after successful registration
@@ -343,19 +416,9 @@ export default function Page() {
           router.push('/auth/login');
         }, 2000);
       } else {
-        // Check if the failure is due to DMT validation
-        if (result.dmtValidationFailed) {
-          // Set DMT validation errors
-          setDmtValidationFailed(true);
-          setDmtValidationErrors(result.validationErrors || []);
-
-          // Show error toast with DMT validation failure message
-          toast.error(result.message || "Vehicle validation failed");
-        } else {
-          // Show general error toast with specific message from backend if available
-          toast.error(result.message || "An unexpected error occurred. Please try again later.");
-          console.error("Registration failed:", result);
-        }
+        // Show general error toast with specific message from backend if available
+        toast.error(result.message || "An unexpected error occurred. Please try again later.");
+        console.error("Registration failed:", result);
       }
     } catch (error) {
       console.error("Error during form submission:", error);
@@ -370,7 +433,7 @@ export default function Page() {
     setCurrentStep(SignupStep.OWNER_INFO);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.OWNER_INFO,
     } as SignupFormData);

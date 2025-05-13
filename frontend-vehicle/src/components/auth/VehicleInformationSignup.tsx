@@ -166,8 +166,13 @@ export function VehicleInformationSignup({
   }, [form, initialData]);
 
 
-  // Handle form submission (same as before)
+  // Handle form submission
   function onSubmit(data: FormValues) {
+    // Reset validation errors if previously failed
+    if (dmtValidationFailed) {
+      form.clearErrors();
+    }
+
     onSubmitProp(data);
   }
 
@@ -193,6 +198,7 @@ export function VehicleInformationSignup({
               </ul>
               <p className="text-xs mt-2 text-muted-foreground">
                 Please ensure your vehicle details match the Department of Motor Traffic records.
+                Check your Registration Number, Engine Number, Chassis Number, and that your NIC matches the vehicle owner.
               </p>
             </div>
           )}
