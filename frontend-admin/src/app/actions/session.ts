@@ -5,13 +5,16 @@ import { cookies } from 'next/headers';
 // Define types for our form data
 export type LoginInfoData = {
   email: string;
-  password: string;
-  confirmPassword: string;
 };
 
 export type EmailVerificationData = {
   verificationCode: string;
   verified?: boolean;
+};
+
+export type PasswordSetupData = {
+  password: string;
+  confirmPassword: string;
 };
 
 export type AdminInfoData = {
@@ -26,6 +29,7 @@ export type AdminInfoData = {
 export type SignupFormData = {
   loginInfo: LoginInfoData;
   emailVerification?: EmailVerificationData;
+  passwordSetup?: PasswordSetupData;
   adminInfo: AdminInfoData;
   currentStep: number;
 };
@@ -81,7 +85,7 @@ export async function submitSignupForm(formData: SignupFormData): Promise<{ succ
     // Prepare the data for the backend
     const completeFormData = {
       email: formData.loginInfo.email,
-      password: formData.loginInfo.password,
+      password: formData.passwordSetup?.password || '',
       fullName: formData.adminInfo.fullName,
       employeeId: formData.adminInfo.employeeId,
       contactNumber: formData.adminInfo.contactNumber,
