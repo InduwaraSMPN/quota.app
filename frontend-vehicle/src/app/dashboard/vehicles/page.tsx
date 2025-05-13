@@ -35,7 +35,7 @@ import Link from "next/link";
 const mockVehiclesData = [
   {
     id: "1",
-    registrationNumber: "ABC-1234",
+    registrationNumber: "ABC1234",
     engineNumber: "ENG123456",
     chassisNumber: "CHS123456",
     make: "Toyota",
@@ -57,7 +57,7 @@ const mockVehiclesData = [
   },
   {
     id: "2",
-    registrationNumber: "XYZ-5678",
+    registrationNumber: "XYZ5678",
     engineNumber: "ENG789012",
     chassisNumber: "CHS789012",
     make: "Honda",

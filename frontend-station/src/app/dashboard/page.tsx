@@ -61,11 +61,11 @@ const mockTransactionStats = {
 };
 
 const mockRecentTransactions = [
-  { id: "TRX-001", date: "2023-06-28", time: "14:30", vehicleOwner: "John Doe", vehicleId: "ABC-1234", fuelType: "Petrol 92", amount: 5.5, status: "Completed" },
-  { id: "TRX-002", date: "2023-06-28", time: "13:15", vehicleOwner: "Jane Smith", vehicleId: "DEF-5678", fuelType: "Diesel", amount: 4.2, status: "Completed" },
-  { id: "TRX-003", date: "2023-06-27", time: "16:45", vehicleOwner: "Robert Johnson", vehicleId: "GHI-9012", fuelType: "Petrol 95", amount: 6.0, status: "Completed" },
-  { id: "TRX-004", date: "2023-06-27", time: "10:20", vehicleOwner: "Emily Davis", vehicleId: "JKL-3456", fuelType: "Diesel", amount: 3.8, status: "Completed" },
-  { id: "TRX-005", date: "2023-06-26", time: "11:05", vehicleOwner: "Michael Wilson", vehicleId: "MNO-7890", fuelType: "Petrol 92", amount: 5.0, status: "Completed" }
+  { id: "TRX-001", date: "2023-06-28", time: "14:30", vehicleOwner: "John Doe", vehicleId: "ABC1234", fuelType: "Petrol 92", amount: 5.5, status: "Completed" },
+  { id: "TRX-002", date: "2023-06-28", time: "13:15", vehicleOwner: "Jane Smith", vehicleId: "DEF5678", fuelType: "Diesel", amount: 4.2, status: "Completed" },
+  { id: "TRX-003", date: "2023-06-27", time: "16:45", vehicleOwner: "Robert Johnson", vehicleId: "GHI9012", fuelType: "Petrol 95", amount: 6.0, status: "Completed" },
+  { id: "TRX-004", date: "2023-06-27", time: "10:20", vehicleOwner: "Emily Davis", vehicleId: "JKL3456", fuelType: "Diesel", amount: 3.8, status: "Completed" },
+  { id: "TRX-005", date: "2023-06-26", time: "11:05", vehicleOwner: "Michael Wilson", vehicleId: "MNO7890", fuelType: "Petrol 92", amount: 5.0, status: "Completed" }
 ];
 
 const mockSystemNotifications = [

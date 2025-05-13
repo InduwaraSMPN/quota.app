@@ -36,8 +36,8 @@ const formSchema = z.object({
   registrationNumber: z
     .string()
     .min(1, { message: "Registration number is required" })
-    .refine((value) => /^[A-Z]{1,3}-\d{4}$/.test(value), {
-      message: "Invalid registration number format (e.g., ABC-1234)",
+    .refine((value) => /^[A-Z]{1,3}\d{4}$/.test(value), {
+      message: "Invalid registration number format (e.g., ABC1234)",
     }),
   engineNumber: z.string().min(1, { message: "Engine number is required" }),
   chassisNumber: z.string().min(1, { message: "Chassis number is required" }),
@@ -213,7 +213,7 @@ export function VehicleInformationSignup({
                       {/* Wrap Control and Message, push down with mt-auto */}
                       <div className="mt-auto space-y-1">
                         <FormControl>
-                          <Input placeholder="ABC-1234" {...field} />
+                          <Input placeholder="ABC1234" {...field} />
                         </FormControl>
                         <FormMessage />
                       </div>
