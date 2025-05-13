@@ -185,19 +185,12 @@ export default function Page() {
 
     // Send verification code to the email
     try {
-      // In a real implementation, this would call the API to send the verification code
-      // For now, we'll simulate a successful send after a short delay
-      toast.success("Verification code sent to your email");
-
-      // Uncomment this for real implementation
-      /*
       const response = await apiService.sendVerificationCode({ email: data.email });
       if (response.data && response.data.sent) {
         toast.success("Verification code sent to your email");
       } else {
         toast.error(response.error || "Failed to send verification code");
       }
-      */
     } catch (error) {
       console.error("Error sending verification code:", error);
       toast.error("Failed to send verification code. Please try again.");
