@@ -196,11 +196,14 @@ export default function Page() {
       if (response.data && response.data.sent) {
         toast.success("Verification code sent to your email");
       } else {
-        toast.error(response.error || "Failed to send verification code");
+        // Display the specific error message from the backend if available
+        const errorMessage = response.error || "Failed to send verification code";
+        toast.error(errorMessage);
+        console.error("Send verification code error:", errorMessage);
       }
     } catch (error) {
       console.error("Error sending verification code:", error);
-      toast.error("Failed to send verification code. Please try again.");
+      toast.error("An unexpected error occurred. Please try again later.");
     }
   };
 

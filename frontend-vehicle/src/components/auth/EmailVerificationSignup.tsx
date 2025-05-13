@@ -138,12 +138,15 @@ export function EmailVerificationSignup({
           setResendDisabled(true);
           setResendCountdown(60); // Disable resend for 60 seconds
         } else {
-          toast.error(response.error || "Failed to resend verification code");
+          // Display the specific error message from the backend if available
+          const errorMessage = response.error || "Failed to resend verification code";
+          toast.error(errorMessage);
+          console.error("Resend verification code error:", errorMessage);
         }
       })
       .catch(err => {
-        toast.error("An error occurred. Please try again.");
-        console.error("Resend error:", err);
+        console.error("Resend verification code error:", err);
+        toast.error("An unexpected error occurred. Please try again later.");
       })
       .finally(() => {
         setIsResending(false);

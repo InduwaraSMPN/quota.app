@@ -3,7 +3,10 @@ package com.quotaapp.backend.controller;
 import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.dto.AuthRequest;
 import com.quotaapp.backend.dto.AuthResponse;
+import com.quotaapp.backend.dto.signup.EmailVerificationDTO;
+import com.quotaapp.backend.exception.InvalidVerificationCodeException;
 import com.quotaapp.backend.service.AuthService;
+import com.quotaapp.backend.service.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
     @GetMapping("/test")
     public ResponseEntity<Map<String, String>> test() {
@@ -46,6 +50,66 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Login error for {}: {}", request.getUsername(), e.getMessage());
             return ResponseEntity.status(401).body(ApiResponse.error("Invalid username or password"));
+        }
+    }
+
+    /**
+     * Send verification code to email
+     *
+     * @param data the email data
+     * @return the response
+     */
+    @PostMapping("/send-verification-code")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> sendVerificationCode(@Valid @RequestBody Map<String, String> data) {
+        String email = data.get("email");
+        log.info("Sending verification code to: {}", email);
+
+        try {
+            boolean sent = emailVerificationService.sendVerificationCode(email);
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("sent", sent);
+
+            if (sent) {
+                return ResponseEntity.ok(ApiResponse.success("Verification code sent successfully", responseData));
+            } else {
+                return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
+            }
+        } catch (Exception e) {
+            log.error("Error sending verification code to: {}", email, e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred. Please try again later."));
+        }
+    }
+
+    /**
+     * Verify email code
+     *
+     * @param data the verification data
+     * @return the response
+     */
+    @PostMapping("/verify-email-code")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyEmailCode(@Valid @RequestBody Map<String, String> data) {
+        String email = data.get("email");
+        String code = data.get("code");
+        log.info("Verifying email code for: {}", email);
+
+        try {
+            boolean verified = emailVerificationService.verifyCode(email, code);
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("verified", verified);
+
+            if (verified) {
+                return ResponseEntity.ok(ApiResponse.success("Email verified successfully", responseData));
+            } else {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Invalid verification code"));
+            }
+        } catch (InvalidVerificationCodeException e) {
+            log.warn("Verification code error for {}: {}", email, e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error verifying email code for: {}", email, e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred. Please try again later."));
         }
     }
 
