@@ -38,18 +38,20 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
 
     if (response.ok) {
       return {
-        data,
+        data: data.data || data,
         error: null,
         status: response.status,
       };
     }
 
+    // Handle error response
     return {
       data: null,
       error: data.message || 'An error occurred',
       status: response.status,
     };
   } catch (error) {
+    console.error('Error parsing API response:', error);
     return {
       data: null,
       error: 'Failed to parse response',
