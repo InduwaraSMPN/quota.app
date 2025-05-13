@@ -34,7 +34,7 @@ export function useAuth(): UseAuthReturn {
       try {
         // Check if token exists in localStorage
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
           setIsAuthenticated(false);
           setUser(null);
@@ -44,7 +44,7 @@ export function useAuth(): UseAuthReturn {
 
         // Verify token by fetching user profile
         const response = await apiService.getUserProfile();
-        
+
         if (response.error || !response.data) {
           // Token is invalid or expired
           localStorage.removeItem('token');
@@ -73,38 +73,61 @@ export function useAuth(): UseAuthReturn {
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await apiService.login(username, password);
-      
+
       if (response.error || !response.data) {
-        setError(response.error || 'Login failed');
+        // Handle specific error cases
+        if (response.status === 401) {
+          setError('Invalid email or password');
+          throw new Error('Invalid email or password');
+        } else if (response.status === 403) {
+          if (response.error?.includes('inactive')) {
+            setError('Your account is inactive. Please contact support.');
+            throw new Error('Account inactive');
+          } else if (response.error?.includes('verified')) {
+            setError('Your email is not verified. Please verify your email first.');
+            throw new Error('Email not verified');
+          } else {
+            setError(response.error || 'Access denied');
+            throw new Error('Access denied');
+          }
+        } else {
+          setError(response.error || 'Login failed');
+          throw new Error('Login failed');
+        }
+      }
+
+      // Check if user has vehicle owner role
+      if (response.data.role !== 'VEHICLE_OWNER') {
+        setError('Access denied. This portal is for vehicle owners only.');
         setIsAuthenticated(false);
         setUser(null);
-        return false;
+        throw new Error('Invalid role');
       }
-      
+
       // Save token to localStorage
       localStorage.setItem('token', response.data.token);
-      
+
       // Fetch user profile
       const profileResponse = await apiService.getUserProfile();
-      
+
       if (profileResponse.error || !profileResponse.data) {
         setError(profileResponse.error || 'Failed to fetch user profile');
         localStorage.removeItem('token');
         setIsAuthenticated(false);
         setUser(null);
-        return false;
+        throw new Error('Failed to fetch profile');
       }
-      
+
       setUser(profileResponse.data);
       setIsAuthenticated(true);
       return true;
     } catch (err) {
-      setError('Login failed');
       setIsAuthenticated(false);
       setUser(null);
+      // Error is already set in the catch blocks above
       return false;
     } finally {
       setIsLoading(false);

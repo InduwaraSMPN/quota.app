@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,11 +24,9 @@ import com.quotaapp.backend.repository.primary.RefreshTokenRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
 import com.quotaapp.backend.security.JwtTokenUtil;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service("authService")
-@RequiredArgsConstructor
 @Slf4j
 public class AuthService implements UserDetailsService {
 
@@ -36,6 +36,20 @@ public class AuthService implements UserDetailsService {
     private final JwtTokenUtil jwtTokenUtil;
 
     /**
+     * Constructor with @Lazy annotation on AuthenticationManager to break circular dependency
+     */
+    public AuthService(
+            UserRepository userRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            @Lazy AuthenticationManager authenticationManager,
+            JwtTokenUtil jwtTokenUtil) {
+        this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenUtil = jwtTokenUtil;
+    }
+
+    /**
      * Authenticate a user and generate tokens
      *
      * @param authRequest the authentication request
@@ -43,35 +57,51 @@ public class AuthService implements UserDetailsService {
      */
     @Transactional
     public AuthResponse authenticate(AuthRequest authRequest) {
-        // Authenticate the user
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
+        try {
+            // Check if the user exists (will throw UsernameNotFoundException if not found)
+            userRepository.findByEmail(authRequest.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + authRequest.getUsername()));
 
-        // Set the authentication in the security context
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            // Authenticate the user using the AuthenticationManager
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
 
-        // Get the user details
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            // Set the authentication in the security context
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Generate JWT token
-        String token = jwtTokenUtil.generateToken(userDetails.getUsername());
+            // Get the user details
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        // Generate refresh token
-        String refreshToken = generateRefreshToken(userDetails.getUsername());
+            // Generate JWT token
+            String token = jwtTokenUtil.generateToken(userDetails.getUsername());
 
-        // Get the user role
-        String role = userDetails.getAuthorities().stream()
-                .findFirst()
-                .map(authority -> authority.getAuthority().replace("ROLE_", ""))
-                .orElse("USER");
+            // Generate refresh token
+            String refreshToken = generateRefreshToken(userDetails.getUsername());
 
-        // Return the authentication response
-        return AuthResponse.builder()
-                .token(token)
-                .refreshToken(refreshToken)
-                .username(userDetails.getUsername())
-                .role(role)
-                .build();
+            // Get the user role
+            String role = userDetails.getAuthorities().stream()
+                    .findFirst()
+                    .map(authority -> authority.getAuthority().replace("ROLE_", ""))
+                    .orElse("USER");
+
+            // Return the authentication response
+            return AuthResponse.builder()
+                    .token(token)
+                    .refreshToken(refreshToken)
+                    .username(userDetails.getUsername())
+                    .role(role)
+                    .build();
+        } catch (UsernameNotFoundException e) {
+            // Re-throw with the same message to maintain consistent error handling
+            throw new UsernameNotFoundException(e.getMessage());
+        } catch (BadCredentialsException e) {
+            // Re-throw to maintain consistent error handling
+            throw new BadCredentialsException("Invalid credentials");
+        } catch (Exception e) {
+            // Log the error and re-throw
+            log.error("Authentication error: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**

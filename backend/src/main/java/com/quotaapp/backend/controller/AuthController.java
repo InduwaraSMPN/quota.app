@@ -3,12 +3,11 @@ package com.quotaapp.backend.controller;
 import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.dto.AuthRequest;
 import com.quotaapp.backend.dto.AuthResponse;
-import com.quotaapp.backend.dto.signup.EmailVerificationDTO;
 import com.quotaapp.backend.exception.InvalidVerificationCodeException;
 import com.quotaapp.backend.service.AuthService;
 import com.quotaapp.backend.service.EmailVerificationService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,12 +22,19 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
 @Slf4j
 public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+
+    /**
+     * Constructor with @Lazy annotation on AuthService to break circular dependency
+     */
+    public AuthController(@Lazy AuthService authService, EmailVerificationService emailVerificationService) {
+        this.authService = authService;
+        this.emailVerificationService = emailVerificationService;
+    }
 
     @GetMapping("/test")
     public ResponseEntity<Map<String, String>> test() {
