@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LoginInformationSignup } from "@/components/auth/LoginInformationSignup";
 import { EmailVerificationSignup } from "@/components/auth/EmailVerificationSignup";
+import { PasswordSetupSignup } from "@/components/auth/PasswordSetupSignup";
 import { PersonalInformationSignup } from "@/components/auth/PersonalInformationSignup";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -16,6 +17,7 @@ import {
   type SignupFormData,
   type LoginInfoData,
   type EmailVerificationData,
+  type PasswordSetupData,
   type AdminInfoData
 } from "@/app/actions/session";
 import { apiService } from "@/services/api";
@@ -26,13 +28,15 @@ import { Toaster } from "@/components/ui/sonner";
 enum SignupStep {
   LOGIN_INFO = 0,
   EMAIL_VERIFICATION = 1,
-  PERSONAL_INFO = 2,
+  PASSWORD_SETUP = 2,
+  PERSONAL_INFO = 3,
 }
 
 // Step information for the indicator
 const STEPS = [
   { id: SignupStep.LOGIN_INFO, label: "Login Information" },
   { id: SignupStep.EMAIL_VERIFICATION, label: "Email Verification" },
+  { id: SignupStep.PASSWORD_SETUP, label: "Password Setup" },
   { id: SignupStep.PERSONAL_INFO, label: "Personal Information" },
 ];
 
@@ -43,9 +47,9 @@ interface StepIndicatorProps {
 
 function StepIndicator({ currentStep }: StepIndicatorProps) {
   return (
-    <div className="w-full bg-background p-4 mb-8 rounded-lg">
+    <div className="flex flex-1 items-center justify-center bg-background p-4 mb-8 rounded-lg">
       <div className="flex justify-center items-center">
-        <div className="flex items-center w-full max-w-md">
+        <div className="flex items-center">
           {STEPS.map((step, index) => {
             const isActive = currentStep === step.id;
             const isCompleted = currentStep > step.id;
@@ -129,10 +133,12 @@ export default function Page() {
   const [formData, setFormData] = useState<{
     loginInfo: Partial<LoginInfoData>;
     emailVerification: Partial<EmailVerificationData>;
+    passwordSetup: Partial<PasswordSetupData>;
     adminInfo: Partial<AdminInfoData>;
   }>({
     loginInfo: {},
     emailVerification: {},
+    passwordSetup: {},
     adminInfo: {},
   });
 
@@ -147,6 +153,7 @@ export default function Page() {
         setFormData({
           loginInfo: sessionData.loginInfo || {},
           emailVerification: sessionData.emailVerification || {},
+          passwordSetup: sessionData.passwordSetup || {},
           adminInfo: sessionData.adminInfo || {},
         });
         setCurrentStep(sessionData.currentStep as SignupStep);
@@ -252,12 +259,12 @@ export default function Page() {
     };
 
     setFormData(updatedFormData);
-    setCurrentStep(SignupStep.PERSONAL_INFO);
+    setCurrentStep(SignupStep.PASSWORD_SETUP);
 
     // Save to session
     await saveFormDataToSession({
       ...updatedFormData,
-      currentStep: SignupStep.PERSONAL_INFO,
+      currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);
 
     toast.success("Email verified successfully");
@@ -274,14 +281,44 @@ export default function Page() {
     } as SignupFormData);
   };
 
-  // Handle going back from personal information step
-  const handlePersonalInfoBack = async () => {
+  // Handle completion of password setup step
+  const handlePasswordSetupNext = async (data: PasswordSetupData) => {
+    const updatedFormData = {
+      ...formData,
+      passwordSetup: data,
+    };
+
+    setFormData(updatedFormData);
+    setCurrentStep(SignupStep.PERSONAL_INFO);
+
+    // Save to session
+    await saveFormDataToSession({
+      ...updatedFormData,
+      currentStep: SignupStep.PERSONAL_INFO,
+    } as SignupFormData);
+
+    toast.success("Password created successfully");
+  };
+
+  // Handle going back from password setup step
+  const handlePasswordSetupBack = async () => {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save current step to session
     await saveFormDataToSession({
       ...formData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
+    } as SignupFormData);
+  };
+
+  // Handle going back from personal information step
+  const handlePersonalInfoBack = async () => {
+    setCurrentStep(SignupStep.PASSWORD_SETUP);
+
+    // Save current step to session
+    await saveFormDataToSession({
+      ...formData,
+      currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);
   };
 
@@ -317,6 +354,14 @@ export default function Page() {
               onBack={handleEmailVerificationBack}
               initialData={formData.emailVerification as EmailVerificationData}
               email={formData.loginInfo.email || ""}
+            />
+          )}
+
+          {currentStep === SignupStep.PASSWORD_SETUP && (
+            <PasswordSetupSignup
+              onNext={handlePasswordSetupNext}
+              onBack={handlePasswordSetupBack}
+              initialData={formData.passwordSetup as PasswordSetupData}
             />
           )}
 
