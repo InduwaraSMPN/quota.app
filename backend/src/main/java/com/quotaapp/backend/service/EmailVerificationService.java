@@ -34,10 +34,17 @@ public class EmailVerificationService {
      *
      * @param email the user's email
      * @return true if the code was sent successfully, false otherwise
+system allows already-registered users to receive verification codes     * @throws IllegalStateException if the email is already registered with a completed registration
      */
     @Transactional
     public boolean sendVerificationCode(String email) {
         try {
+            // Check if the email is already registered with a completed registration
+            if (userRepository.existsByEmailAndHasVehicleOwner(email)) {
+                log.warn("Attempted to send verification code to already registered email: {}", email);
+                throw new IllegalStateException("Email is already registered. Please use the login page instead.");
+            }
+
             // Find or create a temporary user
             User user = userRepository.findByEmail(email)
                     .orElseGet(() -> createTemporaryUser(email));
@@ -60,6 +67,9 @@ public class EmailVerificationService {
 
             log.info("Verification code sent to: {}", email);
             return true;
+        } catch (IllegalStateException e) {
+            // Rethrow the exception to be handled by the controller
+            throw e;
         } catch (Exception e) {
             log.error("Failed to send verification code to: {}", email, e);
             return false;

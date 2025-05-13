@@ -86,6 +86,10 @@ public class RegistrationController {
             }
 
             return ResponseEntity.ok(ApiResponse.success("Login information validated and verification code sent"));
+        } catch (IllegalStateException e) {
+            // This is for already registered emails
+            log.warn("Attempted to register already registered email: {}", loginInfoDTO.getEmail());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             log.error("Error processing step 1 for email: {}", loginInfoDTO.getEmail(), e);
             // Provide more detailed error message for debugging
@@ -134,14 +138,23 @@ public class RegistrationController {
     public ResponseEntity<ApiResponse<String>> resendVerification(@Valid @RequestBody LoginInfoDTO loginInfoDTO) {
         log.info("Resending verification code for email: {}", loginInfoDTO.getEmail());
 
-        // Send verification code
-        boolean sent = emailVerificationService.sendVerificationCode(loginInfoDTO.getEmail());
+        try {
+            // Send verification code
+            boolean sent = emailVerificationService.sendVerificationCode(loginInfoDTO.getEmail());
 
-        if (!sent) {
-            return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
+            if (!sent) {
+                return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
+            }
+
+            return ResponseEntity.ok(ApiResponse.success("Verification code sent"));
+        } catch (IllegalStateException e) {
+            // This is for already registered emails
+            log.warn("Attempted to resend verification code to already registered email: {}", loginInfoDTO.getEmail());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error resending verification code to: {}", loginInfoDTO.getEmail(), e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred. Please try again later."));
         }
-
-        return ResponseEntity.ok(ApiResponse.success("Verification code sent"));
     }
 
     /**
