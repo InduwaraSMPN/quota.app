@@ -26,30 +26,12 @@ import { Input } from "@/components/ui/input";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
 
 // Define the form schema with Zod
-const formSchema = z
-  .object({
-    email: z
-      .string()
-      .min(1, { message: "Email is required" })
-      .email({ message: "Invalid email address" }),
-    password: z
-      .string()
-      .min(8, { message: "Password must be at least 8 characters" })
-      .regex(/[A-Z]/, {
-        message: "Password must contain at least one uppercase letter",
-      })
-      .regex(/[a-z]/, {
-        message: "Password must contain at least one lowercase letter",
-      })
-      .regex(/[0-9]/, { message: "Password must contain at least one number" }),
-    confirmPassword: z
-      .string()
-      .min(1, { message: "Please confirm your password" }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const formSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email({ message: "Invalid email address" }),
+});
 
 // Define the form values type
 type FormValues = z.infer<typeof formSchema>;
@@ -71,8 +53,6 @@ export function LoginInformationSignup({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
-      password: "",
-      confirmPassword: "",
     },
   });
 
@@ -104,7 +84,7 @@ export function LoginInformationSignup({
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
           <CardDescription>
-            Enter your email and create a password to get started
+            Enter your email to get started. You'll create a password after verification.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,45 +108,6 @@ export function LoginInformationSignup({
                       />
                     </FormControl>
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormDescription>
-                      Password must be at least 8 characters and include
-                      uppercase, lowercase, and numbers.
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -6,13 +6,16 @@ import { apiService } from '@/services/api';
 // Define types for our form data
 export type LoginInfoData = {
   email: string;
-  password: string;
-  confirmPassword: string;
 };
 
 export type EmailVerificationData = {
   verificationCode: string;
   verified?: boolean;
+};
+
+export type PasswordSetupData = {
+  password: string;
+  confirmPassword: string;
 };
 
 export type OwnerInfoData = {
@@ -42,6 +45,7 @@ export type VehicleInfoData = {
 export type SignupFormData = {
   loginInfo: LoginInfoData;
   emailVerification?: EmailVerificationData;
+  passwordSetup?: PasswordSetupData;
   ownerInfo: OwnerInfoData;
   vehicleInfo: VehicleInfoData;
   currentStep: number;
@@ -103,7 +107,7 @@ export async function submitSignupForm(formData: SignupFormData): Promise<{
     // Prepare the data for the backend
     const completeFormData = {
       email: formData.loginInfo.email,
-      password: formData.loginInfo.password,
+      password: formData.passwordSetup?.password || '',
       fullName: formData.ownerInfo.fullName,
       nicNumber: formData.ownerInfo.nicNumber,
       address: formData.ownerInfo.address,
