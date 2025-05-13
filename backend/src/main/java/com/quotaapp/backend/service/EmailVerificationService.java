@@ -115,7 +115,11 @@ public class EmailVerificationService {
         token.setUsed(true);
         tokenRepository.save(token);
 
-        log.info("Verification code verified for user: {}", email);
+        // Update the user's email verification status
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        log.info("Verification code verified and user email marked as verified for: {}", email);
         return true;
     }
 
