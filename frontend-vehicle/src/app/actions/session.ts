@@ -1,7 +1,6 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { apiService } from '@/services/api';
 
 // Define types for our form data
 export type LoginInfoData = {
@@ -56,7 +55,7 @@ const SESSION_COOKIE_NAME = 'vehicle_signup_session';
 
 // Save form data to session
 export async function saveFormDataToSession(formData: SignupFormData): Promise<void> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   // Encrypt sensitive data in a real application
   // For now, we'll just stringify the data
@@ -75,7 +74,7 @@ export async function saveFormDataToSession(formData: SignupFormData): Promise<v
 
 // Get form data from session
 export async function getFormDataFromSession(): Promise<SignupFormData | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
 
   if (!sessionCookie?.value) {
@@ -92,7 +91,7 @@ export async function getFormDataFromSession(): Promise<SignupFormData | null> {
 
 // Clear session data
 export async function clearSessionData(): Promise<void> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
@@ -131,56 +130,145 @@ export async function submitSignupForm(formData: SignupFormData): Promise<{
     };
 
     // First, validate with DMT database
-    const dmtValidationResponse = await fetch('http://localhost:8888/api/dmt/validate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        registrationNumber: formData.vehicleInfo.registrationNumber,
-        engineNumber: formData.vehicleInfo.engineNumber,
-        chassisNumber: formData.vehicleInfo.chassisNumber,
-        ownerNIC: formData.ownerInfo.nicNumber,
-        ownerName: formData.ownerInfo.fullName
-      }),
-    });
+    try {
+      const dmtValidationResponse = await fetch('http://localhost:8888/api/dmt/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          registrationNumber: formData.vehicleInfo.registrationNumber,
+          engineNumber: formData.vehicleInfo.engineNumber,
+          chassisNumber: formData.vehicleInfo.chassisNumber,
+          ownerNIC: formData.ownerInfo.nicNumber,
+          ownerName: formData.ownerInfo.fullName
+        }),
+      });
 
-    const dmtValidationResult = await dmtValidationResponse.json();
+      // Check if the response is ok before trying to parse it
+      if (!dmtValidationResponse.ok) {
+        console.error(`DMT validation failed with status: ${dmtValidationResponse.status}`);
+        return {
+          success: false,
+          message: `DMT validation failed with status: ${dmtValidationResponse.status}. Please try again later.`,
+          dmtValidationFailed: true,
+          validationErrors: ['Unable to validate vehicle information at this time.']
+        };
+      }
 
-    // If DMT validation fails, return with validation errors
-    if (!dmtValidationResponse.ok || !dmtValidationResult.valid) {
+      // Check if the response has content before parsing
+      const contentType = dmtValidationResponse.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Invalid content type from DMT validation service:', contentType);
+        return {
+          success: false,
+          message: 'Invalid response from DMT validation service. Please try again later.',
+          dmtValidationFailed: true,
+          validationErrors: ['Server returned an invalid response format.']
+        };
+      }
+
+      // Parse the response
+      const responseText = await dmtValidationResponse.text();
+      console.log('DMT validation response:', responseText);
+
+      if (!responseText || responseText.trim() === '') {
+        console.error('Empty response from DMT validation service');
+        return {
+          success: false,
+          message: 'Empty response from DMT validation service. Please try again later.',
+          dmtValidationFailed: true,
+          validationErrors: ['Server returned an empty response.']
+        };
+      }
+
+      let dmtValidationResult;
+      try {
+        dmtValidationResult = JSON.parse(responseText);
+        console.log('Parsed DMT validation result:', dmtValidationResult);
+      } catch (error) {
+        console.error('Error parsing DMT validation response:', error);
+        return {
+          success: false,
+          message: 'Error parsing DMT validation response. Please try again later.',
+          dmtValidationFailed: true,
+          validationErrors: ['Server returned an invalid response.']
+        };
+      }
+
+      // If DMT validation fails, return with validation errors
+      if (dmtValidationResult.data && dmtValidationResult.data.valid === false) {
+        const errors = dmtValidationResult.data.errors ||
+                      ['The provided vehicle details do not match DMT records.'];
+
+        console.error('DMT validation failed with errors:', errors);
+
+        return {
+          success: false,
+          message: 'Vehicle information validation failed. Please check your details and try again.',
+          dmtValidationFailed: true,
+          validationErrors: errors
+        };
+      }
+    } catch (error) {
+      console.error('Error during DMT validation:', error);
       return {
         success: false,
-        message: 'Vehicle information validation failed. Please check your details and try again.',
+        message: 'An error occurred during vehicle validation. Please try again later.',
         dmtValidationFailed: true,
-        validationErrors: dmtValidationResult.errors || ['The provided vehicle details do not match DMT records.']
+        validationErrors: ['Technical error during validation process.']
       };
     }
 
     // If DMT validation passes, proceed with registration
-    const response = await fetch('http://localhost:8888/api/auth/register/vehicle', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(completeFormData),
-    });
+    try {
+      console.log("Sending registration data to backend:", completeFormData);
 
-    if (!response.ok) {
-      const errorData = await response.json();
+      const response = await fetch('http://localhost:8888/api/auth/register/vehicle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(completeFormData),
+      });
+
+      console.log("Registration response status:", response.status);
+
+      // Try to parse the response as JSON
+      let errorData;
+      try {
+        const responseText = await response.text();
+        console.log("Registration response text:", responseText);
+
+        if (responseText && responseText.trim() !== '') {
+          errorData = JSON.parse(responseText);
+          console.log("Parsed registration response:", errorData);
+        }
+      } catch (parseError) {
+        console.error("Error parsing registration response:", parseError);
+      }
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: errorData?.message || `Registration failed with status ${response.status}. Please try again.`
+        };
+      }
+
+      // Clear session data after successful submission
+      await clearSessionData();
+
+      return {
+        success: true,
+        message: 'Registration successful! Your vehicle details have been verified.'
+      };
+    } catch (error) {
+      console.error("Error during registration API call:", error);
       return {
         success: false,
-        message: errorData.message || 'Registration failed. Please try again.'
+        message: error instanceof Error ? error.message : 'Registration failed due to a network error. Please try again.'
       };
     }
-
-    // Clear session data after successful submission
-    await clearSessionData();
-
-    return {
-      success: true,
-      message: 'Registration successful! Your vehicle details have been verified.'
-    };
   } catch (error) {
     console.error('Error submitting form:', error);
     return {

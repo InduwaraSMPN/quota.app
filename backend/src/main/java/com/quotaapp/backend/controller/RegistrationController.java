@@ -1,6 +1,8 @@
 package com.quotaapp.backend.controller;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -219,6 +221,114 @@ public class RegistrationController {
                 errorMessage += " - Caused by: " + e.getCause().getMessage();
             }
             return ResponseEntity.internalServerError().body(ApiResponse.error(errorMessage));
+        }
+    }
+
+    /**
+     * Complete vehicle owner registration in one step
+     * This endpoint is used by the frontend to submit all registration data at once
+     *
+     * @param requestBody the complete registration data
+     * @return the response
+     */
+    @PostMapping("/vehicle")
+    public ResponseEntity<ApiResponse<String>> registerVehicleOwner(@Valid @RequestBody Map<String, Object> requestBody) {
+        log.info("Processing complete vehicle owner registration");
+
+        try {
+            // Extract data from the request
+            String email = (String) requestBody.get("email");
+            String password = (String) requestBody.get("password");
+            String fullName = (String) requestBody.get("fullName");
+            String nicNumber = (String) requestBody.get("nicNumber");
+            String address = (String) requestBody.get("address");
+            String contactNumber = (String) requestBody.get("contactNumber");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> vehicleData = (Map<String, Object>) requestBody.get("vehicle");
+
+            if (email == null || password == null || fullName == null || nicNumber == null ||
+                address == null || contactNumber == null || vehicleData == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Missing required fields"));
+            }
+
+            // Create DTOs
+            LoginInfoDTO loginInfoDTO = new LoginInfoDTO();
+            loginInfoDTO.setEmail(email);
+
+            PasswordSetupDTO passwordSetupDTO = new PasswordSetupDTO();
+            passwordSetupDTO.setPassword(password);
+            passwordSetupDTO.setConfirmPassword(password);
+
+            OwnerInfoDTO ownerInfoDTO = new OwnerInfoDTO();
+            ownerInfoDTO.setFullName(fullName);
+            ownerInfoDTO.setNicNumber(nicNumber);
+            ownerInfoDTO.setAddress(address);
+            ownerInfoDTO.setContactNumber(contactNumber);
+
+            VehicleInfoDTO vehicleInfoDTO = new VehicleInfoDTO();
+            vehicleInfoDTO.setRegistrationNumber((String) vehicleData.get("registrationNumber"));
+            vehicleInfoDTO.setEngineNumber((String) vehicleData.get("engineNumber"));
+            vehicleInfoDTO.setChassisNumber((String) vehicleData.get("chassisNumber"));
+            vehicleInfoDTO.setMake((String) vehicleData.get("make"));
+            vehicleInfoDTO.setModel((String) vehicleData.get("model"));
+
+            // Handle numeric fields
+            try {
+                vehicleInfoDTO.setYearOfManufacture(Integer.parseInt(vehicleData.get("yearOfManufacture").toString()));
+                vehicleInfoDTO.setEngineCapacity(Integer.parseInt(vehicleData.get("engineCapacity").toString()));
+                vehicleInfoDTO.setGrossVehicleWeight(Integer.parseInt(vehicleData.get("grossVehicleWeight").toString()));
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Invalid numeric values in vehicle data"));
+            }
+
+            vehicleInfoDTO.setVehicleClass((String) vehicleData.get("vehicleClass"));
+            vehicleInfoDTO.setTypeOfBody((String) vehicleData.get("typeOfBody"));
+            vehicleInfoDTO.setFuelType((String) vehicleData.get("fuelType"));
+            vehicleInfoDTO.setColor((String) vehicleData.get("color"));
+
+            // Parse date
+            try {
+                String dateStr = (String) vehicleData.get("dateOfFirstRegistration");
+                vehicleInfoDTO.setDateOfFirstRegistration(LocalDate.parse(dateStr));
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Invalid date format for dateOfFirstRegistration"));
+            }
+
+            vehicleInfoDTO.setCountryOfOrigin((String) vehicleData.get("countryOfOrigin"));
+
+            // Validate login info
+            List<String> loginErrors = registrationService.processStep1(loginInfoDTO);
+            if (!loginErrors.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Login information validation failed", loginErrors));
+            }
+
+            // Validate owner info
+            List<String> ownerErrors = registrationService.processStep2(ownerInfoDTO);
+            if (!ownerErrors.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Owner information validation failed", ownerErrors));
+            }
+
+            // Validate vehicle info
+            List<String> vehicleErrors = registrationService.processStep3(vehicleInfoDTO, ownerInfoDTO);
+            if (!vehicleErrors.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Vehicle information validation failed", vehicleErrors));
+            }
+
+            // Complete registration
+            registrationService.completeRegistration(
+                loginInfoDTO,
+                passwordSetupDTO,
+                ownerInfoDTO,
+                vehicleInfoDTO,
+                true // Assume email is verified since we've already validated with DMT
+            );
+
+            return ResponseEntity.ok(ApiResponse.success("Registration completed successfully"));
+
+        } catch (Exception e) {
+            log.error("Error processing vehicle owner registration", e);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred during registration. Please try again later."));
         }
     }
 }
