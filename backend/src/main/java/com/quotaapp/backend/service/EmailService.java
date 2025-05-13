@@ -1,6 +1,9 @@
 package com.quotaapp.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,13 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 public class EmailService {
 
     private final JavaMailSender mailSender;
-    
+
     @Value("${spring.mail.username}")
     private String fromEmail;
 
     /**
      * Send a verification code to the user's email
-     * 
+     *
      * @param to the recipient's email address
      * @param verificationCode the verification code to send
      */
@@ -33,18 +36,25 @@ public class EmailService {
             message.setText("Your verification code is: " + verificationCode + "\n\n" +
                     "This code will expire in 10 minutes.\n\n" +
                     "If you did not request this code, please ignore this email.");
-            
+
+            log.info("Attempting to send verification email to: {} using sender: {}", to, fromEmail);
             mailSender.send(message);
-            log.info("Verification email sent to: {}", to);
+            log.info("Verification email sent successfully to: {}", to);
+        } catch (MailAuthenticationException e) {
+            log.error("Authentication failed when sending email to: {}. Check your email credentials.", to, e);
+            throw new RuntimeException("Email authentication failed. Please check your email configuration.", e);
+        } catch (MailSendException e) {
+            log.error("Failed to send email to: {}. Mail server connection issue.", to, e);
+            throw new RuntimeException("Failed to connect to mail server. Please try again later.", e);
         } catch (Exception e) {
-            log.error("Failed to send verification email to: {}", to, e);
-            throw new RuntimeException("Failed to send verification email", e);
+            log.error("Unexpected error when sending verification email to: {}", to, e);
+            throw new RuntimeException("Failed to send verification email due to an unexpected error", e);
         }
     }
-    
+
     /**
      * Send a welcome email to the user
-     * 
+     *
      * @param to the recipient's email address
      * @param fullName the user's full name
      */
@@ -60,11 +70,15 @@ public class EmailService {
                     "Thank you for choosing Quota App!\n\n" +
                     "Best regards,\n" +
                     "The Quota App Team");
-            
+
+            log.info("Attempting to send welcome email to: {}", to);
             mailSender.send(message);
-            log.info("Welcome email sent to: {}", to);
-        } catch (Exception e) {
+            log.info("Welcome email sent successfully to: {}", to);
+        } catch (MailException e) {
             log.error("Failed to send welcome email to: {}", to, e);
+            // Don't throw an exception here, as this is not critical
+        } catch (Exception e) {
+            log.error("Unexpected error when sending welcome email to: {}", to, e);
             // Don't throw an exception here, as this is not critical
         }
     }

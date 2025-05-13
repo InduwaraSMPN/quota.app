@@ -1,5 +1,6 @@
 package com.quotaapp.backend.dto;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,15 +18,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
+public class ApiResponse<T> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private boolean success;
     private String message;
     private T data;
-    
+
     @Builder.Default
     private List<String> errors = new ArrayList<>();
-    
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
 

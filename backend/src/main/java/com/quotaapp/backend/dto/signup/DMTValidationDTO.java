@@ -1,5 +1,7 @@
 package com.quotaapp.backend.dto.signup;
 
+import java.io.Serializable;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DMTValidationDTO {
+public class DMTValidationDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @NotBlank(message = "Registration number is required")
     private String registrationNumber;

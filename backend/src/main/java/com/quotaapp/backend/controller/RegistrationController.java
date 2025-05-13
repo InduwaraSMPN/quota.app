@@ -37,153 +37,162 @@ public class RegistrationController {
 
     /**
      * Step 1: Process login information
-     * 
+     *
      * @param loginInfoDTO the login information
      * @return the response
      */
     @PostMapping("/step1")
     public ResponseEntity<ApiResponse<String>> processStep1(@Valid @RequestBody LoginInfoDTO loginInfoDTO) {
         log.info("Processing registration step 1 for email: {}", loginInfoDTO.getEmail());
-        
-        // Validate the login information
-        List<String> errors = registrationService.processStep1(loginInfoDTO);
-        
-        if (!errors.isEmpty()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Validation failed", errors));
-        }
-        
-        // Store the login information in the session
-        sessionService.storeLoginInfo(loginInfoDTO);
-        
-        // Send verification code
-        boolean sent = emailVerificationService.sendVerificationCode(loginInfoDTO.getEmail());
-        
-        if (!sent) {
-            return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
-        }
-        
-            return ResponseEntity.ok(ApiResponse.success("Login information validated and verification code sent"));
 
+        try {
+            // Validate the login information
+            List<String> errors = registrationService.processStep1(loginInfoDTO);
+
+            if (!errors.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Validation failed", errors));
+            }
+
+            // Store the login information in the session
+            sessionService.storeLoginInfo(loginInfoDTO);
+
+            // Send verification code
+            boolean sent = emailVerificationService.sendVerificationCode(loginInfoDTO.getEmail());
+
+            if (!sent) {
+                return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
+            }
+
+            return ResponseEntity.ok(ApiResponse.success("Login information validated and verification code sent"));
+        } catch (Exception e) {
+            log.error("Error processing step 1 for email: {}", loginInfoDTO.getEmail(), e);
+            // Provide more detailed error message for debugging
+            String errorMessage = "An error occurred during step 1: " + e.getMessage();
+            if (e.getCause() != null) {
+                errorMessage += " - Caused by: " + e.getCause().getMessage();
+            }
+            return ResponseEntity.internalServerError().body(ApiResponse.error(errorMessage));
+        }
     }
-    
+
     /**
      * Verify email
-     * 
+     *
      * @param verificationDTO the verification data
      * @return the response
      */
     @PostMapping("/verify-email")
     public ResponseEntity<ApiResponse<String>> verifyEmail(@Valid @RequestBody EmailVerificationDTO verificationDTO) {
         log.info("Verifying email for: {}", verificationDTO.getEmail());
-        
+
         try {
             // Verify the code
             boolean verified = emailVerificationService.verifyCode(verificationDTO.getEmail(), verificationDTO.getVerificationCode());
-            
+
             if (!verified) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Invalid verification code"));
             }
-            
+
             // Mark email as verified in the session
             sessionService.setEmailVerified(true);
-            
+
             return ResponseEntity.ok(ApiResponse.success("Email verified successfully"));
         } catch (InvalidVerificationCodeException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     /**
      * Resend verification code
-     * 
+     *
      * @param loginInfoDTO the login information
      * @return the response
      */
     @PostMapping("/resend-verification")
     public ResponseEntity<ApiResponse<String>> resendVerification(@Valid @RequestBody LoginInfoDTO loginInfoDTO) {
         log.info("Resending verification code for email: {}", loginInfoDTO.getEmail());
-        
+
         // Send verification code
         boolean sent = emailVerificationService.sendVerificationCode(loginInfoDTO.getEmail());
-        
+
         if (!sent) {
             return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success("Verification code sent"));
     }
-    
+
     /**
      * Step 2: Process password setup
-     * 
+     *
      * @param passwordSetupDTO the password setup information
      * @return the response
      */
     @PostMapping("/step2")
     public ResponseEntity<ApiResponse<String>> processStep2(@Valid @RequestBody PasswordSetupDTO passwordSetupDTO) {
         log.info("Processing registration step 2 (password setup)");
-        
+
         // Validate the password
         if (!passwordSetupDTO.getPassword().equals(passwordSetupDTO.getConfirmPassword())) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Passwords do not match"));
         }
-        
+
         // Store the password in the session
         sessionService.storePassword(passwordSetupDTO);
-        
+
         return ResponseEntity.ok(ApiResponse.success("Password setup completed"));
     }
-    
+
     /**
      * Step 3: Process owner information
-     * 
+     *
      * @param ownerInfoDTO the owner information
      * @return the response
      */
     @PostMapping("/step3")
     public ResponseEntity<ApiResponse<String>> processStep3(@Valid @RequestBody OwnerInfoDTO ownerInfoDTO) {
         log.info("Processing registration step 3 for owner: {}", ownerInfoDTO.getFullName());
-        
+
         // Validate the owner information
         List<String> errors = registrationService.processStep2(ownerInfoDTO);
-        
+
         if (!errors.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Validation failed", errors));
         }
-        
+
         // Store the owner information in the session
         sessionService.storeOwnerInfo(ownerInfoDTO);
-        
+
         return ResponseEntity.ok(ApiResponse.success("Owner information validated"));
     }
-    
+
     /**
      * Step 4: Process vehicle information and complete registration
-     * 
+     *
      * @param vehicleInfoDTO the vehicle information
      * @return the response
      */
     @PostMapping("/step4")
     public ResponseEntity<ApiResponse<String>> processStep4(@Valid @RequestBody VehicleInfoDTO vehicleInfoDTO) {
         log.info("Processing registration step 4 for vehicle: {}", vehicleInfoDTO.getRegistrationNumber());
-        
+
         // Get the owner information from the session
         OwnerInfoDTO ownerInfoDTO = sessionService.getOwnerInfo();
-        
+
         if (ownerInfoDTO == null) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Owner information not found. Please complete step 3 first."));
         }
-        
+
         // Validate the vehicle information
         List<String> errors = registrationService.processStep3(vehicleInfoDTO, ownerInfoDTO);
-        
+
         if (!errors.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Validation failed", errors));
         }
-        
+
         // Store the vehicle information in the session
         sessionService.storeVehicleInfo(vehicleInfoDTO);
-        
+
         try {
             // Complete the registration
             User user = registrationService.completeRegistration(
@@ -193,17 +202,23 @@ public class RegistrationController {
                     vehicleInfoDTO,
                     sessionService.isEmailVerified()
             );
-            
+
             // Clear the session data
             sessionService.clearRegistrationData();
-            
+
             log.info("Registration completed successfully for user: {}", user.getEmail());
             return ResponseEntity.ok(ApiResponse.success("Registration completed successfully"));
         } catch (InvalidRegistrationDataException e) {
+            log.warn("Invalid registration data: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             log.error("Error completing registration", e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error("An error occurred during registration"));
+            // Provide more detailed error message for debugging
+            String errorMessage = "An error occurred during registration: " + e.getMessage();
+            if (e.getCause() != null) {
+                errorMessage += " - Caused by: " + e.getCause().getMessage();
+            }
+            return ResponseEntity.internalServerError().body(ApiResponse.error(errorMessage));
         }
     }
 }
