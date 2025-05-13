@@ -1,5 +1,6 @@
 package com.quotaapp.backend.model;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,6 +30,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User implements UserDetails {
 
     @Id
@@ -35,34 +38,35 @@ public class User implements UserDetails {
     private Long id;
 
     @NotBlank
-    @Size(max = 50)
-    @Column(unique = true)
-    private String username;
-
-    @NotBlank
-    @Size(max = 100)
+    @Size(max = 255)
     @Email
     @Column(unique = true)
     private String email;
 
     @NotBlank
-    @Size(max = 120)
+    @Size(max = 255)
     private String password;
 
-    @NotBlank
-    private String fullName;
-
-    @NotBlank
-    private String phoneNumber;
-
     @Enumerated(EnumType.STRING)
+    @Column(name = "role")
     private Role role;
 
-    private boolean enabled = true;
+    @Column(name = "is_active")
+    @Builder.Default
+    private boolean isActive = true;
+
+    @Column(name = "email_verified")
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     // Constructor for testing
-    public User(String username, String email) {
-        this.username = username;
+    public User(String email) {
         this.email = email;
     }
 
@@ -71,6 +75,12 @@ public class User implements UserDetails {
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
         return authorities;
+    }
+
+    @Override
+    public String getUsername() {
+        // Using email as the username
+        return email;
     }
 
     @Override
@@ -90,6 +100,16 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return isActive;
+    }
+
+    // Pre-persist and pre-update methods
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

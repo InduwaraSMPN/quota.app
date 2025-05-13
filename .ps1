@@ -1,6 +1,6 @@
 # Step 1: Start Spring Boot in current terminal
 Set-Location -Path ".\backend"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", ".\mvnw.cmd spring-boot:run"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "mvn spring-boot:run"
 Set-Location -Path ".."  # Go back to root
 
 # Step 2: Start bun dev:vehicle in new terminal
