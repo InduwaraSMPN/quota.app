@@ -1,24 +1,15 @@
--- Consolidated database schema for quota.app system
+-- Simplified database schema for quota.app system
 -- This schema combines the previously separate schemas for vehicle, station, and admin frontends
 -- into a single unified database schema for use with Azure PostgreSQL flexible server.
 
 -- =============================================
--- COMMON TYPES AND FUNCTIONS
+-- COMMON TYPES
 -- =============================================
 
 -- Create enum types for better data integrity
 CREATE TYPE user_role AS ENUM ('VEHICLE_OWNER', 'STATION_OWNER', 'ADMIN', 'STATION_OPERATOR');
 CREATE TYPE fuel_type AS ENUM ('92 OCTANE PETROL', '95 OCTANE PETROL', 'AUTO DIESEL', 'SUPER DIESEL', 'KEROSENE');
 CREATE TYPE verification_status AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
-
--- Create function for updated_at timestamps
-CREATE OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 -- =============================================
 -- CORE TABLES
@@ -460,74 +451,3 @@ CREATE TABLE sms_notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sms_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- =============================================
--- VERIFICATION TRIGGERS
--- =============================================
-
--- Create function to update station verification status when a verification request is processed
-CREATE OR REPLACE FUNCTION update_station_verification_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- If the status of the verification request has changed
-    IF OLD.status != NEW.status THEN
-        -- Update the station's verification status to match the request status
-        UPDATE fuel_stations
-        SET verification_status = NEW.status,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = NEW.station_id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger to update station verification status
-CREATE TRIGGER update_station_status_on_verification
-AFTER UPDATE ON station_verification_requests
-FOR EACH ROW
-WHEN (OLD.status IS DISTINCT FROM NEW.status)
-EXECUTE FUNCTION update_station_verification_status();
-
--- Create function to update vehicle verification status when a verification request is processed
-CREATE OR REPLACE FUNCTION update_vehicle_verification_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- If the status of the verification request has changed
-    IF OLD.status != NEW.status THEN
-        -- Update the vehicle's verification status
-        UPDATE vehicles
-        SET is_active = CASE WHEN NEW.status = 'VERIFIED' THEN TRUE ELSE FALSE END,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = NEW.vehicle_id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger to update vehicle status on verification
-CREATE TRIGGER update_vehicle_status_on_verification
-AFTER UPDATE ON vehicle_verification_requests
-FOR EACH ROW
-WHEN (OLD.status IS DISTINCT FROM NEW.status)
-EXECUTE FUNCTION update_vehicle_verification_status();
-
--- Create function to update user email_verified status when token is used
-CREATE OR REPLACE FUNCTION update_user_email_verified_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.is_used = TRUE AND OLD.is_used = FALSE THEN
-        UPDATE users
-        SET email_verified = TRUE,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = NEW.user_id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create trigger to update user email_verified status
-CREATE TRIGGER update_user_email_verified
-AFTER UPDATE ON email_verification_tokens
-FOR EACH ROW
-WHEN (NEW.is_used = TRUE AND OLD.is_used = FALSE)
-EXECUTE FUNCTION update_user_email_verified_status();
