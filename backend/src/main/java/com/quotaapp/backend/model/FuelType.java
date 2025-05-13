@@ -1,5 +1,7 @@
 package com.quotaapp.backend.model;
 
+import java.util.Arrays;
+
 public enum FuelType {
     OCTANE_92("92 OCTANE PETROL"),
     OCTANE_95("95 OCTANE PETROL"),
@@ -15,5 +17,22 @@ public enum FuelType {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    /**
+     * Find a FuelType enum by its display name
+     *
+     * @param displayName the display name to search for
+     * @return the matching FuelType enum, or null if not found
+     */
+    public static FuelType fromDisplayName(String displayName) {
+        if (displayName == null) {
+            return null;
+        }
+
+        return Arrays.stream(FuelType.values())
+                .filter(fuelType -> fuelType.getDisplayName().equalsIgnoreCase(displayName))
+                .findFirst()
+                .orElse(null);
     }
 }

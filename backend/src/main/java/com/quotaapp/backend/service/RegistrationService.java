@@ -54,9 +54,12 @@ public class RegistrationService {
     public List<String> processStep1(LoginInfoDTO loginInfoDTO) {
         List<String> errors = new ArrayList<>();
 
-        // Check if email is already registered
-        if (userRepository.existsByEmail(loginInfoDTO.getEmail())) {
+        // Check if email is already registered with a completed registration
+        // This distinguishes between temporary users created for email verification
+        // and fully registered users with vehicle owner records
+        if (userRepository.existsByEmailAndHasVehicleOwner(loginInfoDTO.getEmail())) {
             errors.add("Email is already registered");
+            log.warn("Email {} is already registered with a completed registration", loginInfoDTO.getEmail());
         }
 
         return errors;
@@ -85,10 +88,11 @@ public class RegistrationService {
      *
      * @param vehicleInfoDTO the vehicle information
      * @param ownerInfoDTO the owner information
+     * @param performDmtValidation whether to perform DMT validation
      * @return a list of validation errors, empty if validation is successful
      */
     @Transactional(readOnly = true)
-    public List<String> processStep3(VehicleInfoDTO vehicleInfoDTO, OwnerInfoDTO ownerInfoDTO) {
+    public List<String> processStep3(VehicleInfoDTO vehicleInfoDTO, OwnerInfoDTO ownerInfoDTO, boolean performDmtValidation) {
         List<String> errors = new ArrayList<>();
 
         // Check if vehicle class exists
@@ -106,23 +110,37 @@ public class RegistrationService {
             errors.add("Vehicle with this chassis number is already registered");
         }
 
-        // Validate against DMT database
-        DMTValidationDTO validationDTO = DMTValidationDTO.builder()
-                .registrationNumber(vehicleInfoDTO.getRegistrationNumber())
-                .engineNumber(vehicleInfoDTO.getEngineNumber())
-                .chassisNumber(vehicleInfoDTO.getChassisNumber())
-                .ownerNIC(ownerInfoDTO.getNicNumber())
-                .ownerName(ownerInfoDTO.getFullName())
-                .build();
+        // Validate against DMT database if requested
+        if (performDmtValidation) {
+            DMTValidationDTO validationDTO = DMTValidationDTO.builder()
+                    .registrationNumber(vehicleInfoDTO.getRegistrationNumber())
+                    .engineNumber(vehicleInfoDTO.getEngineNumber())
+                    .chassisNumber(vehicleInfoDTO.getChassisNumber())
+                    .ownerNIC(ownerInfoDTO.getNicNumber())
+                    .ownerName(ownerInfoDTO.getFullName())
+                    .build();
 
-        List<String> dmtValidationErrors = dmtValidationService.validateVehicleInformation(validationDTO);
-        errors.addAll(dmtValidationErrors);
+            List<String> dmtValidationErrors = dmtValidationService.validateVehicleInformation(validationDTO);
+            errors.addAll(dmtValidationErrors);
+        }
 
         return errors;
     }
 
     /**
-     * Complete the registration process
+     * Process step 3 of registration (vehicle information) with DMT validation
+     *
+     * @param vehicleInfoDTO the vehicle information
+     * @param ownerInfoDTO the owner information
+     * @return a list of validation errors, empty if validation is successful
+     */
+    @Transactional(readOnly = true)
+    public List<String> processStep3(VehicleInfoDTO vehicleInfoDTO, OwnerInfoDTO ownerInfoDTO) {
+        return processStep3(vehicleInfoDTO, ownerInfoDTO, true);
+    }
+
+    /**
+     * Complete the registration process with DMT validation
      *
      * @param loginInfoDTO the login information
      * @param passwordSetupDTO the password setup information
@@ -138,6 +156,28 @@ public class RegistrationService {
             OwnerInfoDTO ownerInfoDTO,
             VehicleInfoDTO vehicleInfoDTO,
             boolean emailVerified) {
+        return completeRegistration(loginInfoDTO, passwordSetupDTO, ownerInfoDTO, vehicleInfoDTO, emailVerified, true);
+    }
+
+    /**
+     * Complete the registration process with optional DMT validation
+     *
+     * @param loginInfoDTO the login information
+     * @param passwordSetupDTO the password setup information
+     * @param ownerInfoDTO the owner information
+     * @param vehicleInfoDTO the vehicle information
+     * @param emailVerified whether the email is verified
+     * @param performDmtValidation whether to perform DMT validation
+     * @return the created user
+     */
+    @Transactional
+    public User completeRegistration(
+            LoginInfoDTO loginInfoDTO,
+            PasswordSetupDTO passwordSetupDTO,
+            OwnerInfoDTO ownerInfoDTO,
+            VehicleInfoDTO vehicleInfoDTO,
+            boolean emailVerified,
+            boolean performDmtValidation) {
 
         // Validate all data is present
         if (loginInfoDTO == null || passwordSetupDTO == null || ownerInfoDTO == null || vehicleInfoDTO == null) {
@@ -148,6 +188,24 @@ public class RegistrationService {
         if (!emailVerified) {
             log.warn("Attempted to complete registration with unverified email: {}", loginInfoDTO.getEmail());
             throw new InvalidRegistrationDataException("Email must be verified before registration. Please complete the email verification step.");
+        }
+
+        // Perform validation checks
+        List<String> validationErrors = new ArrayList<>();
+
+        // Validate login information
+        validationErrors.addAll(processStep1(loginInfoDTO));
+
+        // Validate owner information
+        validationErrors.addAll(processStep2(ownerInfoDTO));
+
+        // Validate vehicle information (with or without DMT validation)
+        validationErrors.addAll(processStep3(vehicleInfoDTO, ownerInfoDTO, performDmtValidation));
+
+        // If there are validation errors, throw an exception
+        if (!validationErrors.isEmpty()) {
+            log.warn("Validation failed during registration: {}", validationErrors);
+            throw new InvalidRegistrationDataException("Validation failed: " + String.join(", ", validationErrors));
         }
 
         // Create or update the user
@@ -184,6 +242,12 @@ public class RegistrationService {
         VehicleClass vehicleClass = vehicleClassOpt.get();
 
         // Create the vehicle
+        // Convert fuel type from display name to enum
+        FuelType fuelType = FuelType.fromDisplayName(vehicleInfoDTO.getFuelType());
+        if (fuelType == null) {
+            throw new InvalidRegistrationDataException("Invalid fuel type: " + vehicleInfoDTO.getFuelType());
+        }
+
         Vehicle vehicle = Vehicle.builder()
                 .owner(savedVehicleOwner)
                 .registrationNumber(vehicleInfoDTO.getRegistrationNumber().replaceAll("-", "").toUpperCase())
@@ -194,7 +258,7 @@ public class RegistrationService {
                 .yearOfManufacture(vehicleInfoDTO.getYearOfManufacture())
                 .vehicleClass(vehicleClass)
                 .typeOfBody(vehicleInfoDTO.getTypeOfBody())
-                .fuelType(FuelType.valueOf(vehicleInfoDTO.getFuelType()))
+                .fuelType(fuelType)
                 .engineCapacity(vehicleInfoDTO.getEngineCapacity())
                 .color(vehicleInfoDTO.getColor())
                 .grossVehicleWeight(vehicleInfoDTO.getGrossVehicleWeight())

@@ -1,6 +1,7 @@
 package com.quotaapp.backend.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +41,21 @@ public class RegistrationController {
     private final EmailVerificationService emailVerificationService;
     private final SessionService sessionService;
     private final UserRepository userRepository;
+
+    /**
+     * Extract the vehicle class code from the full vehicle class string
+     *
+     * @param vehicleClassFull the full vehicle class string (e.g., "J: Special purpose Vehicle")
+     * @return the vehicle class code (e.g., "J")
+     */
+    private String extractVehicleClassCode(String vehicleClassFull) {
+        if (vehicleClassFull == null) {
+            return null;
+        }
+        // Extract the code part (e.g., "J" from "J: Special purpose Vehicle")
+        int colonIndex = vehicleClassFull.indexOf(':');
+        return colonIndex > 0 ? vehicleClassFull.substring(0, colonIndex).trim() : vehicleClassFull;
+    }
 
     /**
      * Step 1: Process login information
@@ -189,8 +205,8 @@ public class RegistrationController {
             return ResponseEntity.badRequest().body(ApiResponse.error("Owner information not found. Please complete step 3 first."));
         }
 
-        // Validate the vehicle information
-        List<String> errors = registrationService.processStep3(vehicleInfoDTO, ownerInfoDTO);
+        // Validate the vehicle information (without DMT validation at this step)
+        List<String> errors = registrationService.processStep3(vehicleInfoDTO, ownerInfoDTO, false);
 
         if (!errors.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Validation failed", errors));
@@ -200,13 +216,14 @@ public class RegistrationController {
         sessionService.storeVehicleInfo(vehicleInfoDTO);
 
         try {
-            // Complete the registration
+            // Complete the registration with DMT validation
             User user = registrationService.completeRegistration(
                     sessionService.getLoginInfo(),
                     sessionService.getPassword(),
                     ownerInfoDTO,
                     vehicleInfoDTO,
-                    sessionService.isEmailVerified()
+                    sessionService.isEmailVerified(),
+                    true // Perform DMT validation
             );
 
             // Clear the session data
@@ -286,7 +303,12 @@ public class RegistrationController {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Invalid numeric values in vehicle data"));
             }
 
-            vehicleInfoDTO.setVehicleClass((String) vehicleData.get("vehicleClass"));
+            // Extract vehicle class code from the full vehicle class string
+            String vehicleClassFull = (String) vehicleData.get("vehicleClass");
+            String vehicleClassCode = extractVehicleClassCode(vehicleClassFull);
+            log.info("Vehicle class from frontend: '{}', extracted code: '{}'", vehicleClassFull, vehicleClassCode);
+            vehicleInfoDTO.setVehicleClass(vehicleClassCode);
+
             vehicleInfoDTO.setTypeOfBody((String) vehicleData.get("typeOfBody"));
             vehicleInfoDTO.setFuelType((String) vehicleData.get("fuelType"));
             vehicleInfoDTO.setColor((String) vehicleData.get("color"));
@@ -301,39 +323,64 @@ public class RegistrationController {
 
             vehicleInfoDTO.setCountryOfOrigin((String) vehicleData.get("countryOfOrigin"));
 
-            // Validate login info
-            List<String> loginErrors = registrationService.processStep1(loginInfoDTO);
-            if (!loginErrors.isEmpty()) {
-                return ResponseEntity.badRequest().body(ApiResponse.error("Login information validation failed", loginErrors));
-            }
-
-            // Validate owner info
-            List<String> ownerErrors = registrationService.processStep2(ownerInfoDTO);
-            if (!ownerErrors.isEmpty()) {
-                return ResponseEntity.badRequest().body(ApiResponse.error("Owner information validation failed", ownerErrors));
-            }
-
-            // Validate vehicle info
-            List<String> vehicleErrors = registrationService.processStep3(vehicleInfoDTO, ownerInfoDTO);
-            if (!vehicleErrors.isEmpty()) {
-                return ResponseEntity.badRequest().body(ApiResponse.error("Vehicle information validation failed", vehicleErrors));
-            }
+            // Store data in session
+            sessionService.storeLoginInfo(loginInfoDTO);
+            sessionService.storePassword(passwordSetupDTO);
+            sessionService.storeOwnerInfo(ownerInfoDTO);
+            sessionService.storeVehicleInfo(vehicleInfoDTO);
 
             // Check if email is verified
             Optional<User> userOpt = userRepository.findByEmail(loginInfoDTO.getEmail());
             boolean emailVerified = userOpt.isPresent() && userOpt.get().isEmailVerified();
+            sessionService.setEmailVerified(emailVerified);
 
-            // Complete registration
-            registrationService.completeRegistration(
-                loginInfoDTO,
-                passwordSetupDTO,
-                ownerInfoDTO,
-                vehicleInfoDTO,
-                emailVerified // Use actual verification status instead of assuming true
-            );
+            // Set current step
+            sessionService.setCurrentStep(4); // VEHICLE_INFO step
 
-            return ResponseEntity.ok(ApiResponse.success("Registration completed successfully"));
+            try {
+                // Complete registration with DMT validation
+                User user = registrationService.completeRegistration(
+                    loginInfoDTO,
+                    passwordSetupDTO,
+                    ownerInfoDTO,
+                    vehicleInfoDTO,
+                    emailVerified,
+                    true // Perform DMT validation
+                );
 
+                // Clear session data after successful registration
+                sessionService.clearRegistrationData();
+
+                log.info("Registration completed successfully for user: {}", user.getEmail());
+                return ResponseEntity.ok(ApiResponse.success("Registration completed successfully"));
+            } catch (InvalidRegistrationDataException e) {
+                // If validation fails, return the error but keep session data
+                log.warn("Validation failed during registration: {}", e.getMessage());
+
+                // Extract specific error types for better frontend handling
+                String errorMessage = e.getMessage();
+                List<String> errors = new ArrayList<>();
+
+                if (errorMessage.contains("Email is already registered")) {
+                    errors.add("Email is already registered");
+                    return ResponseEntity.badRequest().body(ApiResponse.error("Login information validation failed", errors));
+                } else if (errorMessage.contains("Invalid vehicle class")) {
+                    errors.add("Invalid vehicle class");
+                    return ResponseEntity.badRequest().body(ApiResponse.error("Vehicle information validation failed", errors));
+                } else if (errorMessage.contains("Vehicle with this registration number is already registered")) {
+                    errors.add("Vehicle with this registration number is already registered");
+                    return ResponseEntity.badRequest().body(ApiResponse.error("Vehicle information validation failed", errors));
+                } else if (errorMessage.contains("Vehicle with this chassis number is already registered")) {
+                    errors.add("Vehicle with this chassis number is already registered");
+                    return ResponseEntity.badRequest().body(ApiResponse.error("Vehicle information validation failed", errors));
+                } else if (errorMessage.contains("NIC number is already registered")) {
+                    errors.add("NIC number is already registered");
+                    return ResponseEntity.badRequest().body(ApiResponse.error("Owner information validation failed", errors));
+                } else {
+                    // Generic error handling
+                    return ResponseEntity.badRequest().body(ApiResponse.error(errorMessage));
+                }
+            }
         } catch (Exception e) {
             log.error("Error processing vehicle owner registration", e);
             return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred during registration. Please try again later."));

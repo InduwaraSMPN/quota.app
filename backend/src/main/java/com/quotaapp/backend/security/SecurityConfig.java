@@ -37,6 +37,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/dmt/**").permitAll()  // Allow DMT validation without authentication
+                .requestMatchers("/api/session/**").permitAll()  // Allow session endpoints without authentication
                 .requestMatchers("/").permitAll()
                 .requestMatchers("/api/test/public").permitAll()
                 .anyRequest().authenticated()
