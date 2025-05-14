@@ -9,6 +9,9 @@ import com.quotaapp.backend.service.EmailVerificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,9 +56,18 @@ public class AuthController {
             log.info("Login successful for: {} with role: {}", authResponse.getUsername(), authResponse.getRole());
 
             return ResponseEntity.ok(ApiResponse.success("Login successful", authResponse));
-        } catch (Exception e) {
+        } catch (DisabledException e) {
+            log.error("Login error for {}: {}", request.getUsername(), e.getMessage());
+            return ResponseEntity.status(403).body(ApiResponse.error("Your account is disabled. Please contact support."));
+        } catch (LockedException e) {
+            log.error("Login error for {}: {}", request.getUsername(), e.getMessage());
+            return ResponseEntity.status(403).body(ApiResponse.error("Your account is locked. Please contact support."));
+        } catch (BadCredentialsException e) {
             log.error("Login error for {}: {}", request.getUsername(), e.getMessage());
             return ResponseEntity.status(401).body(ApiResponse.error("Invalid username or password"));
+        } catch (Exception e) {
+            log.error("Login error for {}: {}", request.getUsername(), e.getMessage());
+            return ResponseEntity.status(401).body(ApiResponse.error("Authentication failed: " + e.getMessage()));
         }
     }
 

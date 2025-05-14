@@ -123,9 +123,39 @@ export const apiService = {
         method: 'POST',
         headers: DEFAULT_HEADERS,
         body: JSON.stringify({ username, password }),
+        ...getCredentialOptions(),
       });
 
-      return handleResponse(response);
+      const result = await handleResponse(response);
+
+      // Check for specific error conditions
+      if (!result.data) {
+        if (response.status === 401) {
+          return {
+            data: null,
+            error: result.error || 'Invalid email or password',
+            status: 401,
+          };
+        } else if (response.status === 403) {
+          return {
+            data: null,
+            error: result.error || 'Access denied',
+            status: 403,
+          };
+        }
+      }
+
+      // Check if the user is inactive
+      if (result.data && typeof result.data === 'object' && result.data !== null &&
+          'isActive' in result.data && result.data.isActive === false) {
+        return {
+          data: null,
+          error: 'Your account is inactive. Please contact support.',
+          status: 403,
+        };
+      }
+
+      return result;
     } catch (error) {
       return {
         data: null,

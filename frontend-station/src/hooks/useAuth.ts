@@ -9,9 +9,9 @@ interface AuthUser {
   username: string;
   email: string;
   role: string;
-  fullName: string;
-  employeeId?: string;
-  department?: string;
+  fullName?: string;
+  businessName?: string;
+  businessRegistrationNumber?: string;
 }
 
 interface UseAuthReturn {
@@ -37,7 +37,7 @@ export function useAuth(): UseAuthReturn {
       try {
         // Check if token exists in localStorage
         const token = localStorage.getItem('token');
-
+        
         if (!token) {
           setIsAuthenticated(false);
           setUser(null);
@@ -45,9 +45,9 @@ export function useAuth(): UseAuthReturn {
           return;
         }
 
-        // Verify token by fetching admin profile
-        const response = await apiService.getAdminProfile();
-
+        // Verify token by fetching station owner profile
+        const response = await apiService.getStationOwnerProfile();
+        
         if (response.error || !response.data) {
           // Token is invalid or expired
           localStorage.removeItem('token');
@@ -76,46 +76,54 @@ export function useAuth(): UseAuthReturn {
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
-
+    
     try {
       const response = await apiService.login(username, password);
-
+      
       if (response.error || !response.data) {
         // Handle specific error cases
         if (response.status === 401) {
-          setError(response.error || 'Invalid email or password');
-          throw new Error('Invalid credentials');
+          setError('Invalid email or password');
+          throw new Error('Invalid email or password');
         } else if (response.status === 403) {
-          setError(response.error || 'Access denied');
-          throw new Error('Access denied');
+          if (response.error?.includes('inactive')) {
+            setError('Your account is inactive. Please contact support.');
+            throw new Error('Account inactive');
+          } else if (response.error?.includes('verified')) {
+            setError('Your account is pending verification. Please check your verification status.');
+            throw new Error('Account not verified');
+          } else {
+            setError(response.error || 'Access denied');
+            throw new Error('Access denied');
+          }
         } else {
           setError(response.error || 'Login failed');
           throw new Error('Login failed');
         }
       }
-
-      // Check if user has admin role
-      if (response.data.role !== 'ADMIN') {
-        setError('Access denied. Admin privileges required.');
+      
+      // Check if user has station owner role
+      if (response.data.role !== 'STATION_OWNER') {
+        setError('Access denied. This portal is for fuel station owners only.');
         setIsAuthenticated(false);
         setUser(null);
         throw new Error('Invalid role');
       }
-
+      
       // Save token to localStorage
       localStorage.setItem('token', response.data.token);
-
-      // Fetch admin profile
-      const profileResponse = await apiService.getAdminProfile();
-
+      
+      // Fetch station owner profile
+      const profileResponse = await apiService.getStationOwnerProfile();
+      
       if (profileResponse.error || !profileResponse.data) {
-        setError(profileResponse.error || 'Failed to fetch admin profile');
+        setError(profileResponse.error || 'Failed to fetch station owner profile');
         localStorage.removeItem('token');
         setIsAuthenticated(false);
         setUser(null);
         throw new Error('Failed to fetch profile');
       }
-
+      
       setUser(profileResponse.data);
       setIsAuthenticated(true);
       return true;

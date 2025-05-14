@@ -1,6 +1,7 @@
 import { LoginForm } from "@/components/auth/LoginForm"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Logo } from "@/components/logo"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function Page() {
   return (
@@ -21,6 +22,9 @@ export default function Page() {
           <LoginForm />
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <Toaster richColors position="bottom-right" />
     </div>
   )
 }
