@@ -341,6 +341,65 @@ export const apiService = {
         method: 'POST',
         headers: DEFAULT_HEADERS,
         body: JSON.stringify({ username, password }),
+        ...getCredentialOptions(),
+      });
+
+      const result = await handleResponse(response);
+
+      // Check for specific error conditions
+      if (!result.data) {
+        if (response.status === 401) {
+          return {
+            data: null,
+            error: result.error || 'Invalid email or password',
+            status: 401,
+          };
+        } else if (response.status === 403) {
+          return {
+            data: null,
+            error: result.error || 'Access denied',
+            status: 403,
+          };
+        }
+      }
+
+      // Check if the user is inactive
+      if (result.data && result.data.isActive === false) {
+        return {
+          data: null,
+          error: 'Your account is inactive. Please contact support.',
+          status: 403,
+        };
+      }
+
+      // Check if the account is not verified
+      if (result.data && result.data.emailVerified === false) {
+        return {
+          data: null,
+          error: 'Your account is pending verification. Please check your verification status.',
+          status: 403,
+        };
+      }
+
+      return result;
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get station owner profile
+   */
+  getStationOwnerProfile: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+        ...getCredentialOptions(),
       });
 
       return handleResponse(response);

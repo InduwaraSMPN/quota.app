@@ -355,12 +355,20 @@ export const apiService = {
       const result = await handleResponse(response);
 
       // Check for specific error conditions
-      if (!result.data && response.status === 401) {
-        return {
-          data: null,
-          error: 'Invalid email or password',
-          status: 401,
-        };
+      if (!result.data) {
+        if (response.status === 401) {
+          return {
+            data: null,
+            error: result.error || 'Invalid email or password',
+            status: 401,
+          };
+        } else if (response.status === 403) {
+          return {
+            data: null,
+            error: result.error || 'Access denied',
+            status: 403,
+          };
+        }
       }
 
       // Check if the user is inactive
