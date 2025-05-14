@@ -330,12 +330,12 @@ export function BusinessInformationSignup({
                                 <FormControl>
 
                                   <Checkbox
-                                    checked={field.value?.includes(type.id)}
+                                    checked={field.value?.includes(type.label)}
                                     onCheckedChange={(checked) => {
                                       const updatedValue = checked
-                                        ? [...field.value, type.id]
+                                        ? [...field.value, type.label]
                                         : field.value?.filter(
-                                            (value) => value !== type.id
+                                            (value) => value !== type.label
                                           );
                                       field.onChange(updatedValue);
                                     }}

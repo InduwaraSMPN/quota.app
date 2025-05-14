@@ -82,4 +82,36 @@ public class EmailService {
             // Don't throw an exception here, as this is not critical
         }
     }
+
+    /**
+     * Send a registration confirmation email to the station owner
+     *
+     * @param to the recipient's email address
+     * @param fullName the station owner's full name
+     */
+    public void sendRegistrationConfirmationEmail(String to, String fullName) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject("Quota App - Registration Confirmation");
+            message.setText("Dear " + fullName + ",\n\n" +
+                    "Thank you for registering your fuel station with Quota App!\n\n" +
+                    "Your registration has been received and is pending verification by our administrators. " +
+                    "You will receive another email once your account has been verified.\n\n" +
+                    "Thank you for choosing Quota App!\n\n" +
+                    "Best regards,\n" +
+                    "The Quota App Team");
+
+            log.info("Attempting to send registration confirmation email to: {}", to);
+            mailSender.send(message);
+            log.info("Registration confirmation email sent successfully to: {}", to);
+        } catch (MailException e) {
+            log.error("Failed to send registration confirmation email to: {}", to, e);
+            // Don't throw an exception here, as this is not critical
+        } catch (Exception e) {
+            log.error("Unexpected error when sending registration confirmation email to: {}", to, e);
+            // Don't throw an exception here, as this is not critical
+        }
+    }
 }

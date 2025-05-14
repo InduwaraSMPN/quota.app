@@ -112,6 +112,23 @@ system allows already-registered users to receive verification codes     * @thro
         // Check if the token is already used
         if (token.isUsed()) {
             log.warn("Verification token already used for user: {}", email);
+
+            // Check if the provided code matches the token
+            // If it does, this is likely a duplicate request with the correct code
+            if (token.getToken().equals(code)) {
+                log.info("Duplicate verification attempt with correct code for user: {}", email);
+
+                // If the user's email is already verified, return true
+                if (user.isEmailVerified()) {
+                    return true;
+                }
+
+                // Otherwise, update the user's email verification status
+                user.setEmailVerified(true);
+                userRepository.save(user);
+                return true;
+            }
+
             throw new InvalidVerificationCodeException("Verification code has already been used. Please request a new one.");
         }
 

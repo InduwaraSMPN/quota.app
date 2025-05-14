@@ -22,6 +22,8 @@ public class RegistrationSessionDTO implements Serializable {
     private PasswordSetupDTO passwordSetup;
     private OwnerInfoDTO ownerInfo;
     private VehicleInfoDTO vehicleInfo;
+    private StationOwnerInfoDTO stationOwnerInfo;
+    private BusinessInfoDTO businessInfo;
     private Boolean emailVerified;
     private Integer currentStep;
 }
