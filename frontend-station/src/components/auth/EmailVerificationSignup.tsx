@@ -103,25 +103,12 @@ export function EmailVerificationSignup({
     setIsSubmitting(true);
     setError(null);
 
-    // In a real implementation, this would call an API to verify the code
-    // For now, we'll simulate a successful verification after a short delay
-    setTimeout(() => {
-      // Simulate verification success
-      onNext({
-        verificationCode: data.verificationCode,
-        verified: true
-      });
-      setIsSubmitting(false);
-    }, 1000);
-
-    // Uncomment this for real implementation
-    /*
     apiService.verifyEmailCode({
       email: email,
       code: data.verificationCode
     })
     .then(response => {
-      if (response.data && response.data.verified) {
+      if (response.status === 200) {
         onNext({
           verificationCode: data.verificationCode,
           verified: true
@@ -137,7 +124,6 @@ export function EmailVerificationSignup({
     .finally(() => {
       setIsSubmitting(false);
     });
-    */
   }
 
   // Handle resend verification code
@@ -145,20 +131,9 @@ export function EmailVerificationSignup({
     setIsResending(true);
     setError(null);
 
-    // In a real implementation, this would call an API to resend the code
-    // For now, we'll simulate a successful resend after a short delay
-    setTimeout(() => {
-      toast.success("Verification code resent to your email");
-      setIsResending(false);
-      setResendDisabled(true);
-      setResendCountdown(60); // Disable resend for 60 seconds
-    }, 1000);
-
-    // Uncomment this for real implementation
-    /*
     apiService.sendVerificationCode({ email: email })
       .then(response => {
-        if (response.data && response.data.sent) {
+        if (response.status === 200) {
           toast.success("Verification code resent to your email");
           setResendDisabled(true);
           setResendCountdown(60); // Disable resend for 60 seconds
@@ -173,7 +148,6 @@ export function EmailVerificationSignup({
       .finally(() => {
         setIsResending(false);
       });
-    */
   };
 
   return (
@@ -228,7 +202,7 @@ export function EmailVerificationSignup({
                 >
                   {isSubmitting ? "Verifying..." : "Verify Email"}
                 </Button>
-                
+
                 <Button
                   type="button"
                   variant="outline"

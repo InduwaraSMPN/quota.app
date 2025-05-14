@@ -4,9 +4,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import com.quotaapp.backend.dto.signup.BusinessInfoDTO;
 import com.quotaapp.backend.dto.signup.LoginInfoDTO;
 import com.quotaapp.backend.dto.signup.OwnerInfoDTO;
 import com.quotaapp.backend.dto.signup.PasswordSetupDTO;
+import com.quotaapp.backend.dto.signup.StationOwnerInfoDTO;
 import com.quotaapp.backend.dto.signup.VehicleInfoDTO;
 
 import jakarta.servlet.http.HttpSession;
@@ -20,6 +22,8 @@ public class SessionService {
     private static final String PASSWORD_SESSION_KEY = "registration_password";
     private static final String OWNER_INFO_SESSION_KEY = "registration_owner_info";
     private static final String VEHICLE_INFO_SESSION_KEY = "registration_vehicle_info";
+    private static final String STATION_OWNER_INFO_SESSION_KEY = "registration_station_owner_info";
+    private static final String BUSINESS_INFO_SESSION_KEY = "registration_business_info";
     private static final String EMAIL_VERIFIED_SESSION_KEY = "registration_email_verified";
     private static final String CURRENT_STEP_SESSION_KEY = "registration_current_step";
 
@@ -149,6 +153,44 @@ public class SessionService {
     }
 
     /**
+     * Store station owner information in the session
+     *
+     * @param stationOwnerInfo the station owner information
+     */
+    public void storeStationOwnerInfo(StationOwnerInfoDTO stationOwnerInfo) {
+        getSession().setAttribute(STATION_OWNER_INFO_SESSION_KEY, stationOwnerInfo);
+        log.debug("Stored station owner info in session for: {}", stationOwnerInfo.getFullName());
+    }
+
+    /**
+     * Get station owner information from the session
+     *
+     * @return the station owner information, or null if not found
+     */
+    public StationOwnerInfoDTO getStationOwnerInfo() {
+        return (StationOwnerInfoDTO) getSession().getAttribute(STATION_OWNER_INFO_SESSION_KEY);
+    }
+
+    /**
+     * Store business information in the session
+     *
+     * @param businessInfo the business information
+     */
+    public void storeBusinessInfo(BusinessInfoDTO businessInfo) {
+        getSession().setAttribute(BUSINESS_INFO_SESSION_KEY, businessInfo);
+        log.debug("Stored business info in session for: {}", businessInfo.getBusinessName());
+    }
+
+    /**
+     * Get business information from the session
+     *
+     * @return the business information, or null if not found
+     */
+    public BusinessInfoDTO getBusinessInfo() {
+        return (BusinessInfoDTO) getSession().getAttribute(BUSINESS_INFO_SESSION_KEY);
+    }
+
+    /**
      * Clear all registration data from the session
      */
     public void clearRegistrationData() {
@@ -156,6 +198,8 @@ public class SessionService {
         getSession().removeAttribute(PASSWORD_SESSION_KEY);
         getSession().removeAttribute(OWNER_INFO_SESSION_KEY);
         getSession().removeAttribute(VEHICLE_INFO_SESSION_KEY);
+        getSession().removeAttribute(STATION_OWNER_INFO_SESSION_KEY);
+        getSession().removeAttribute(BUSINESS_INFO_SESSION_KEY);
         getSession().removeAttribute(EMAIL_VERIFIED_SESSION_KEY);
         getSession().removeAttribute(CURRENT_STEP_SESSION_KEY);
         log.debug("Cleared all registration data from session");

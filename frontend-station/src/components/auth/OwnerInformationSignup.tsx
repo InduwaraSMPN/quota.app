@@ -40,9 +40,9 @@ const formSchema = z.object({
       },
       { message: "Invalid NIC number format" }
     ),
-  mobileNumber: z
+  contactNumber: z
     .string()
-    .min(1, { message: "Mobile number is required" })
+    .min(1, { message: "Contact number is required" })
     .refine(
       (value) => {
         // Validate Sri Lankan phone numbers (e.g., +94XXXXXXXXX or 0XXXXXXXXX)
@@ -75,7 +75,7 @@ export function OwnerInformationSignup({
     defaultValues: {
       fullName: "",
       nicNumber: "",
-      mobileNumber: "",
+      contactNumber: "",
     },
   });
 
@@ -149,10 +149,10 @@ export function OwnerInformationSignup({
               />
               <FormField
                 control={form.control}
-                name="mobileNumber"
+                name="contactNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mobile Number</FormLabel>
+                    <FormLabel>Contact Number</FormLabel>
                     <FormDescription>
                       Enter your primary contact number in the format +94XXXXXXXXX or
                       0XXXXXXXXX

@@ -20,6 +20,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     Optional<User> findByEmail(String email);
 
+    // The findByUsername method has been removed
+    // Use findByEmail instead
+
     /**
      * Check if a user exists with the given email
      *
@@ -27,6 +30,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return true if a user exists with the email, false otherwise
      */
     boolean existsByEmail(String email);
+
+    // The existsByUsername method has been removed
+    // Use existsByEmail instead
 
     /**
      * Check if a user exists with the given email and has a vehicle owner record

@@ -12,9 +12,6 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { Logo } from "@/components/logo";
 import {
-  saveFormDataToSession,
-  getFormDataFromSession,
-  submitSignupForm,
   type SignupFormData,
   type LoginInfoData,
   type EmailVerificationData,
@@ -23,6 +20,7 @@ import {
   type BusinessInfoData
 } from "@/app/actions/session";
 import { apiService } from "@/services/api";
+import { sessionService } from "@/services/sessionService";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -154,7 +152,7 @@ export default function Page() {
   // Load saved form data from session on initial render
   useEffect(() => {
     const loadSessionData = async () => {
-      const sessionData = await getFormDataFromSession();
+      const sessionData = await sessionService.getRegistrationData();
       if (sessionData) {
         setFormData({
           loginInfo: sessionData.loginInfo || {},
@@ -181,26 +179,19 @@ export default function Page() {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
 
     // Send verification code to the email
     try {
-      // In a real implementation, this would call the API to send the verification code
-      // For now, we'll simulate a successful send after a short delay
-      toast.success("Verification code sent to your email");
-
-      // Uncomment this for real implementation
-      /*
       const response = await apiService.sendVerificationCode({ email: data.email });
-      if (response.data && response.data.sent) {
+      if (response.status === 200) {
         toast.success("Verification code sent to your email");
       } else {
         toast.error(response.error || "Failed to send verification code");
       }
-      */
     } catch (error) {
       console.error("Error sending verification code:", error);
       toast.error("Failed to send verification code. Please try again.");
@@ -218,7 +209,7 @@ export default function Page() {
     setCurrentStep(SignupStep.BUSINESS_INFO);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.BUSINESS_INFO,
     } as SignupFormData);
@@ -228,24 +219,46 @@ export default function Page() {
 
   // Handle completion of email verification step
   const handleEmailVerificationNext = async (data: EmailVerificationData) => {
-    const updatedFormData = {
-      ...formData,
-      emailVerification: {
-        ...data,
-        verified: true,
-      },
-    };
+    try {
+      // Verify the code with the backend
+      const response = await apiService.verifyEmailCode({
+        email: formData.loginInfo.email || '',
+        code: data.verificationCode
+      });
 
-    setFormData(updatedFormData);
-    setCurrentStep(SignupStep.PASSWORD_SETUP);
+      if (response.status !== 200) {
+        toast.error(response.error || "Invalid verification code");
+        return;
+      }
 
-    // Save to session
-    await saveFormDataToSession({
-      ...updatedFormData,
-      currentStep: SignupStep.PASSWORD_SETUP,
-    } as SignupFormData);
+      const updatedFormData = {
+        ...formData,
+        emailVerification: {
+          ...data,
+          verified: true,
+        },
+      };
 
-    toast.success("Email verified successfully");
+      setFormData(updatedFormData);
+      setCurrentStep(SignupStep.PASSWORD_SETUP);
+
+      // Save to session
+      await sessionService.saveRegistrationData({
+        ...updatedFormData,
+        currentStep: SignupStep.PASSWORD_SETUP,
+      } as SignupFormData);
+
+      // Also update the email verified status separately
+      await sessionService.saveEmailVerification({
+        verificationCode: data.verificationCode,
+        verified: true
+      });
+
+      toast.success("Email verified successfully");
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      toast.error("Failed to verify email. Please try again.");
+    }
   };
 
   // Handle going back from email verification step
@@ -253,7 +266,7 @@ export default function Page() {
     setCurrentStep(SignupStep.LOGIN_INFO);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.LOGIN_INFO,
     } as SignupFormData);
@@ -270,10 +283,13 @@ export default function Page() {
     setCurrentStep(SignupStep.OWNER_INFO);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.OWNER_INFO,
     } as SignupFormData);
+
+    // Also save password separately
+    await sessionService.savePasswordSetup(data);
 
     toast.success("Password created successfully");
   };
@@ -283,7 +299,7 @@ export default function Page() {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
@@ -294,7 +310,7 @@ export default function Page() {
     setCurrentStep(SignupStep.PASSWORD_SETUP);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);
@@ -311,10 +327,13 @@ export default function Page() {
       };
 
       // Save to session first
-      await saveFormDataToSession({
+      await sessionService.saveRegistrationData({
         ...updatedFormData,
         currentStep: SignupStep.BUSINESS_INFO,
       } as SignupFormData);
+
+      // Also save business info separately
+      await sessionService.saveBusinessInfo(data);
 
       // Make sure email is verified before submitting
       if (!updatedFormData.emailVerification?.verified) {
@@ -324,13 +343,43 @@ export default function Page() {
         return;
       }
 
-      // Submit the complete form data to the backend
-      const result = await submitSignupForm({
-        ...updatedFormData,
-        currentStep: SignupStep.BUSINESS_INFO,
-      } as SignupFormData);
+      // Prepare the data for the backend
+      const completeFormData = {
+        email: updatedFormData.loginInfo.email,
+        password: updatedFormData.passwordSetup?.password || '',
+        fullName: updatedFormData.ownerInfo.fullName,
+        nicNumber: updatedFormData.ownerInfo.nicNumber,
+        contactNumber: updatedFormData.ownerInfo.contactNumber,
+        business: {
+          businessRegistrationNumber: data.businessRegistrationNumber,
+          businessName: data.businessName,
+          businessAddress: data.businessAddress,
+          province: data.province,
+          district: data.district,
+          stationName: data.stationName,
+          fuelTypes: data.fuelTypes,
+          openingTime: data.openingTime,
+          closingTime: data.closingTime,
+          fuelRetailLicenseNumber: data.fuelRetailLicenseNumber,
+        }
+      };
 
-      if (result.success) {
+      // Submit the complete form data to the backend
+      const response = await fetch('http://localhost:8888/api/auth/register/station', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(completeFormData),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Clear session data after successful submission
+        await sessionService.clearRegistrationData();
+
         toast.success("Registration submitted successfully!");
 
         // Redirect to verification status page after successful registration
@@ -353,7 +402,7 @@ export default function Page() {
     setCurrentStep(SignupStep.OWNER_INFO);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.OWNER_INFO,
     } as SignupFormData);

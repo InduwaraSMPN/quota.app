@@ -29,6 +29,15 @@ const getAuthHeader = (): HeadersInit => {
 };
 
 /**
+ * Get credential options for fetch
+ */
+const getCredentialOptions = () => {
+  return {
+    credentials: 'include' as RequestCredentials,
+  };
+};
+
+/**
  * Handle API response
  */
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
@@ -302,6 +311,180 @@ export const apiService = {
           status: data.status,
           rejectionReason: data.rejectionReason
         }),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get registration data from session
+   */
+  getRegistrationData: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/registration-data`, {
+        method: 'GET',
+        headers: DEFAULT_HEADERS,
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update registration data in session
+   */
+  updateRegistrationData: async (data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/registration-data`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Clear registration data from session
+   */
+  clearRegistrationData: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/registration-data`, {
+        method: 'DELETE',
+        headers: DEFAULT_HEADERS,
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update login information in session
+   */
+  updateLoginInfo: async (data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/login-info`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update email verified status in session
+   */
+  updateEmailVerified: async (data: { verified: boolean }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/email-verified`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update password in session
+   */
+  updatePassword: async (data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/password`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update admin information in session
+   */
+  updateAdminInfo: async (data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/admin-info`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+        ...getCredentialOptions(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update current step in session
+   */
+  updateCurrentStep: async (data: { currentStep: number }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session/current-step`, {
+        method: 'PUT',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+        ...getCredentialOptions(),
       });
 
       return handleResponse(response);

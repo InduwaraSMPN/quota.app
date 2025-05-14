@@ -11,9 +11,6 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { Logo } from "@/components/logo";
 import {
-  saveFormDataToSession,
-  getFormDataFromSession,
-  submitSignupForm,
   type SignupFormData,
   type LoginInfoData,
   type EmailVerificationData,
@@ -21,6 +18,7 @@ import {
   type AdminInfoData
 } from "@/app/actions/session";
 import { apiService } from "@/services/api";
+import { sessionService } from "@/services/sessionService";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -148,7 +146,7 @@ export default function Page() {
   // Load saved form data from session on initial render
   useEffect(() => {
     const loadSessionData = async () => {
-      const sessionData = await getFormDataFromSession();
+      const sessionData = await sessionService.getRegistrationData();
       if (sessionData) {
         setFormData({
           loginInfo: sessionData.loginInfo || {},
@@ -174,7 +172,7 @@ export default function Page() {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
@@ -211,7 +209,7 @@ export default function Page() {
       };
 
       // Save to session first
-      await saveFormDataToSession({
+      await sessionService.saveRegistrationData({
         ...updatedFormData,
         currentStep: SignupStep.PERSONAL_INFO,
       } as SignupFormData);
@@ -224,13 +222,34 @@ export default function Page() {
         return;
       }
 
-      // Submit the complete form data to the backend
-      const result = await submitSignupForm({
-        ...updatedFormData,
-        currentStep: SignupStep.PERSONAL_INFO,
-      } as SignupFormData);
+      // Prepare the data for the backend
+      const completeFormData = {
+        email: updatedFormData.loginInfo.email,
+        password: updatedFormData.passwordSetup?.password || '',
+        fullName: updatedFormData.adminInfo.fullName,
+        employeeId: updatedFormData.adminInfo.employeeId,
+        contactNumber: updatedFormData.adminInfo.contactNumber,
+        department: updatedFormData.adminInfo.department,
+        emergencyContactNumber: updatedFormData.adminInfo.emergencyContactNumber,
+        address: updatedFormData.adminInfo.address,
+      };
 
-      if (result.success) {
+      // Submit the complete form data to the backend
+      const response = await fetch('http://localhost:8888/api/auth/register/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(completeFormData),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+      const success = response.ok;
+
+      if (success) {
+        // Clear session data after successful submission
+        await sessionService.clearRegistrationData();
         toast.success("Registration successful!");
 
         // Redirect to login page after successful registration
@@ -262,10 +281,16 @@ export default function Page() {
     setCurrentStep(SignupStep.PASSWORD_SETUP);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);
+
+    // Also save email verification separately
+    await sessionService.saveEmailVerification({
+      verificationCode: data.verificationCode,
+      verified: true
+    });
 
     toast.success("Email verified successfully");
   };
@@ -275,7 +300,7 @@ export default function Page() {
     setCurrentStep(SignupStep.LOGIN_INFO);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.LOGIN_INFO,
     } as SignupFormData);
@@ -292,10 +317,13 @@ export default function Page() {
     setCurrentStep(SignupStep.PERSONAL_INFO);
 
     // Save to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...updatedFormData,
       currentStep: SignupStep.PERSONAL_INFO,
     } as SignupFormData);
+
+    // Also save password separately
+    await sessionService.savePasswordSetup(data);
 
     toast.success("Password created successfully");
   };
@@ -305,7 +333,7 @@ export default function Page() {
     setCurrentStep(SignupStep.EMAIL_VERIFICATION);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.EMAIL_VERIFICATION,
     } as SignupFormData);
@@ -316,7 +344,7 @@ export default function Page() {
     setCurrentStep(SignupStep.PASSWORD_SETUP);
 
     // Save current step to session
-    await saveFormDataToSession({
+    await sessionService.saveRegistrationData({
       ...formData,
       currentStep: SignupStep.PASSWORD_SETUP,
     } as SignupFormData);

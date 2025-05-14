@@ -123,6 +123,18 @@ public class AuthController {
         }
     }
 
+    /**
+     * Alternative endpoint for verifying email code (for backward compatibility)
+     *
+     * @param data the verification data
+     * @return the response
+     */
+    @PostMapping("/verify-code")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyCode(@Valid @RequestBody Map<String, String> data) {
+        // Delegate to the main verification method
+        return verifyEmailCode(data);
+    }
+
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestParam String refreshToken) {
         return authService.refreshToken(refreshToken)
