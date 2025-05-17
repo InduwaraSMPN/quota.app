@@ -22,7 +22,7 @@ export function Logo({ className, width = 200, height = 40 }: LogoProps) {
           alt="Quota.app Logo"
           width={width} // Defines aspect ratio (200/40 = 5:1) and helps Next.js optimize
           height={height} // Defines aspect ratio
-          className="h-auto w-auto" // Image takes full width of parent (Link), height adjusts for aspect ratio
+          className="h-auto w-4xs" // Image takes full width of parent (Link), height adjusts for aspect ratio
           priority
         />
       </Link>

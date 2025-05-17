@@ -19,7 +19,7 @@ export function Logo({ className, width = 200, height = 40 }: LogoProps) {
           alt="Quota.app Logo"
           width={width}
           height={height}
-          className="h-auto"
+          className="h-auto w-4xs"
           priority
         />
       </Link>
