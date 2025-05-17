@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
 import { QRCodeSVG } from "qrcode.react";
@@ -30,64 +30,76 @@ import {
   ChevronRight
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data for vehicles
-const mockVehiclesData = [
-  {
-    id: "1",
-    registrationNumber: "ABC1234",
-    engineNumber: "ENG123456",
-    chassisNumber: "CHS123456",
-    make: "Toyota",
-    model: "Corolla",
-    yearOfManufacture: "2020",
-    vehicleClass: "Car",
-    typeOfBody: "Sedan",
-    fuelType: "Petrol",
-    engineCapacity: "1500",
-    color: "White",
-    dateOfFirstRegistration: "2020-01-15",
-    quota: {
-      totalQuota: 20,
-      remainingQuota: 12.5,
-      quotaUnit: "liters",
-      lastUpdated: "2023-06-15",
-      nextRefill: "2023-07-01"
-    }
-  },
-  {
-    id: "2",
-    registrationNumber: "XYZ5678",
-    engineNumber: "ENG789012",
-    chassisNumber: "CHS789012",
-    make: "Honda",
-    model: "Civic",
-    yearOfManufacture: "2021",
-    vehicleClass: "Car",
-    typeOfBody: "Sedan",
-    fuelType: "Petrol",
-    engineCapacity: "1800",
-    color: "Blue",
-    dateOfFirstRegistration: "2021-03-20",
-    quota: {
-      totalQuota: 25,
-      remainingQuota: 18.2,
-      quotaUnit: "liters",
-      lastUpdated: "2023-06-18",
-      nextRefill: "2023-07-01"
-    }
-  }
-];
+import { apiService } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { Vehicle } from "@/types/vehicle";
+import { Loading } from "@/components/ui/loading";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { toast } from "sonner";
 
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState(mockVehiclesData);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch vehicles data
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      if (!isAuthenticated) return;
+
+      try {
+        setIsLoading(true);
+        const response = await apiService.getVehicleDetails();
+
+        if (response.error) {
+          setError(response.error);
+          toast.error("Failed to load vehicles");
+        } else if (response.data) {
+          setVehicles(Array.isArray(response.data) ? response.data : response.data.vehicles || []);
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Error fetching vehicles:", err);
+        setError("Failed to load vehicles. Please try again.");
+        toast.error("Failed to load vehicles");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated && !authLoading) {
+      fetchVehicles();
+    }
+  }, [isAuthenticated, authLoading]);
 
   // Function to handle vehicle deletion
-  const handleDeleteVehicle = (id: string) => {
-    setVehicles(vehicles.filter(vehicle => vehicle.id !== id));
-    setVehicleToDelete(null);
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      setIsDeleting(true);
+
+      // In a real implementation, you would call an API to delete the vehicle
+      // const response = await apiService.deleteVehicle(id);
+
+      // For now, we'll just simulate the API call with a timeout
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Update the local state
+      setVehicles(vehicles.filter(vehicle => vehicle.id !== id));
+      setVehicleToDelete(null);
+      toast.success("Vehicle deleted successfully");
+    } catch (err) {
+      console.error("Error deleting vehicle:", err);
+      toast.error("Failed to delete vehicle");
+    } finally {
+      setIsDeleting(false);
+    }
   };
+
+  // Combine loading states
+  const isPageLoading = authLoading || isLoading;
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
@@ -96,25 +108,43 @@ export default function VehiclesPage() {
         <ModeToggle />
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 pt-16 px-4 md:px-8 pb-8">
-        <div className="w-full max-w-7xl mx-auto space-y-6">
-          {/* Page Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <MagicBackButton backLink="/dashboard" />
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Your Vehicles</h1>
-                <p className="text-muted-foreground">Manage your vehicles and their fuel quotas</p>
+      {/* Loading state */}
+      {isPageLoading && (
+        <div className="flex-1 flex items-center justify-center">
+          <Loading text="Loading vehicles..." />
+        </div>
+      )}
+
+      {/* Error state */}
+      {!isPageLoading && error && (
+        <div className="flex-1 flex items-center justify-center">
+          <ErrorMessage
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+        </div>
+      )}
+
+      {/* Main content - only show when not loading and no errors */}
+      {!isPageLoading && !error && (
+        <div className="flex flex-1 pt-16 px-4 md:px-8 pb-8">
+          <div className="w-full max-w-7xl mx-auto space-y-6">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <MagicBackButton backLink="/dashboard" />
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">Your Vehicles</h1>
+                  <p className="text-muted-foreground">Manage your vehicles and their fuel quotas</p>
+                </div>
               </div>
+              <Button asChild className="flex items-center gap-2">
+                <Link href="/dashboard/vehicles/add">
+                  <Plus className="h-4 w-4" />
+                  Add New Vehicle
+                </Link>
+              </Button>
             </div>
-            <Button asChild className="flex items-center gap-2">
-              <Link href="/dashboard/vehicles/add">
-                <Plus className="h-4 w-4" />
-                Add New Vehicle
-              </Link>
-            </Button>
-          </div>
 
           {/* Vehicles Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -158,8 +188,9 @@ export default function VehiclesPage() {
                             <Button
                               variant="destructive"
                               onClick={() => vehicleToDelete && handleDeleteVehicle(vehicleToDelete)}
+                              disabled={isDeleting}
                             >
-                              Delete Vehicle
+                              {isDeleting ? "Deleting..." : "Delete Vehicle"}
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -260,6 +291,7 @@ export default function VehiclesPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

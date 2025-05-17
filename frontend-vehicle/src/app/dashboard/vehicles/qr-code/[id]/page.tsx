@@ -1,85 +1,77 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { MagicBackButton } from "@/components/ui/magic-back-button";
-import { QRCodeSVG } from "qrcode.react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import { QRCodeGenerator } from "@/components/qr-code";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, QrCode } from "lucide-react";
+import { QrCode } from "lucide-react";
+import { apiService } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import { Vehicle } from "@/types/vehicle";
+import { toast } from "sonner";
 
-// Mock data for vehicles
-const mockVehiclesData = [
-  {
-    id: "1",
-    registrationNumber: "ABC1234",
-    engineNumber: "ENG123456",
-    chassisNumber: "CHS123456",
-    make: "Toyota",
-    model: "Corolla",
-    yearOfManufacture: "2020",
-    vehicleClass: "Car",
-    typeOfBody: "Sedan",
-    fuelType: "Petrol",
-    engineCapacity: "1500",
-    color: "White",
-    dateOfFirstRegistration: "2020-01-15",
-    quota: {
-      totalQuota: 20,
-      remainingQuota: 12.5,
-      quotaUnit: "liters",
-      lastUpdated: "2023-06-15",
-      nextRefill: "2023-07-01"
-    }
-  },
-  {
-    id: "2",
-    registrationNumber: "XYZ5678",
-    engineNumber: "ENG789012",
-    chassisNumber: "CHS789012",
-    make: "Honda",
-    model: "Civic",
-    yearOfManufacture: "2021",
-    vehicleClass: "Car",
-    typeOfBody: "Sedan",
-    fuelType: "Petrol",
-    engineCapacity: "1800",
-    color: "Blue",
-    dateOfFirstRegistration: "2021-03-20",
-    quota: {
-      totalQuota: 25,
-      remainingQuota: 18.2,
-      quotaUnit: "liters",
-      lastUpdated: "2023-06-18",
-      nextRefill: "2023-07-01"
-    }
-  }
-];
+// Define the page component with properly typed params
+export default function VehicleQRCodePage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  // Unwrap the params Promise using React.use()
+  const unwrappedParams = 'then' in params ? use(params) : params;
+  const vehicleId = unwrappedParams.id;
 
-export default function VehicleQRCodePage({ params }: { params: { id: string } }) {
-  const [vehicle, setVehicle] = useState<any>(null);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call to fetch vehicle data
-    const fetchVehicle = () => {
-      setIsLoading(true);
-      setTimeout(() => {
-        const foundVehicle = mockVehiclesData.find(v => v.id === params.id);
-        setVehicle(foundVehicle || null);
+    const fetchVehicle = async () => {
+      // Check if we have a valid ID and authentication
+      if (!isAuthenticated || !vehicleId) {
         setIsLoading(false);
-      }, 500);
+        if (!vehicleId) {
+          setError("Invalid vehicle ID");
+          toast.error("Invalid vehicle ID");
+        }
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        // In a real implementation, you would have an API endpoint to get a single vehicle by ID
+        // For now, we'll fetch all vehicles and find the one with matching ID
+        const response = await apiService.getVehicleDetails();
+
+        if (response.error) {
+          setError(response.error);
+          toast.error("Failed to load vehicle data");
+        } else if (response.data) {
+          const vehicles = Array.isArray(response.data) ? response.data : response.data.vehicles || [];
+          const foundVehicle = vehicles.find((v: Vehicle) => v.id === vehicleId);
+
+          if (foundVehicle) {
+            setVehicle(foundVehicle);
+            setError(null);
+          } else {
+            setVehicle(null);
+            setError("Vehicle not found");
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching vehicle:", err);
+        setError("Failed to load vehicle data. Please try again.");
+        toast.error("Failed to load vehicle data");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchVehicle();
-  }, [params.id]);
+    if (isAuthenticated && !authLoading) {
+      fetchVehicle();
+    }
+  }, [vehicleId, isAuthenticated, authLoading]);
+
+  // Combine loading states
+  const isPageLoading = authLoading || isLoading;
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
@@ -89,76 +81,43 @@ export default function VehicleQRCodePage({ params }: { params: { id: string } }
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 pt-16 px-4 md:px-8 pb-8">
-        <div className="w-full max-w-3xl mx-auto space-y-6">
-          {/* Page Header */}
-          <div className="flex items-center gap-3">
-            <MagicBackButton backLink="/dashboard/vehicles" />
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Vehicle QR Code</h1>
-              <p className="text-muted-foreground">Present this QR code at fuel stations</p>
-            </div>
-          </div>
+      <div className="flex flex-1 items-center justify-center p-4 sm:p-6 md:p-8">
+        {!isPageLoading && vehicle && vehicleId && (
+          <QRCodeGenerator
+            vehicleId={vehicleId}
+            vehicleData={vehicle}
+            backLink="/dashboard/vehicles"
+          />
+        )}
 
-          {/* QR Code Card */}
-          {!isLoading && vehicle && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{vehicle.make} {vehicle.model}</CardTitle>
-                <CardDescription>Registration Number: {vehicle.registrationNumber}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center">
-                <div className="bg-white p-6 rounded-lg border border-border mb-4">
-                  <QRCodeSVG
-                    value={`VEHICLE:${vehicle.registrationNumber}`}
-                    size={250}
-                    level="M"
-                  />
+        {/* Loading or Not Found State */}
+        {(isPageLoading || !vehicle) && (
+          <Card className="w-full max-w-md">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              {isPageLoading ? (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                  <p>Loading vehicle information...</p>
                 </div>
-                <div className="text-center space-y-1 mb-6">
-                  <p className="text-sm font-medium">{vehicle.make} {vehicle.model}</p>
-                  <p className="text-sm text-muted-foreground">{vehicle.registrationNumber}</p>
-                  <p className="text-xs text-muted-foreground">Scan this code at fuel stations to identify your vehicle</p>
+              ) : (
+                <div className="text-center">
+                  <div className="bg-destructive/10 p-3 rounded-full inline-flex mb-4">
+                    <QrCode className="h-8 w-8 text-destructive" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Vehicle Not Found</h3>
+                  <p className="text-muted-foreground mb-6">
+                    We couldn't find the vehicle you're looking for. It may have been removed or the ID is incorrect.
+                  </p>
+                  <Button asChild>
+                    <a href="/dashboard/vehicles">
+                      Return to Vehicles
+                    </a>
+                  </Button>
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <Button className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Download QR Code
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {/* Loading or Not Found State */}
-          {(isLoading || !vehicle) && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                {isLoading ? (
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                    <p>Loading vehicle information...</p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <div className="bg-destructive/10 p-3 rounded-full inline-flex mb-4">
-                      <QrCode className="h-8 w-8 text-destructive" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Vehicle Not Found</h3>
-                    <p className="text-muted-foreground mb-6">
-                      We couldn't find the vehicle you're looking for. It may have been removed or the ID is incorrect.
-                    </p>
-                    <Button asChild>
-                      <a href="/dashboard/vehicles">
-                        Return to Vehicles
-                      </a>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
