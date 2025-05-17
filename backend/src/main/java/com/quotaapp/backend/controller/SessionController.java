@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.quotaapp.backend.dto.ApiResponse;
+import com.quotaapp.backend.dto.signup.AdminInfoDTO;
 import com.quotaapp.backend.dto.signup.BusinessInfoDTO;
 import com.quotaapp.backend.dto.signup.EmailVerificationDTO;
 import com.quotaapp.backend.dto.signup.LoginInfoDTO;
@@ -22,6 +23,9 @@ import com.quotaapp.backend.dto.signup.StationOwnerInfoDTO;
 import com.quotaapp.backend.dto.signup.VehicleInfoDTO;
 import com.quotaapp.backend.service.SessionService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,21 +47,51 @@ public class SessionController {
      * @return the registration data
      */
     @GetMapping("/registration-data")
-    public ResponseEntity<ApiResponse<RegistrationSessionDTO>> getRegistrationData() {
-        log.info("Retrieving registration data from session");
+    public ResponseEntity<ApiResponse<RegistrationSessionDTO>> getRegistrationData(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            log.info("Retrieving registration data from session");
 
-        RegistrationSessionDTO sessionData = RegistrationSessionDTO.builder()
-                .loginInfo(sessionService.getLoginInfo())
-                .passwordSetup(sessionService.getPassword())
-                .ownerInfo(sessionService.getOwnerInfo())
-                .vehicleInfo(sessionService.getVehicleInfo())
-                .stationOwnerInfo(sessionService.getStationOwnerInfo())
-                .businessInfo(sessionService.getBusinessInfo())
-                .emailVerified(sessionService.isEmailVerified())
-                .currentStep(sessionService.getCurrentStep())
-                .build();
+            // Log request details for debugging
+            log.info("Request URI: {}", request.getRequestURI());
+            log.info("Request Method: {}", request.getMethod());
+            log.info("Request Origin: {}", request.getHeader("Origin"));
 
-        return ResponseEntity.ok(ApiResponse.success("Registration data retrieved", sessionData));
+            // Get the session
+            HttpSession session = request.getSession(false);
+
+            if (session == null) {
+                log.warn("No session found when retrieving registration data");
+                return ResponseEntity.ok(ApiResponse.success("No session found", new RegistrationSessionDTO()));
+            }
+
+            log.info("Session ID: {}", session.getId());
+
+            // Build the session data
+            RegistrationSessionDTO sessionData = RegistrationSessionDTO.builder()
+                    .loginInfo(sessionService.getLoginInfo())
+                    .passwordSetup(sessionService.getPassword())
+                    .ownerInfo(sessionService.getOwnerInfo())
+                    .vehicleInfo(sessionService.getVehicleInfo())
+                    .stationOwnerInfo(sessionService.getStationOwnerInfo())
+                    .businessInfo(sessionService.getBusinessInfo())
+                    .adminInfo(sessionService.getAdminInfo())
+                    .emailVerified(sessionService.isEmailVerified())
+                    .currentStep(sessionService.getCurrentStep())
+                    .build();
+
+            // Ensure CORS headers are set
+            String origin = request.getHeader("Origin");
+            if (origin != null) {
+                response.setHeader("Access-Control-Allow-Origin", origin);
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+            }
+
+            log.info("Registration data retrieved successfully: {}", sessionData);
+            return ResponseEntity.ok(ApiResponse.success("Registration data retrieved", sessionData));
+        } catch (Exception e) {
+            log.error("Error retrieving registration data from session", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Error retrieving registration data: " + e.getMessage()));
+        }
     }
 
     /**
@@ -93,6 +127,10 @@ public class SessionController {
 
         if (sessionData.getBusinessInfo() != null) {
             sessionService.storeBusinessInfo(sessionData.getBusinessInfo());
+        }
+
+        if (sessionData.getAdminInfo() != null) {
+            sessionService.storeAdminInfo(sessionData.getAdminInfo());
         }
 
         if (sessionData.getEmailVerified() != null) {
@@ -211,6 +249,23 @@ public class SessionController {
     }
 
     /**
+     * Update admin information in the session
+     *
+     * @param adminInfo the admin information
+     * @return success response
+     */
+    @PutMapping("/admin-info")
+    public ResponseEntity<ApiResponse<String>> updateAdminInfo(@Valid @RequestBody AdminInfoDTO adminInfo) {
+        log.info("Updating admin info in session for: {}", adminInfo.getFullName());
+
+        sessionService.storeAdminInfo(adminInfo);
+
+        return ResponseEntity.ok(ApiResponse.success("Admin information updated successfully"));
+    }
+
+
+
+    /**
      * Update email verification status in the session
      *
      * @param data the email verification status
@@ -250,5 +305,39 @@ public class SessionController {
         sessionService.setCurrentStep(currentStep);
 
         return ResponseEntity.ok(ApiResponse.success("Current step updated successfully"));
+    }
+
+    /**
+     * Simple test endpoint to check if the session controller is accessible
+     *
+     * @return success response with timestamp
+     */
+    @GetMapping("/ping")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> ping(HttpServletRequest request, HttpServletResponse response) {
+        log.info("Session controller ping endpoint called");
+
+        // Log request details for debugging
+        log.info("Request URI: {}", request.getRequestURI());
+        log.info("Request Method: {}", request.getMethod());
+        log.info("Request Origin: {}", request.getHeader("Origin"));
+
+        // Get the session
+        HttpSession session = request.getSession(true);
+        log.info("Session ID: {}", session.getId());
+
+        // Create response data
+        Map<String, Object> data = new HashMap<>();
+        data.put("timestamp", System.currentTimeMillis());
+        data.put("sessionId", session.getId());
+        data.put("isNewSession", session.isNew());
+
+        // Ensure CORS headers are set
+        String origin = request.getHeader("Origin");
+        if (origin != null) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("Session controller is accessible", data));
     }
 }

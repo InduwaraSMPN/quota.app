@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MagicBackButton } from "@/components/ui/magic-back-button";
 import {
   Form,
   FormControl,
@@ -154,9 +155,12 @@ export function RoleInformationSignup({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-        <CardHeader>
-          <CardTitle>Role Information</CardTitle>
-          <CardDescription>
+        <CardHeader className="relative">
+          <div className="absolute top-4 left-4">
+            <MagicBackButton onClick={onBack} />
+          </div>
+          <CardTitle className="text-2xl text-center">Role Information</CardTitle>
+          <CardDescription className="text-center">
             Please provide your role and department details
           </CardDescription>
         </CardHeader>

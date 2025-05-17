@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MagicBackButton } from "@/components/ui/magic-back-button";
 import {
   Form,
   FormControl,
@@ -134,9 +135,12 @@ export function PersonalInformationSignup({
   return (
     <div className={cn("flex flex-col", className)} {...props}>
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-          <CardDescription>
+        <CardHeader className="relative">
+          <div className="absolute top-4 left-4">
+            <MagicBackButton onClick={onBack} />
+          </div>
+          <CardTitle className="text-2xl text-center">Personal Information</CardTitle>
+          <CardDescription className="text-center">
             Please provide your personal details for administrative purposes
           </CardDescription>
         </CardHeader>

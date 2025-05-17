@@ -17,8 +17,8 @@ import {
   type PasswordSetupData,
   type AdminInfoData
 } from "@/app/actions/session";
-import { apiService } from "@/services/api";
 import { sessionService } from "@/services/sessionService";
+import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -146,15 +146,38 @@ export default function Page() {
   // Load saved form data from session on initial render
   useEffect(() => {
     const loadSessionData = async () => {
-      const sessionData = await sessionService.getRegistrationData();
-      if (sessionData) {
-        setFormData({
-          loginInfo: sessionData.loginInfo || {},
-          emailVerification: sessionData.emailVerification || {},
-          passwordSetup: sessionData.passwordSetup || {},
-          adminInfo: sessionData.adminInfo || {},
-        });
-        setCurrentStep(sessionData.currentStep as SignupStep);
+      console.log('Loading session data...');
+
+      // First ping the session controller to check if it's accessible
+      const pingResult = await sessionService.pingSession();
+      console.log('Session ping result:', pingResult);
+
+      if (!pingResult) {
+        console.error('Session controller is not accessible');
+        toast.error('Unable to connect to session service');
+        return;
+      }
+
+      // If ping is successful, try to get registration data
+      try {
+        const sessionData = await sessionService.getRegistrationData();
+        console.log('Session data loaded:', sessionData);
+
+        if (sessionData) {
+          setFormData({
+            loginInfo: sessionData.loginInfo || {},
+            emailVerification: sessionData.emailVerification || {},
+            passwordSetup: sessionData.passwordSetup || {},
+            adminInfo: sessionData.adminInfo || {},
+          });
+          setCurrentStep(sessionData.currentStep as SignupStep);
+          console.log('Form data set from session');
+        } else {
+          console.log('No session data found');
+        }
+      } catch (error) {
+        console.error('Error loading session data:', error);
+        toast.error('Error loading saved data');
       }
     };
 
@@ -179,19 +202,23 @@ export default function Page() {
 
     // Send verification code to the email
     try {
-      // In a real implementation, this would call the API to send the verification code
-      // For now, we'll simulate a successful send after a short delay
-      toast.success("Verification code sent to your email");
-
-      // Uncomment this for real implementation
-      /*
+      console.log("Sending verification code to:", data.email);
       const response = await apiService.sendVerificationCode({ email: data.email });
-      if (response.data && response.data.sent) {
+      console.log("Send verification code response:", response);
+
+      // Check for successful response in various formats
+      if (
+        (response.data && response.data.sent) || // JSON format
+        (response.status === 200 && !response.error) || // Generic success
+        (response.data && response.data.success === true) // Alternative format
+      ) {
+        console.log("Verification code sent successfully");
         toast.success("Verification code sent to your email");
       } else {
-        toast.error(response.error || "Failed to send verification code");
+        const errorMessage = response.error || "Failed to send verification code";
+        console.error("Send verification code error:", errorMessage);
+        toast.error(errorMessage);
       }
-      */
     } catch (error) {
       console.error("Error sending verification code:", error);
       toast.error("Failed to send verification code. Please try again.");
@@ -201,55 +228,57 @@ export default function Page() {
   // Handle completion of personal information step
   const handlePersonalInfoSubmit = async (data: AdminInfoData) => {
     setIsSubmitting(true);
+    console.log('Personal Info Submit - Data:', data);
 
     try {
       const updatedFormData = {
         ...formData,
         adminInfo: data,
       };
+      console.log('Updated Form Data:', updatedFormData);
 
       // Save to session first
       await sessionService.saveRegistrationData({
         ...updatedFormData,
         currentStep: SignupStep.PERSONAL_INFO,
       } as SignupFormData);
+      console.log('Saved to session');
 
-      // Make sure email is verified before submitting
+      // Make sure email is verified before proceeding
       if (!updatedFormData.emailVerification?.verified) {
-        toast.error("Email verification is required before registration");
+        console.log('Email not verified, redirecting to verification step');
+        toast.error("Email verification is required before proceeding");
         setIsSubmitting(false);
         setCurrentStep(SignupStep.EMAIL_VERIFICATION);
         return;
       }
 
-      // Prepare the data for the backend
-      const completeFormData = {
-        email: updatedFormData.loginInfo.email,
-        password: updatedFormData.passwordSetup?.password || '',
-        fullName: updatedFormData.adminInfo.fullName,
-        employeeId: updatedFormData.adminInfo.employeeId,
-        contactNumber: updatedFormData.adminInfo.contactNumber,
-        department: updatedFormData.adminInfo.department,
-        emergencyContactNumber: updatedFormData.adminInfo.emergencyContactNumber,
-        address: updatedFormData.adminInfo.address,
-      };
+      // Save admin info to session
+      const adminInfoSaved = await sessionService.saveAdminInfo(data);
+      console.log('Admin info saved to session:', adminInfoSaved);
 
-      // Submit the complete form data to the backend
-      const response = await fetch('http://localhost:8888/api/auth/register/admin', {
+      // Submit admin info to the backend to complete registration
+      console.log('Submitting to backend:', data);
+      // Check the URL against the controller endpoint
+      const apiUrl = 'http://localhost:8888/api/auth/register/admin/step3';
+      console.log('API URL:', apiUrl);
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(completeFormData),
+        body: JSON.stringify(data),
         credentials: 'include',
       });
+      console.log('Backend response status:', response.status);
 
       const result = await response.json();
-      const success = response.ok;
+      console.log('Backend response data:', result);
 
-      if (success) {
-        // Clear session data after successful submission
+      if (response.ok) {
+        // Clear session data after successful registration
         await sessionService.clearRegistrationData();
+        console.log('Registration successful, session cleared');
         toast.success("Registration successful!");
 
         // Redirect to login page after successful registration
@@ -257,11 +286,12 @@ export default function Page() {
           router.push('/auth/login');
         }, 2000);
       } else {
+        console.error('Registration failed:', result);
         toast.error(result.message || "Registration failed");
       }
     } catch (error) {
-      console.error("Error during form submission:", error);
-      toast.error("Registration failed");
+      console.error('Error submitting registration:', error);
+      toast.error("An error occurred during registration");
     } finally {
       setIsSubmitting(false);
     }

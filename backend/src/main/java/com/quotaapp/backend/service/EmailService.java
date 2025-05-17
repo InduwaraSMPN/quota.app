@@ -29,25 +29,36 @@ public class EmailService {
      */
     public void sendVerificationCode(String to, String verificationCode) {
         try {
+            log.info("Creating verification email for: {} with code: {}", to, verificationCode);
+
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
             message.setSubject("Quota App - Email Verification Code");
-            message.setText("Your verification code is: " + verificationCode + "\n\n" +
+            String emailBody = "Your verification code is: " + verificationCode + "\n\n" +
                     "This code will expire in 10 minutes.\n\n" +
-                    "If you did not request this code, please ignore this email.");
+                    "If you did not request this code, please ignore this email.";
+            message.setText(emailBody);
 
+            log.info("Verification email content: From: {}, To: {}, Subject: {}", fromEmail, to, message.getSubject());
             log.info("Attempting to send verification email to: {} using sender: {}", to, fromEmail);
+
+            // Send the email
             mailSender.send(message);
+
             log.info("Verification email sent successfully to: {}", to);
         } catch (MailAuthenticationException e) {
             log.error("Authentication failed when sending email to: {}. Check your email credentials.", to, e);
+            log.error("Mail authentication details: username={}, password={} (length)", fromEmail,
+                    (System.getProperty("spring.mail.password") != null ? System.getProperty("spring.mail.password").length() : "null"));
             throw new RuntimeException("Email authentication failed. Please check your email configuration.", e);
         } catch (MailSendException e) {
             log.error("Failed to send email to: {}. Mail server connection issue.", to, e);
+            log.error("Mail server details: host={}, port={}", System.getProperty("spring.mail.host"), System.getProperty("spring.mail.port"));
             throw new RuntimeException("Failed to connect to mail server. Please try again later.", e);
         } catch (Exception e) {
             log.error("Unexpected error when sending verification email to: {}", to, e);
+            log.error("Exception class: {}, Message: {}", e.getClass().getName(), e.getMessage());
             throw new RuntimeException("Failed to send verification email due to an unexpected error", e);
         }
     }
@@ -57,16 +68,25 @@ public class EmailService {
      *
      * @param to the recipient's email address
      * @param fullName the user's full name
+     * @param role the user's role (optional)
      */
-    public void sendWelcomeEmail(String to, String fullName) {
+    public void sendWelcomeEmail(String to, String fullName, String... role) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
             message.setSubject("Welcome to Quota App");
+
+            String roleSpecificText = "";
+            if (role.length > 0 && "Admin".equalsIgnoreCase(role[0])) {
+                roleSpecificText = "You can now log in to the application and access the admin portal.\n\n";
+            } else {
+                roleSpecificText = "You can now log in to the application and start managing your fuel quota.\n\n";
+            }
+
             message.setText("Dear " + fullName + ",\n\n" +
                     "Welcome to Quota App! Your account has been successfully created.\n\n" +
-                    "You can now log in to the application and start managing your fuel quota.\n\n" +
+                    roleSpecificText +
                     "Thank you for choosing Quota App!\n\n" +
                     "Best regards,\n" +
                     "The Quota App Team");
