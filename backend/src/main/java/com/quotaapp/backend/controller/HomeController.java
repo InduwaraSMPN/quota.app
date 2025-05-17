@@ -13,7 +13,7 @@ public class HomeController {
     @GetMapping("/")
     public ResponseEntity<Map<String, String>> home() {
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Welcome to Quota App API");
+        response.put("message", "Welcome to quota.app API");
         response.put("status", "running");
         return ResponseEntity.ok(response);
     }
