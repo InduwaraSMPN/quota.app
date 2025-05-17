@@ -103,24 +103,12 @@ export function EmailVerificationSignup({
     setIsSubmitting(true);
     setError(null);
 
-    // In a real implementation, this would call an API to verify the code
-    // For now, we'll simulate a successful verification after a short delay
-    setTimeout(() => {
-      // Simulate verification success
-      onNext({
-        verificationCode: data.verificationCode,
-        verified: true
-      });
-      setIsSubmitting(false);
-    }, 1000);
-
-    // Uncomment this for real implementation
-    /*
     apiService.verifyEmailCode({
       email: email,
       code: data.verificationCode
     })
     .then(response => {
+      console.log("Verification response:", response);
       if (response.data && response.data.verified) {
         onNext({
           verificationCode: data.verificationCode,
@@ -137,7 +125,6 @@ export function EmailVerificationSignup({
     .finally(() => {
       setIsSubmitting(false);
     });
-    */
   }
 
   // Handle resend verification code
@@ -145,35 +132,36 @@ export function EmailVerificationSignup({
     setIsResending(true);
     setError(null);
 
-    // In a real implementation, this would call an API to resend the code
-    // For now, we'll simulate a successful resend after a short delay
-    setTimeout(() => {
-      toast.success("Verification code resent to your email");
-      setIsResending(false);
-      setResendDisabled(true);
-      setResendCountdown(60); // Disable resend for 60 seconds
-    }, 1000);
+    console.log("Resending verification code to:", email);
 
-    // Uncomment this for real implementation
-    /*
     apiService.sendVerificationCode({ email: email })
       .then(response => {
-        if (response.data && response.data.sent) {
+        console.log("Resend verification code response:", response);
+
+        // Check for successful response in various formats
+        if (
+          (response.data && response.data.sent) || // JSON format
+          (response.status === 200 && !response.error) || // Generic success
+          (response.data && response.data.success === true) // Alternative format
+        ) {
+          console.log("Verification code resent successfully");
           toast.success("Verification code resent to your email");
           setResendDisabled(true);
           setResendCountdown(60); // Disable resend for 60 seconds
         } else {
-          toast.error(response.error || "Failed to resend verification code");
+          // Display the specific error message from the backend if available
+          const errorMessage = response.error || "Failed to resend verification code";
+          toast.error(errorMessage);
+          console.error("Resend verification code error:", errorMessage);
         }
       })
       .catch(err => {
-        toast.error("An error occurred. Please try again.");
-        console.error("Resend error:", err);
+        console.error("Resend verification code error:", err);
+        toast.error("An unexpected error occurred. Please try again later.");
       })
       .finally(() => {
         setIsResending(false);
       });
-    */
   };
 
   return (
@@ -228,7 +216,7 @@ export function EmailVerificationSignup({
                 >
                   {isSubmitting ? "Verifying..." : "Verify Email"}
                 </Button>
-                
+
                 <Button
                   type="button"
                   variant="outline"

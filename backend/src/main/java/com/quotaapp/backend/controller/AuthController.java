@@ -8,6 +8,7 @@ import com.quotaapp.backend.service.AuthService;
 import com.quotaapp.backend.service.EmailVerificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -89,17 +90,27 @@ public class AuthController {
             responseData.put("sent", sent);
 
             if (sent) {
-                return ResponseEntity.ok(ApiResponse.success("Verification code sent successfully", responseData));
+                log.info("Verification code sent successfully to: {}", email);
+                return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(ApiResponse.success("Verification code sent successfully", responseData));
             } else {
-                return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send verification code"));
+                log.warn("Failed to send verification code to: {}", email);
+                return ResponseEntity.internalServerError()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(ApiResponse.error("Failed to send verification code"));
             }
         } catch (IllegalStateException e) {
             // This is for already registered emails
             log.warn("Attempted to send verification code to already registered email: {}", email);
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             log.error("Error sending verification code to: {}", email, e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred. Please try again later."));
+            return ResponseEntity.internalServerError()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error("An unexpected error occurred. Please try again later."));
         }
     }
 
@@ -122,16 +133,26 @@ public class AuthController {
             responseData.put("verified", verified);
 
             if (verified) {
-                return ResponseEntity.ok(ApiResponse.success("Email verified successfully", responseData));
+                log.info("Email verified successfully for: {}", email);
+                return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(ApiResponse.success("Email verified successfully", responseData));
             } else {
-                return ResponseEntity.badRequest().body(ApiResponse.error("Invalid verification code"));
+                log.warn("Invalid verification code for: {}", email);
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(ApiResponse.error("Invalid verification code"));
             }
         } catch (InvalidVerificationCodeException e) {
             log.warn("Verification code error for {}: {}", email, e.getMessage());
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             log.error("Error verifying email code for: {}", email, e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error("An unexpected error occurred. Please try again later."));
+            return ResponseEntity.internalServerError()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiResponse.error("An unexpected error occurred. Please try again later."));
         }
     }
 

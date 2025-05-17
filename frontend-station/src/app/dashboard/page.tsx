@@ -46,7 +46,7 @@ const mockStationData = {
 
 const mockFuelInventory = {
   petrol92: { total: 5000, remaining: 3200, unit: "liters" },
-  petrol95: { total: 3000, remaining: 1800, unit: "liters" },
+  petrol95: { total: 4000, remaining: 1800, unit: "liters" },
   diesel: { total: 8000, remaining: 5500, unit: "liters" },
   superDiesel: { total: 2000, remaining: 1200, unit: "liters" }
 };

@@ -79,8 +79,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/dmt/**").permitAll()  // Allow DMT validation without authentication
                 .requestMatchers("/api/session/**").permitAll()  // Allow session endpoints without authentication
+                .requestMatchers("/api/test/**").permitAll()  // Allow all test endpoints without authentication
                 .requestMatchers("/").permitAll()
-                .requestMatchers("/api/test/public").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -111,10 +111,25 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",  // Vehicle frontend
             "http://localhost:3001",  // Station frontend
-            "http://localhost:3002"   // Admin frontend
+            "http://localhost:3002",  // Admin frontend
+            "http://localhost:9000",  // Alternative Vehicle frontend
+            "http://localhost:9001",  // Alternative Station frontend
+            "http://localhost:9002"   // Alternative Admin frontend
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
+        ));
         configuration.setAllowCredentials(true);  // Can be true when specific origins are listed
         configuration.setMaxAge(3600L);  // 1 hour cache for preflight requests
 

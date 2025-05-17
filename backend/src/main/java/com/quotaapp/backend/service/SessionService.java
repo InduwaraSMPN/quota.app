@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import com.quotaapp.backend.dto.signup.AdminInfoDTO;
 import com.quotaapp.backend.dto.signup.BusinessInfoDTO;
 import com.quotaapp.backend.dto.signup.LoginInfoDTO;
 import com.quotaapp.backend.dto.signup.OwnerInfoDTO;
@@ -24,6 +25,7 @@ public class SessionService {
     private static final String VEHICLE_INFO_SESSION_KEY = "registration_vehicle_info";
     private static final String STATION_OWNER_INFO_SESSION_KEY = "registration_station_owner_info";
     private static final String BUSINESS_INFO_SESSION_KEY = "registration_business_info";
+    private static final String ADMIN_INFO_SESSION_KEY = "registration_admin_info";
     private static final String EMAIL_VERIFIED_SESSION_KEY = "registration_email_verified";
     private static final String CURRENT_STEP_SESSION_KEY = "registration_current_step";
 
@@ -191,6 +193,27 @@ public class SessionService {
     }
 
     /**
+     * Store admin information in the session
+     *
+     * @param adminInfo the admin information
+     */
+    public void storeAdminInfo(AdminInfoDTO adminInfo) {
+        getSession().setAttribute(ADMIN_INFO_SESSION_KEY, adminInfo);
+        log.debug("Stored admin info in session for: {}", adminInfo.getFullName());
+    }
+
+    /**
+     * Get admin information from the session
+     *
+     * @return the admin information, or null if not found
+     */
+    public AdminInfoDTO getAdminInfo() {
+        return (AdminInfoDTO) getSession().getAttribute(ADMIN_INFO_SESSION_KEY);
+    }
+
+
+
+    /**
      * Clear all registration data from the session
      */
     public void clearRegistrationData() {
@@ -200,6 +223,7 @@ public class SessionService {
         getSession().removeAttribute(VEHICLE_INFO_SESSION_KEY);
         getSession().removeAttribute(STATION_OWNER_INFO_SESSION_KEY);
         getSession().removeAttribute(BUSINESS_INFO_SESSION_KEY);
+        getSession().removeAttribute(ADMIN_INFO_SESSION_KEY);
         getSession().removeAttribute(EMAIL_VERIFIED_SESSION_KEY);
         getSession().removeAttribute(CURRENT_STEP_SESSION_KEY);
         log.debug("Cleared all registration data from session");

@@ -38,32 +38,184 @@ const getCredentialOptions = () => {
 };
 
 /**
+ * Parse XML string to JavaScript object
+ */
+const parseXML = (xmlString: string): any => {
+  // Simple XML parser for the specific format we're receiving
+  try {
+    console.log('Parsing XML:', xmlString);
+
+    // Check if it's an ApiResponse format
+    if (xmlString.includes('<ApiResponse>')) {
+      const success = xmlString.match(/<success>(.*?)<\/success>/)?.[1] === 'true';
+      const message = xmlString.match(/<message>(.*?)<\/message>/)?.[1] || '';
+      const timestamp = xmlString.match(/<timestamp>(.*?)<\/timestamp>/)?.[1] || '';
+
+      // Extract data
+      let data: any = {};
+      if (xmlString.includes('<data>')) {
+        const dataContent = xmlString.match(/<data>(.*?)<\/data>/s)?.[1] || '';
+        console.log('Data content:', dataContent);
+
+        // Parse data content
+        const sentMatch = dataContent.match(/<sent>(.*?)<\/sent>/);
+        if (sentMatch) {
+          data.sent = sentMatch[1] === 'true';
+          console.log('Sent value:', data.sent);
+        }
+
+        const verifiedMatch = dataContent.match(/<verified>(.*?)<\/verified>/);
+        if (verifiedMatch) {
+          data.verified = verifiedMatch[1] === 'true';
+          console.log('Verified value:', data.verified);
+        }
+      } else {
+        // Check if sent is directly in the response (not nested in data)
+        const sentMatch = xmlString.match(/<sent>(.*?)<\/sent>/);
+        if (sentMatch) {
+          data.sent = sentMatch[1] === 'true';
+          console.log('Direct sent value:', data.sent);
+        }
+
+        // Check if verified is directly in the response (not nested in data)
+        const verifiedMatch = xmlString.match(/<verified>(.*?)<\/verified>/);
+        if (verifiedMatch) {
+          data.verified = verifiedMatch[1] === 'true';
+          console.log('Direct verified value:', data.verified);
+        }
+      }
+
+      return {
+        success,
+        message,
+        data,
+        timestamp
+      };
+    }
+
+    // Check if it's a Map format
+    if (xmlString.includes('<Map>')) {
+      const result: any = {};
+
+      // Extract common fields
+      const successMatch = xmlString.match(/<success>(.*?)<\/success>/);
+      if (successMatch) {
+        result.success = successMatch[1] === 'true';
+      }
+
+      const messageMatch = xmlString.match(/<message>(.*?)<\/message>/);
+      if (messageMatch) {
+        result.message = messageMatch[1];
+      }
+
+      // Extract email
+      const emailMatch = xmlString.match(/<email>(.*?)<\/email>/);
+      if (emailMatch) {
+        result.email = emailMatch[1];
+      }
+
+      // Extract testCode
+      const testCodeMatch = xmlString.match(/<testCode>(.*?)<\/testCode>/);
+      if (testCodeMatch) {
+        result.testCode = testCodeMatch[1];
+      }
+
+      return result;
+    }
+
+    // If we can't parse it, return the original string
+    return { rawXml: xmlString };
+  } catch (error) {
+    console.error('Error parsing XML:', error);
+    return { error: 'Failed to parse XML', rawXml: xmlString };
+  }
+};
+
+/**
  * Handle API response
  */
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   try {
-    // Parse the JSON response
-    const data = await response.json();
+    // Get the content type
+    const contentType = response.headers.get('Content-Type') || '';
+    console.log('Response content type:', contentType);
 
-    if (response.ok) {
+    // Get the raw text
+    const text = await response.text();
+    console.log('Raw response text:', text);
+
+    // If it's JSON
+    if (contentType.includes('application/json') || text.trim().startsWith('{')) {
+      try {
+        const data = JSON.parse(text);
+
+        if (response.ok) {
+          return {
+            data: data.data || data,
+            error: null,
+            status: response.status,
+          };
+        }
+
+        // Handle error response
+        return {
+          data: null,
+          error: data.message || 'An error occurred',
+          status: response.status,
+        };
+      } catch (jsonError) {
+        console.error('Error parsing JSON:', jsonError);
+        return {
+          data: null,
+          error: 'Invalid JSON response',
+          status: response.status,
+        };
+      }
+    }
+
+    // If it's XML or looks like XML
+    if (contentType.includes('application/xml') || text.trim().startsWith('<')) {
+      const xmlData = parseXML(text);
+      console.log('Parsed XML data:', xmlData);
+
+      // Special handling for verification code responses
+      if (text.includes('<sent>true</sent>') ||
+          (xmlData.data && xmlData.data.sent === true) ||
+          (xmlData.success && text.includes('Verification code sent successfully'))) {
+        console.log('Detected successful verification code sending');
+        return {
+          data: { sent: true },
+          error: null,
+          status: response.status,
+        };
+      }
+
+      if (xmlData.success) {
+        return {
+          data: xmlData.data || xmlData,
+          error: null,
+          status: response.status,
+        };
+      }
+
       return {
-        data: data.data || data,
-        error: null,
+        data: null,
+        error: xmlData.message || 'Error in XML response',
         status: response.status,
       };
     }
 
-    // Handle error response
+    // If we don't know what it is
     return {
       data: null,
-      error: data.message || 'An error occurred',
+      error: 'Unknown response format',
       status: response.status,
     };
   } catch (error) {
-    console.error('Error parsing API response:', error);
+    console.error('Error handling API response:', error);
     return {
       data: null,
-      error: 'Failed to parse response',
+      error: error instanceof Error ? error.message : 'Unknown error',
       status: response.status,
     };
   }
@@ -78,14 +230,18 @@ export const apiService = {
    */
   sendVerificationCode: async (data: { email: string }): Promise<ApiResponse<any>> => {
     try {
+      console.log('Sending verification code to:', data.email);
       const response = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
         method: 'POST',
         headers: DEFAULT_HEADERS,
         body: JSON.stringify(data),
+        ...getCredentialOptions(),
       });
 
+      console.log('Send verification code response status:', response.status);
       return handleResponse(response);
     } catch (error) {
+      console.error('Error sending verification code:', error);
       return {
         data: null,
         error: error instanceof Error ? error.message : 'Network error',
@@ -99,14 +255,18 @@ export const apiService = {
    */
   verifyEmailCode: async (data: { email: string, code: string }): Promise<ApiResponse<any>> => {
     try {
+      console.log('Verifying email code for:', data.email, 'with code:', data.code);
       const response = await fetch(`${API_BASE_URL}/api/auth/verify-email-code`, {
         method: 'POST',
         headers: DEFAULT_HEADERS,
         body: JSON.stringify(data),
+        ...getCredentialOptions(),
       });
 
+      console.log('Verify email code response status:', response.status);
       return handleResponse(response);
     } catch (error) {
+      console.error('Error verifying email code:', error);
       return {
         data: null,
         error: error instanceof Error ? error.message : 'Network error',
@@ -504,6 +664,8 @@ export const apiService = {
       };
     }
   },
+
+
 
   /**
    * Update current step in session
