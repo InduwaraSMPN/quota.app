@@ -12,7 +12,7 @@ export default function TestLayout({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/" className="text-primary font-semibold">
-                Quota App Admin
+                quota.app Admin
               </Link>
               <div className="h-4 w-px bg-gray-300"></div>
               <span className="text-gray-500">Test Tools</span>
