@@ -31,8 +31,28 @@ import {
   Loader2
 } from "lucide-react";
 
-export function QRCodeGenerator() {
-  const [qrCode] = useState("https://designali.in");
+interface Vehicle {
+  id: string;
+  ownerId: string;  // Added owner ID
+  registrationNumber: string;
+  make: string;
+  model: string;
+  [key: string]: any; // For other properties
+}
+
+interface QRCodeGeneratorProps {
+  vehicleId?: string;
+  vehicleData?: Vehicle;
+  backLink?: string;
+}
+
+export function QRCodeGenerator({ vehicleId, vehicleData, backLink = "/dashboard" }: QRCodeGeneratorProps) {
+  // Generate QR code value based on vehicle data if available
+  const qrValue = vehicleData
+    ? `VEHICLE:${vehicleData.registrationNumber}:OWNER:${vehicleData.ownerId}`
+    : "quota.app";
+
+  const [qrCode] = useState(qrValue);
   const [color, setColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const [size, setSize] = useState(256);
@@ -61,7 +81,7 @@ export function QRCodeGenerator() {
         const blobUrl = URL.createObjectURL(svgBlob);
         const link = document.createElement("a");
         link.href = blobUrl;
-        link.download = "qrcode.svg";
+        link.download = vehicleData ? `${vehicleData.registrationNumber}_qrcode.svg` : "qrcode.svg";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -122,7 +142,7 @@ export function QRCodeGenerator() {
         const pngUrl = canvas.toDataURL("image/png");
         const link = document.createElement("a");
         link.href = pngUrl;
-        link.download = "qrcode.png";
+        link.download = vehicleData ? `${vehicleData.registrationNumber}_qrcode.png` : "qrcode.png";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -148,18 +168,18 @@ export function QRCodeGenerator() {
     // Outermost Page Container: Responsible for centering the 'GroupWrapper'.
     // 'relative' class is removed from here as the button is no longer directly positioned by it.
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 sm:p-6 md:p-8">
-      
+
       {/* Group Wrapper: This div is 'relative' for the MagicBackButton and will be centered by the parent.
           Its width will be determined by the Card inside it. */}
       <div className="relative"> {/* Step 1: Added Group Wrapper */}
-        
+
         {/* MagicBackButton: Positioned relative to the 'GroupWrapper'.
             'top-0': Aligns button's top with the Card's top.
             '-left-12': Provides a 0.5rem gap to the left of the Card (assuming button is 2.5rem wide).
             'z-10': Ensures button is above the card.
         */}
         <div className="absolute top-0 -left-12 z-10"> {/* Step 3: Adjusted top to top-0 */}
-          <MagicBackButton backLink="/dashboard" />
+          <MagicBackButton backLink={backLink} />
         </div>
 
         {/* Main card: Increased max-width for better layout, enhanced shadow for depth */}
@@ -167,10 +187,16 @@ export function QRCodeGenerator() {
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
               <QrCode className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
-              <CardTitle className="text-2xl sm:text-3xl font-bold">Your QR just as you like it...</CardTitle>
+              <CardTitle className="text-2xl sm:text-3xl font-bold">
+                {vehicleData
+                  ? `${vehicleData.make} ${vehicleData.model} QR Code`
+                  : "Your QR just as you like it..."}
+              </CardTitle>
             </div>
             <CardDescription className="text-sm sm:text-base pt-1">
-              Customize, and download your QR code effortlessly.
+              {vehicleData
+                ? `Registration Number: ${vehicleData.registrationNumber}`
+                : "Customize, and download your QR code effortlessly."}
             </CardDescription>
           </CardHeader>
 

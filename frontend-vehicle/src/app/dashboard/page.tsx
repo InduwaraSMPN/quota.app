@@ -22,72 +22,15 @@ import {
   MapPin,
   Edit
 } from "lucide-react";
-// Import the API service (commented out for now as we're using mock data)
-// import { apiService } from "@/services/api";
-// import { useAuth } from "@/hooks/useAuth";
+import { apiService } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
 import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
 import Link from "next/link";
+import { Vehicle } from "@/types/vehicle";
+import { toast } from "sonner";
 
-// Mock data for the dashboard
-const mockUserData = {
-  fullName: "John Doe",
-  nicNumber: "123456789V",
-  address: "123 Main Street, Colombo",
-  contactNumber: "+94712345678",
-  email: "john.doe@example.com"
-};
-
-// Mock data for multiple vehicles
-const mockVehiclesData = [
-  {
-    id: "1",
-    registrationNumber: "ABC1234",
-    engineNumber: "ENG123456",
-    chassisNumber: "CHS123456",
-    make: "Toyota",
-    model: "Corolla",
-    yearOfManufacture: "2020",
-    vehicleClass: "Car",
-    typeOfBody: "Sedan",
-    fuelType: "Petrol",
-    engineCapacity: "1500",
-    color: "White",
-    dateOfFirstRegistration: "2020-01-15",
-    quota: {
-      totalQuota: 20,
-      remainingQuota: 12.5,
-      quotaUnit: "liters",
-      lastUpdated: "2023-06-15",
-      nextRefill: "2023-07-01"
-    }
-  },
-  {
-    id: "2",
-    registrationNumber: "XYZ5678",
-    engineNumber: "ENG789012",
-    chassisNumber: "CHS789012",
-    make: "Honda",
-    model: "Civic",
-    yearOfManufacture: "2021",
-    vehicleClass: "Car",
-    typeOfBody: "Sedan",
-    fuelType: "Petrol",
-    engineCapacity: "1800",
-    color: "Blue",
-    dateOfFirstRegistration: "2021-03-20",
-    quota: {
-      totalQuota: 25,
-      remainingQuota: 18.2,
-      quotaUnit: "liters",
-      lastUpdated: "2023-06-18",
-      nextRefill: "2023-07-01"
-    }
-  }
-];
-
-// We'll use the mockVehiclesData directly in the components
-
+// Mock data for consumption history until API is implemented
 const mockConsumptionHistory = [
   { date: "2023-06-10", amount: 3.5, station: "Fuel Station A", location: "Colombo" },
   { date: "2023-05-25", amount: 4.0, station: "Fuel Station B", location: "Kandy" },
@@ -98,95 +41,45 @@ const mockConsumptionHistory = [
 
 
 export default function Dashboard() {
-  const [isClient, setIsClient] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use the auth hook to check authentication
+  // Fetch vehicle data when authenticated
   useEffect(() => {
-    // In a Todo, we would use the useAuth hook
-    // For now, we'll simulate authentication
-    const checkAuth = async () => {
+    const fetchVehicleData = async () => {
+      if (!isAuthenticated) return;
+
       try {
         setIsLoading(true);
-        // Mock authentication check
-        // Check if token exists, but we'll always set authenticated to true for demo
-        const hasToken = !!localStorage.getItem("token");
-        console.log("Token exists:", hasToken);
+        const response = await apiService.getVehicleDetails();
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        setIsAuthenticated(true); // For demo purposes, always set to true
-        setIsClient(true);
-        setError(null);
+        if (response.error) {
+          setError(response.error);
+          toast.error("Failed to load vehicle data");
+        } else if (response.data) {
+          setVehicles(Array.isArray(response.data) ? response.data : response.data.vehicles || []);
+          setError(null);
+        }
       } catch (err) {
-        console.error("Authentication error:", err);
-        setError("Failed to authenticate. Please try again.");
-        setIsAuthenticated(false);
+        console.error("Error fetching vehicle data:", err);
+        setError("Failed to load vehicle data. Please try again.");
+        toast.error("Failed to load vehicle data");
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, []);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (isClient && !isAuthenticated) {
-      // In a Todo, redirect to login page
-      // Uncomment the following line to enable redirection
-      // window.location.href = "/auth/login";
+    if (isAuthenticated && !authLoading) {
+      fetchVehicleData();
     }
-  }, [isClient, isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
-  // In a Todo, we would fetch data from the API
-  // For example:
-  // useEffect(() => {
-  //   const fetchDashboardData = async () => {
-  //     try {
-  //       // Fetch user profile
-  //       const profileResponse = await apiService.getUserProfile();
-  //       if (profileResponse.data) {
-  //         setUserData(profileResponse.data);
-  //       }
-  //
-  //       // Fetch vehicle details
-  //       const vehicleResponse = await apiService.getVehicleDetails();
-  //       if (vehicleResponse.data) {
-  //         setVehicleData(vehicleResponse.data);
-  //       }
-  //
-  //       // Fetch quota information
-  //       const quotaResponse = await apiService.getFuelQuota();
-  //       if (quotaResponse.data) {
-  //         setQuotaData(quotaResponse.data);
-  //       }
-  //
-  //       // Fetch consumption history
-  //       const historyResponse = await apiService.getConsumptionHistory();
-  //       if (historyResponse.data) {
-  //         setConsumptionHistory(historyResponse.data);
-  //       }
-  //
-  //       // Fetch notifications
-  //       const notificationsResponse = await apiService.getNotifications();
-  //       if (notificationsResponse.data) {
-  //         setNotifications(notificationsResponse.data);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching dashboard data:", error);
-  //     }
-  //   };
-  //
-  //   if (isAuthenticated) {
-  //     fetchDashboardData();
-  //   }
-  // }, [isAuthenticated]);
-
-  // We'll calculate quota percentages directly in the components
+  // Combine loading states
+  const isPageLoading = authLoading || isLoading;
+  // Combine error states
+  const pageError = authError || error;
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
@@ -197,24 +90,24 @@ export default function Dashboard() {
       </div>
 
       {/* Loading state */}
-      {isLoading && (
+      {isPageLoading && (
         <div className="flex-1 flex items-center justify-center">
           <Loading text="Loading dashboard..." />
         </div>
       )}
 
       {/* Error state */}
-      {!isLoading && error && (
+      {!isPageLoading && pageError && (
         <div className="flex-1 flex items-center justify-center">
           <ErrorMessage
-            message={error}
+            message={pageError}
             onRetry={() => window.location.reload()}
           />
         </div>
       )}
 
       {/* Main content - only show when not loading and no errors */}
-      {!isLoading && !error && (
+      {!isPageLoading && !pageError && (
       <div className="flex flex-1 pt-16 px-4 md:px-8 pb-8">
         <div className="w-full max-w-7xl mx-auto space-y-6">
           {/* Dashboard Header */}
@@ -251,23 +144,23 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                      <p>{mockUserData.fullName}</p>
+                      <p>{user?.fullName || "Not available"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">NIC Number</p>
-                      <p>{mockUserData.nicNumber}</p>
+                      <p>{user?.nicNumber || "Not available"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
-                      <p>{mockUserData.contactNumber}</p>
+                      <p>{user?.contactNumber || "Not available"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p>{mockUserData.email}</p>
+                      <p>{user?.email || "Not available"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Address</p>
-                      <p className="text-sm">{mockUserData.address}</p>
+                      <p className="text-sm">{user?.address || "Not available"}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -290,26 +183,35 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockVehiclesData.slice(0, 2).map((vehicle, index) => (
-                      <div key={vehicle.id} className={`pb-3 ${index < mockVehiclesData.slice(0, 2).length - 1 ? 'border-b border-border' : ''}`}>
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="font-medium">{vehicle.make} {vehicle.model}</p>
-                          <p className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{vehicle.fuelType}</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-1">
-                          {vehicle.registrationNumber}
-                        </p>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Fuel className="h-3 w-3" />
-                          <span>{vehicle.quota.remainingQuota} / {vehicle.quota.totalQuota} {vehicle.quota.quotaUnit}</span>
-                        </div>
-                      </div>
-                    ))}
+                    {vehicles.length > 0 ? (
+                      <>
+                        {vehicles.slice(0, 2).map((vehicle, index) => (
+                          <div key={vehicle.id} className={`pb-3 ${index < vehicles.slice(0, 2).length - 1 ? 'border-b border-border' : ''}`}>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-medium">{vehicle.make} {vehicle.model}</p>
+                              <p className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{vehicle.fuelType}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              {vehicle.registrationNumber}
+                            </p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Fuel className="h-3 w-3" />
+                              <span>{vehicle.quota.remainingQuota} / {vehicle.quota.totalQuota} {vehicle.quota.quotaUnit}</span>
+                            </div>
+                          </div>
+                        ))}
 
-                    {mockVehiclesData.length > 2 && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        +{mockVehiclesData.length - 2} more vehicles
-                      </p>
+                        {vehicles.length > 2 && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            +{vehicles.length - 2} more vehicles
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="py-4 text-center">
+                        <p className="text-sm text-muted-foreground">No vehicles found</p>
+                        <p className="text-xs text-muted-foreground mt-1">Add a vehicle to get started</p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
