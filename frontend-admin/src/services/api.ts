@@ -688,4 +688,25 @@ export const apiService = {
       };
     }
   },
+
+  /**
+   * Update admin profile
+   */
+  updateUserProfile: async (profileData: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/profile`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(profileData),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
 };
