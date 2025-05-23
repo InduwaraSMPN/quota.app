@@ -440,7 +440,7 @@ export const apiService = {
   },
 
   /**
-   * Get fuel quota information
+   * Get fuel quota information for all vehicles
    */
   getFuelQuota: async (): Promise<ApiResponse<any>> => {
     try {
@@ -460,11 +460,51 @@ export const apiService = {
   },
 
   /**
-   * Get consumption history
+   * Get fuel quota information for a specific vehicle
    */
-  getConsumptionHistory: async (): Promise<ApiResponse<any>> => {
+  getFuelQuotaByVehicleId: async (vehicleId: number): Promise<ApiResponse<any>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/consumption/history`, {
+      const response = await fetch(`${API_BASE_URL}/api/quota/details/${vehicleId}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get consumption history for all vehicles
+   */
+  getConsumptionHistory: async (page: number = 0, size: number = 10): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/quota/consumption/history?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get consumption history for a specific vehicle
+   */
+  getConsumptionHistoryByVehicleId: async (vehicleId: number, page: number = 0, size: number = 10): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/quota/consumption/history/${vehicleId}?page=${page}&size=${size}`, {
         method: 'GET',
         headers: getAuthHeader(),
       });

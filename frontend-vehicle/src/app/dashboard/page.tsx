@@ -15,11 +15,7 @@ import {
   Car,
   User,
   Fuel,
-  History,
-  QrCode,
   ChevronRight,
-  Droplet,
-  MapPin,
   Edit
 } from "lucide-react";
 import { apiService } from "@/services/api";
@@ -29,22 +25,24 @@ import { ErrorMessage } from "@/components/ui/error-message";
 import Link from "next/link";
 import { Vehicle } from "@/types/vehicle";
 import { toast } from "sonner";
-
-// Mock data for consumption history until API is implemented
-const mockConsumptionHistory = [
-  { date: "2023-06-10", amount: 3.5, station: "Fuel Station A", location: "Colombo" },
-  { date: "2023-05-25", amount: 4.0, station: "Fuel Station B", location: "Kandy" },
-  { date: "2023-05-15", amount: 5.0, station: "Fuel Station A", location: "Colombo" },
-  { date: "2023-05-01", amount: 3.0, station: "Fuel Station C", location: "Galle" },
-];
+import { QuotaCard } from "@/components/quota-card";
+import { ConsumptionHistory } from "@/components/consumption-history";
 
 
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [quotaData, setQuotaData] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isQuotaLoading, setIsQuotaLoading] = useState(true);
+  const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [transactionsError, setTransactionsError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Fetch vehicle data when authenticated
   useEffect(() => {
@@ -76,8 +74,74 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading]);
 
+  // Fetch quota data when authenticated
+  useEffect(() => {
+    const fetchQuotaData = async () => {
+      if (!isAuthenticated) return;
+
+      try {
+        setIsQuotaLoading(true);
+        const response = await apiService.getFuelQuota();
+
+        if (response.error) {
+          setQuotaError(response.error);
+          toast.error("Failed to load quota data");
+        } else if (response.data) {
+          setQuotaData(Array.isArray(response.data) ? response.data : [response.data]);
+          setQuotaError(null);
+        }
+      } catch (err) {
+        console.error("Error fetching quota data:", err);
+        setQuotaError("Failed to load quota data. Please try again.");
+        toast.error("Failed to load quota data");
+      } finally {
+        setIsQuotaLoading(false);
+      }
+    };
+
+    if (isAuthenticated && !authLoading) {
+      fetchQuotaData();
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // Fetch consumption history when authenticated
+  useEffect(() => {
+    const fetchConsumptionHistory = async () => {
+      if (!isAuthenticated) return;
+
+      try {
+        setIsTransactionsLoading(true);
+        const response = await apiService.getConsumptionHistory(currentPage, 5);
+
+        if (response.error) {
+          setTransactionsError(response.error);
+          toast.error("Failed to load consumption history");
+        } else if (response.data) {
+          setTransactions(response.data.content || []);
+          setTotalPages(response.data.totalPages || 1);
+          setTransactionsError(null);
+        }
+      } catch (err) {
+        console.error("Error fetching consumption history:", err);
+        setTransactionsError("Failed to load consumption history. Please try again.");
+        toast.error("Failed to load consumption history");
+      } finally {
+        setIsTransactionsLoading(false);
+      }
+    };
+
+    if (isAuthenticated && !authLoading) {
+      fetchConsumptionHistory();
+    }
+  }, [isAuthenticated, authLoading, currentPage]);
+
+  // Handle page change for consumption history
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   // Combine loading states
-  const isPageLoading = authLoading || isLoading;
+  const isPageLoading = authLoading || isLoading || isQuotaLoading || isTransactionsLoading;
   // Combine error states
   const pageError = authError || error;
 
@@ -227,44 +291,28 @@ export default function Dashboard() {
               </CardFooter>
             </Card>
 
+            {/* Fuel Quota Card */}
+            {quotaData.length > 0 && (
+              <QuotaCard
+                vehicleId={parseInt(quotaData[0].vehicleId)}
+                registrationNumber={quotaData[0].registrationNumber}
+                allocatedAmount={parseFloat(quotaData[0].allocatedAmount)}
+                remainingAmount={parseFloat(quotaData[0].remainingAmount)}
+                allocationDate={quotaData[0].allocationDate}
+                expiryDate={quotaData[0].expiryDate}
+                quotaStatus={quotaData[0].quotaStatus}
+                nextAllocationDate={quotaData[0].nextAllocationDate}
+              />
+            )}
+
             {/* Consumption History Card */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <History className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Consumption History</CardTitle>
-                  </div>
-                  <Button variant="ghost" size="sm" className="gap-1" asChild>
-                    <Link href="/dashboard/history">
-                      <span>View All</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockConsumptionHistory.map((item, index) => (
-                    <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
-                        <Droplet className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between">
-                          <p className="font-medium">{item.amount} liters</p>
-                          <p className="text-sm text-muted-foreground">{item.date}</p>
-                        </div>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          <span>{item.station}, {item.location}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <ConsumptionHistory
+              transactions={transactions}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              loading={isTransactionsLoading}
+            />
           </div>
 
 

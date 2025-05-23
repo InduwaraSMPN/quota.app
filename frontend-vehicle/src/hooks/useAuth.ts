@@ -9,6 +9,12 @@ interface AuthUser {
   username: string;
   email: string;
   role: string;
+  fullName?: string;
+  nicNumber?: string;
+  address?: string;
+  contactNumber?: string;
+  isActive?: boolean;
+  emailVerified?: boolean;
 }
 
 interface UseAuthReturn {

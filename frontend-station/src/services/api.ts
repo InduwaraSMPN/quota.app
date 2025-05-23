@@ -453,6 +453,26 @@ export const apiService = {
   },
 
   /**
+   * Get station statistics
+   */
+  getStationStats: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/stats`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
    * Update user profile
    */
   updateUserProfile: async (profileData: any): Promise<ApiResponse<any>> => {
@@ -461,6 +481,67 @@ export const apiService = {
         method: 'PUT',
         headers: getAuthHeader(),
         body: JSON.stringify(profileData),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Validate vehicle quota by vehicle ID
+   */
+  validateVehicleQuota: async (vehicleId: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/quota/validate/${vehicleId}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Dispense fuel (record a transaction)
+   */
+  dispenseFuel: async (transactionData: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/quota/dispense`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: JSON.stringify(transactionData),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get transaction history for the station
+   */
+  getTransactionHistory: async (page: number = 0, size: number = 10): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/quota/transactions?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
       });
 
       return handleResponse(response);

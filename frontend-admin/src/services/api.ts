@@ -54,7 +54,7 @@ const parseXML = (xmlString: string): any => {
       // Extract data
       let data: any = {};
       if (xmlString.includes('<data>')) {
-        const dataContent = xmlString.match(/<data>(.*?)<\/data>/s)?.[1] || '';
+        const dataContent = xmlString.match(/<data>([\s\S]*?)<\/data>/)?.[1] || '';
         console.log('Data content:', dataContent);
 
         // Parse data content
@@ -184,7 +184,7 @@ const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> =>
           (xmlData.success && text.includes('Verification code sent successfully'))) {
         console.log('Detected successful verification code sending');
         return {
-          data: { sent: true },
+          data: { sent: true } as T,
           error: null,
           status: response.status,
         };
@@ -698,6 +698,121 @@ export const apiService = {
         method: 'PUT',
         headers: getAuthHeader(),
         body: JSON.stringify(profileData),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get vehicle classes with quota amounts
+   */
+  getVehicleClasses: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/quota/vehicle-classes`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update vehicle class quota amount
+   */
+  updateVehicleClassQuota: async (data: { vehicleClassId: number, fuelQuotaAmount: number }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/quota/vehicle-classes/${data.vehicleClassId}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify({ fuelQuotaAmount: data.fuelQuotaAmount }),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Allocate quota for a specific vehicle
+   */
+  allocateQuota: async (data: {
+    vehicleId: number,
+    allocatedAmount: number,
+    allocationDate: string,
+    expiryDate: string
+  }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/quota/allocate`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Allocate quotas for all vehicles of a specific class
+   */
+  allocateQuotasByVehicleClass: async (data: {
+    vehicleClassId: number,
+    allocationDate: string,
+    expiryDate: string
+  }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/quota/allocate-by-class/${data.vehicleClassId}`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: JSON.stringify({
+          allocationDate: data.allocationDate,
+          expiryDate: data.expiryDate
+        }),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get quota details for a specific vehicle
+   */
+  getQuotaDetailsByVehicleId: async (vehicleId: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/quota/details/${vehicleId}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
       });
 
       return handleResponse(response);
