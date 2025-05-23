@@ -226,63 +226,77 @@ public class StationQuotaController {
      *
      * @param page the page number (0-based)
      * @param size the page size
+     * @param startDate optional start date filter
+     * @param endDate optional end date filter
+     * @param fuelType optional fuel type filter
      * @return the transaction history
      */
     @GetMapping("/transactions")
     public ResponseEntity<ApiResponse<Page<TransactionDetailsDTO>>> getTransactionHistory(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String fuelType) {
 
         // Get the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
-        log.info("Fetching transaction history for user: {}", email);
+        log.info("Fetching transaction history for user: {} with filters - startDate: {}, endDate: {}, fuelType: {}",
+                email, startDate, endDate, fuelType);
 
-        // Find the user in the database
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        try {
+            // Find the user in the database
+            Optional<User> userOpt = userRepository.findByEmail(email);
 
-        if (userOpt.isEmpty()) {
-            log.warn("User not found: {}", email);
-            return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            if (userOpt.isEmpty()) {
+                log.warn("User not found: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Verify that the user is a station owner
+            if (!user.getRole().name().equals("STATION_OWNER")) {
+                log.warn("User is not a station owner: {}", email);
+                return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Station owner privileges required."));
+            }
+
+            // Find the station owner details
+            Optional<StationOwner> stationOwnerOpt = stationOwnerRepository.findByUser(user);
+
+            if (stationOwnerOpt.isEmpty()) {
+                log.warn("Station owner details not found for user: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("Station owner details not found"));
+            }
+
+            StationOwner stationOwner = stationOwnerOpt.get();
+
+            // Get the station ID directly instead of loading the full entity with collections
+            Long stationId = fuelStationRepository.findIdByOwner(stationOwner);
+
+            if (stationId == null) {
+                log.warn("Fuel station not found for owner: {}", stationOwner.getId());
+                return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
+            }
+
+            // Create pageable with sorting by transaction date (descending)
+            Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
+
+            // Get transaction history for the station with filters
+            Page<TransactionDetailsDTO> transactionHistory = fuelTransactionService.getTransactionsByStationId(
+                    stationId,
+                    startDate,
+                    endDate,
+                    fuelType,
+                    pageable);
+
+            return ResponseEntity.ok(ApiResponse.success("Transaction history retrieved successfully", transactionHistory));
+        } catch (Exception e) {
+            log.error("Error fetching transaction history: ", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("An error occurred while fetching transaction history"));
         }
-
-        User user = userOpt.get();
-
-        // Verify that the user is a station owner
-        if (!user.getRole().name().equals("STATION_OWNER")) {
-            log.warn("User is not a station owner: {}", email);
-            return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Station owner privileges required."));
-        }
-
-        // Find the station owner details
-        Optional<StationOwner> stationOwnerOpt = stationOwnerRepository.findByUser(user);
-
-        if (stationOwnerOpt.isEmpty()) {
-            log.warn("Station owner details not found for user: {}", email);
-            return ResponseEntity.status(404).body(ApiResponse.error("Station owner details not found"));
-        }
-
-        StationOwner stationOwner = stationOwnerOpt.get();
-
-        // Get the station
-        List<FuelStation> stations = fuelStationRepository.findByOwner(stationOwner);
-
-        if (stations.isEmpty()) {
-            log.warn("Fuel station not found for owner: {}", stationOwner.getId());
-            return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
-        }
-
-        // Get the first station (assuming one station per owner)
-        FuelStation station = stations.get(0);
-
-        // Create pageable with sorting by transaction date (descending)
-        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
-
-        // Get transaction history for the station
-        Page<TransactionDetailsDTO> transactionHistory = fuelTransactionService.getTransactionsByStationId(station.getId(), pageable);
-
-        return ResponseEntity.ok(ApiResponse.success("Transaction history retrieved successfully", transactionHistory));
     }
 
     /**

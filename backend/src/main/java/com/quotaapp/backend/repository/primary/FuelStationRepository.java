@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.quotaapp.backend.model.FuelStation;
@@ -155,4 +156,12 @@ public interface FuelStationRepository extends JpaRepository<FuelStation, Long> 
             """,
             nativeQuery = true)
     List<Object[]> findStationFuelTypesByStationId(Long stationId);
+
+    /**
+     * Find all station IDs using a native query to avoid loading full entities
+     *
+     * @return a list of station IDs
+     */
+    @Query(value = "SELECT id FROM fuel_stations", nativeQuery = true)
+    List<Long> findAllStationIds();
 }

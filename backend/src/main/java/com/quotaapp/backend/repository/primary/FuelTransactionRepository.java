@@ -138,6 +138,20 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
             @Param("endDate") LocalDateTime endDate);
 
     /**
+     * Count transactions for a station by station ID and date range
+     *
+     * @param stationId the station ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @return the count of transactions
+     */
+    @Query("SELECT COUNT(t) FROM FuelTransaction t WHERE t.station.id = :stationId AND t.transactionDate BETWEEN :startDate AND :endDate")
+    long countByStationIdAndDateRange(
+            @Param("stationId") Long stationId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    /**
      * Find all transactions for a vehicle by vehicle ID and fuel type
      *
      * @param vehicleId the vehicle ID to search for

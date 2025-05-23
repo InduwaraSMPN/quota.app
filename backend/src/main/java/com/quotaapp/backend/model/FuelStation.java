@@ -24,7 +24,9 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "fuel_stations")
@@ -32,6 +34,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"stationFuelTypes"})
+@EqualsAndHashCode(exclude = {"stationFuelTypes"})
 public class FuelStation {
 
     @Id
@@ -80,7 +84,7 @@ public class FuelStation {
     @Column(name = "station_name")
     private String stationName;
 
-    @OneToMany(mappedBy = "station", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "station", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<StationFuelType> stationFuelTypes = new HashSet<>();
 

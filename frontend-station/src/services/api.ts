@@ -537,9 +537,23 @@ export const apiService = {
   /**
    * Get transaction history for the station
    */
-  getTransactionHistory: async (page: number = 0, size: number = 10): Promise<ApiResponse<any>> => {
+  getTransactionHistory: async (
+    page: number = 0,
+    size: number = 10,
+    startDate?: string,
+    endDate?: string,
+    fuelType?: string
+  ): Promise<ApiResponse<any>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/station/quota/transactions?page=${page}&size=${size}`, {
+      // Build the URL with query parameters
+      let url = `${API_BASE_URL}/api/station/quota/transactions?page=${page}&size=${size}`;
+
+      // Add optional filters if provided
+      if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+      if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+      if (fuelType) url += `&fuelType=${encodeURIComponent(fuelType)}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeader(),
       });
@@ -580,6 +594,83 @@ export const apiService = {
   getStationNotifications: async (): Promise<ApiResponse<any>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/station/notifications`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get inventory for the station
+   */
+  getInventory: async (fuelType?: string): Promise<ApiResponse<any>> => {
+    try {
+      let url = `${API_BASE_URL}/api/station/inventory`;
+      if (fuelType) {
+        url += `?fuelType=${encodeURIComponent(fuelType)}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update inventory for a specific fuel type
+   */
+  updateInventory: async (inventoryId: number, data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/inventory/${inventoryId}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get inventory history for a specific fuel type
+   */
+  getInventoryHistory: async (
+    inventoryId: number,
+    page: number = 0,
+    size: number = 10,
+    startDate?: string,
+    endDate?: string
+  ): Promise<ApiResponse<any>> => {
+    try {
+      let url = `${API_BASE_URL}/api/station/inventory/${inventoryId}/history?page=${page}&size=${size}`;
+
+      if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+      if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeader(),
       });

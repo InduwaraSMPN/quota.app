@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,15 +23,14 @@ import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.model.FuelInventory;
 import com.quotaapp.backend.model.FuelStation;
 import com.quotaapp.backend.model.FuelType;
-import com.quotaapp.backend.model.StationFuelType;
 import com.quotaapp.backend.model.StationOwner;
 import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.repository.primary.FuelInventoryRepository;
 import com.quotaapp.backend.repository.primary.FuelStationRepository;
 import com.quotaapp.backend.repository.primary.FuelTransactionRepository;
-import com.quotaapp.backend.repository.primary.StationFuelTypeRepository;
 import com.quotaapp.backend.repository.primary.StationOwnerRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
+import com.quotaapp.backend.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,7 @@ public class StationStatsController {
     private final FuelStationRepository fuelStationRepository;
     private final FuelTransactionRepository fuelTransactionRepository;
     private final FuelInventoryRepository fuelInventoryRepository;
-    private final StationFuelTypeRepository stationFuelTypeRepository;
+    private final NotificationService notificationService;
 
     /**
      * Get station statistics for the station dashboard
@@ -98,15 +99,13 @@ public class StationStatsController {
                 return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
             }
 
-            // Get the station without loading collections
-            Optional<FuelStation> stationOpt = fuelStationRepository.findById(stationId);
+            // Verify that the station exists
+            boolean stationExists = fuelStationRepository.existsById(stationId);
 
-            if (stationOpt.isEmpty()) {
+            if (!stationExists) {
                 log.warn("Fuel station not found with ID: {}", stationId);
                 return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
             }
-
-            FuelStation station = stationOpt.get();
 
             // Collect station statistics
             Map<String, Object> stats = new HashMap<>();
@@ -116,14 +115,15 @@ public class StationStatsController {
             LocalDateTime startOfWeek = LocalDate.now().minusDays(LocalDate.now().getDayOfWeek().getValue() - 1).atStartOfDay();
             LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
 
-            long transactionsToday = fuelTransactionRepository.countByStationAndTransactionDateBetween(
-                    station, today, today.plusDays(1).minusSeconds(1));
+            // Use native queries to count transactions by date range
+            long transactionsToday = fuelTransactionRepository.countByStationIdAndDateRange(
+                    stationId, today, today.plusDays(1).minusSeconds(1));
 
-            long transactionsThisWeek = fuelTransactionRepository.countByStationAndTransactionDateBetween(
-                    station, startOfWeek, startOfWeek.plusDays(7).minusSeconds(1));
+            long transactionsThisWeek = fuelTransactionRepository.countByStationIdAndDateRange(
+                    stationId, startOfWeek, startOfWeek.plusDays(7).minusSeconds(1));
 
-            long transactionsThisMonth = fuelTransactionRepository.countByStationAndTransactionDateBetween(
-                    station, startOfMonth, startOfMonth.plusMonths(1).minusSeconds(1));
+            long transactionsThisMonth = fuelTransactionRepository.countByStationIdAndDateRange(
+                    stationId, startOfMonth, startOfMonth.plusMonths(1).minusSeconds(1));
 
             // Calculate average transactions per day for the current month
             long daysPassed = LocalDate.now().getDayOfMonth();
@@ -132,8 +132,12 @@ public class StationStatsController {
             // Fuel inventory
             Map<String, Object> fuelInventory = new HashMap<>();
 
+            // Create a minimal FuelStation object with just the ID to avoid loading collections
+            FuelStation minimalStation = new FuelStation();
+            minimalStation.setId(stationId);
+
             // Get fuel inventory for the station
-            List<FuelInventory> inventoryList = fuelInventoryRepository.findByStation(station);
+            List<FuelInventory> inventoryList = fuelInventoryRepository.findByStation(minimalStation);
 
             for (FuelInventory inventory : inventoryList) {
                 FuelType fuelType = inventory.getFuelType();
@@ -149,20 +153,23 @@ public class StationStatsController {
 
             // If no inventory records found, use station fuel types as fallback
             if (inventoryList.isEmpty()) {
-                // Fetch station fuel types separately to avoid ConcurrentModificationException
-                List<StationFuelType> stationFuelTypes = stationFuelTypeRepository.findByStation(station);
+                // Use a native query to get fuel types to avoid ConcurrentModificationException
+                List<Object[]> fuelTypeData = fuelStationRepository.findStationFuelTypesByStationId(stationId);
 
-                for (StationFuelType stationFuelType : stationFuelTypes) {
-                    FuelType fuelType = stationFuelType.getFuelType();
-                    String key = fuelTypeToKey(fuelType);
+                for (Object[] fuelTypeRow : fuelTypeData) {
+                    if (fuelTypeRow != null && fuelTypeRow.length > 0) {
+                        String fuelTypeStr = fuelTypeRow[0].toString();
+                        FuelType fuelType = FuelType.valueOf(fuelTypeStr);
+                        String key = fuelTypeToKey(fuelType);
 
-                    Map<String, Object> fuelData = new HashMap<>();
-                    // Default values since actual inventory not available
-                    fuelData.put("total", BigDecimal.valueOf(1000));
-                    fuelData.put("remaining", BigDecimal.valueOf(500));
-                    fuelData.put("unit", "liters");
+                        Map<String, Object> fuelData = new HashMap<>();
+                        // Default values since actual inventory not available
+                        fuelData.put("total", BigDecimal.valueOf(1000));
+                        fuelData.put("remaining", BigDecimal.valueOf(500));
+                        fuelData.put("unit", "liters");
 
-                    fuelInventory.put(key, fuelData);
+                        fuelInventory.put(key, fuelData);
+                    }
                 }
             }
 
@@ -184,12 +191,6 @@ public class StationStatsController {
         }
     }
 
-    /**
-     * Convert a FuelType enum to a key for the fuel inventory map
-     *
-     * @param fuelType the fuel type
-     * @return the key
-     */
     /**
      * Get station details for the station dashboard
      *
@@ -372,44 +373,79 @@ public class StationStatsController {
                 return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
             }
 
-            // For now, return some sample notifications
-            // In a real implementation, this would fetch from a notifications table
-            List<Map<String, Object>> notifications = new ArrayList<>();
+            // Initialize default notifications if none exist
+            notificationService.initializeDefaultNotifications();
 
-            // Sample notification 1
-            Map<String, Object> notification1 = new HashMap<>();
-            notification1.put("id", 1);
-            notification1.put("title", "Fuel Price Update");
-            notification1.put("message", "Fuel prices have been updated. Please check the latest prices.");
-            notification1.put("type", "INFO");
-            notification1.put("isRead", false);
-            notification1.put("createdAt", LocalDateTime.now().minusDays(1));
-            notifications.add(notification1);
-
-            // Sample notification 2
-            Map<String, Object> notification2 = new HashMap<>();
-            notification2.put("id", 2);
-            notification2.put("title", "System Maintenance");
-            notification2.put("message", "System maintenance scheduled for tonight from 2 AM to 4 AM.");
-            notification2.put("type", "WARNING");
-            notification2.put("isRead", true);
-            notification2.put("createdAt", LocalDateTime.now().minusDays(3));
-            notifications.add(notification2);
-
-            // Sample notification 3
-            Map<String, Object> notification3 = new HashMap<>();
-            notification3.put("id", 3);
-            notification3.put("title", "New Feature Available");
-            notification3.put("message", "You can now view detailed transaction reports. Check the reports section.");
-            notification3.put("type", "INFO");
-            notification3.put("isRead", false);
-            notification3.put("createdAt", LocalDateTime.now().minusDays(5));
-            notifications.add(notification3);
+            // Get notifications for the station
+            List<Map<String, Object>> notifications = notificationService.getStationNotifications(stationId);
 
             return ResponseEntity.ok(ApiResponse.success("Station notifications retrieved successfully", notifications));
         } catch (Exception e) {
             log.error("Error fetching station notifications", e);
             return ResponseEntity.status(500).body(ApiResponse.error("An error occurred while fetching station notifications"));
+        }
+    }
+
+    /**
+     * Mark a notification as read
+     *
+     * @param notificationId the notification ID
+     * @return success or error response
+     */
+    @PostMapping("/notifications/{notificationId}/read")
+    public ResponseEntity<ApiResponse<String>> markNotificationAsRead(@PathVariable Long notificationId) {
+        try {
+            // Get the authenticated user
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+
+            log.info("Marking notification as read: {} for station owner: {}", notificationId, email);
+
+            // Find the user in the database
+            Optional<User> userOpt = userRepository.findByEmail(email);
+
+            if (userOpt.isEmpty()) {
+                log.warn("User not found: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Verify that the user is a station owner
+            if (!user.getRole().name().equals("STATION_OWNER")) {
+                log.warn("User is not a station owner: {}", email);
+                return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Station owner privileges required."));
+            }
+
+            // Find the station owner details
+            Optional<StationOwner> stationOwnerOpt = stationOwnerRepository.findByUser(user);
+
+            if (stationOwnerOpt.isEmpty()) {
+                log.warn("Station owner details not found for user: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("Station owner details not found"));
+            }
+
+            StationOwner stationOwner = stationOwnerOpt.get();
+
+            // Get the station ID directly to avoid loading the full entity with collections
+            Long stationId = fuelStationRepository.findIdByOwner(stationOwner);
+
+            if (stationId == null) {
+                log.warn("Fuel station not found for owner: {}", stationOwner.getId());
+                return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
+            }
+
+            // Mark the notification as read
+            boolean success = notificationService.markStationNotificationAsRead(notificationId, stationId);
+
+            if (success) {
+                return ResponseEntity.ok(ApiResponse.success("Notification marked as read successfully"));
+            } else {
+                return ResponseEntity.status(404).body(ApiResponse.error("Notification not found or does not belong to this station"));
+            }
+        } catch (Exception e) {
+            log.error("Error marking notification as read", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("An error occurred while marking notification as read"));
         }
     }
 
