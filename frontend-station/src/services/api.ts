@@ -553,4 +553,44 @@ export const apiService = {
       };
     }
   },
+
+  /**
+   * Get recent transactions for the station
+   */
+  getRecentTransactions: async (limit: number = 5): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/quota/transactions/recent?limit=${limit}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get station notifications
+   */
+  getStationNotifications: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/notifications`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
 };

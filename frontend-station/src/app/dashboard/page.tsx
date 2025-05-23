@@ -42,29 +42,14 @@ const calculatePercentage = (remaining: number, total: number) => {
   return Math.min(100, Math.max(0, (remaining / total) * 100));
 };
 
-// These will be replaced with real data from API in future updates
-const mockRecentTransactions = [
-  { id: "TRX-001", date: "2023-06-28", time: "14:30", vehicleOwner: "John Doe", vehicleId: "ABC1234", fuelType: "Petrol 92", amount: 5.5, status: "Completed" },
-  { id: "TRX-002", date: "2023-06-28", time: "13:15", vehicleOwner: "Jane Smith", vehicleId: "DEF5678", fuelType: "Diesel", amount: 4.2, status: "Completed" },
-  { id: "TRX-003", date: "2023-06-27", time: "16:45", vehicleOwner: "Robert Johnson", vehicleId: "GHI9012", fuelType: "Petrol 95", amount: 6.0, status: "Completed" },
-  { id: "TRX-004", date: "2023-06-27", time: "10:20", vehicleOwner: "Emily Davis", vehicleId: "JKL3456", fuelType: "Diesel", amount: 3.8, status: "Completed" },
-  { id: "TRX-005", date: "2023-06-26", time: "11:05", vehicleOwner: "Michael Wilson", vehicleId: "MNO7890", fuelType: "Petrol 92", amount: 5.0, status: "Completed" }
-];
-
-// These will be replaced with real data from API in future updates
-const mockSystemNotifications = [
-  { id: 1, type: "warning", message: "Petrol 95 inventory below 30%. Consider restocking soon.", date: "2023-06-28" },
-  { id: 2, type: "info", message: "System maintenance scheduled for tonight at 02:00 AM", date: "2023-06-25" },
-  { id: 3, type: "info", message: "New fuel price update effective from July 1st", date: "2023-06-24" },
-  { id: 4, type: "warning", message: "Diesel pump #3 reported technical issues", date: "2023-06-22" }
-];
-
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stationData, setStationData] = useState<any>(null);
   const [fuelInventory, setFuelInventory] = useState<any>(null);
   const [transactionStats, setTransactionStats] = useState<any>(null);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [systemNotifications, setSystemNotifications] = useState<any[]>([]);
   const { isAuthenticated } = useAuth();
 
   // Fetch station profile and stats
@@ -73,6 +58,7 @@ export default function Dashboard() {
       if (!isAuthenticated) return;
 
       setIsLoading(true);
+      setError(null);
 
       try {
         // Fetch station profile
@@ -80,20 +66,12 @@ export default function Dashboard() {
         if (profileResponse.error) {
           console.error("Error fetching station profile:", profileResponse.error);
           toast.error("Failed to load station profile");
+          setStationData(null);
         } else if (profileResponse.data) {
           setStationData(profileResponse.data);
         } else {
-          // Fallback to mock data if API returns empty data
-          setStationData({
-            stationName: "City Fuel Station",
-            registrationNumber: "FS-2023-001",
-            ownerName: "Jane Smith",
-            address: "123 Main Street, Colombo 05",
-            contactNumber: "+94712345678",
-            email: "citystation@example.com",
-            operatingHours: "6:00 AM - 10:00 PM",
-            lastLogin: "2023-06-25 14:30:45"
-          });
+          setStationData(null);
+          toast.error("No station profile data available");
         }
 
         // Fetch station statistics
@@ -102,65 +80,60 @@ export default function Dashboard() {
         if (statsResponse.error) {
           console.error("Error fetching station stats:", statsResponse.error);
           toast.error("Failed to load station statistics");
+          setFuelInventory(null);
+          setTransactionStats(null);
         } else if (statsResponse.data) {
           if (statsResponse.data.fuelInventory) {
             setFuelInventory(statsResponse.data.fuelInventory);
+          } else {
+            setFuelInventory(null);
           }
+
           if (statsResponse.data.transactionStats) {
             setTransactionStats(statsResponse.data.transactionStats);
+          } else {
+            setTransactionStats(null);
           }
         } else {
-          // Fallback to mock data if API returns empty data
-          setFuelInventory({
-            petrol92: { total: 5000, remaining: 3200, unit: "liters" },
-            petrol95: { total: 4000, remaining: 1800, unit: "liters" },
-            diesel: { total: 8000, remaining: 5500, unit: "liters" },
-            superDiesel: { total: 2000, remaining: 1200, unit: "liters" }
-          });
-
-          setTransactionStats({
-            today: 45,
-            thisWeek: 320,
-            thisMonth: 1250,
-            totalTransactions: 15680,
-            totalRevenue: 3250000,
-            averagePerDay: 42
-          });
+          setFuelInventory(null);
+          setTransactionStats(null);
+          toast.error("No station statistics available");
         }
 
-        setError(null);
+        // Fetch recent transactions
+        const transactionsResponse = await apiService.getRecentTransactions(5);
+        if (transactionsResponse.error) {
+          console.error("Error fetching recent transactions:", transactionsResponse.error);
+          toast.error("Failed to load recent transactions");
+          setRecentTransactions([]);
+        } else if (transactionsResponse.data && Array.isArray(transactionsResponse.data)) {
+          setRecentTransactions(transactionsResponse.data);
+        } else {
+          setRecentTransactions([]);
+        }
+
+        // Fetch station notifications
+        const notificationsResponse = await apiService.getStationNotifications();
+        if (notificationsResponse.error) {
+          console.error("Error fetching station notifications:", notificationsResponse.error);
+          toast.error("Failed to load station notifications");
+          setSystemNotifications([]);
+        } else if (notificationsResponse.data && Array.isArray(notificationsResponse.data)) {
+          setSystemNotifications(notificationsResponse.data);
+        } else {
+          setSystemNotifications([]);
+        }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data. Please try again.");
         toast.error("Failed to load dashboard data");
 
-        // Set fallback mock data on error
-        setStationData({
-          stationName: "City Fuel Station",
-          registrationNumber: "FS-2023-001",
-          ownerName: "Jane Smith",
-          address: "123 Main Street, Colombo 05",
-          contactNumber: "+94712345678",
-          email: "citystation@example.com",
-          operatingHours: "6:00 AM - 10:00 PM",
-          lastLogin: "2023-06-25 14:30:45"
-        });
-
-        setFuelInventory({
-          petrol92: { total: 5000, remaining: 3200, unit: "liters" },
-          petrol95: { total: 4000, remaining: 1800, unit: "liters" },
-          diesel: { total: 8000, remaining: 5500, unit: "liters" },
-          superDiesel: { total: 2000, remaining: 1200, unit: "liters" }
-        });
-
-        setTransactionStats({
-          today: 45,
-          thisWeek: 320,
-          thisMonth: 1250,
-          totalTransactions: 15680,
-          totalRevenue: 3250000,
-          averagePerDay: 42
-        });
+        // Reset all state to empty values
+        setStationData(null);
+        setFuelInventory(null);
+        setTransactionStats(null);
+        setRecentTransactions([]);
+        setSystemNotifications([]);
       } finally {
         setIsLoading(false);
       }
@@ -224,38 +197,50 @@ export default function Dashboard() {
 
           {/* Stats Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">Today's Transactions</p>
-                  <p className="text-2xl font-bold">{transactionStats?.today || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">This Week</p>
-                  <p className="text-2xl font-bold">{transactionStats?.thisWeek || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold">{transactionStats?.thisMonth || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">Average Per Day</p>
-                  <p className="text-2xl font-bold">{transactionStats?.averagePerDay || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
+            {transactionStats ? (
+              <>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">Today's Transactions</p>
+                      <p className="text-2xl font-bold">{transactionStats.today || 0}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">This Week</p>
+                      <p className="text-2xl font-bold">{transactionStats.thisWeek || 0}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">This Month</p>
+                      <p className="text-2xl font-bold">{transactionStats.thisMonth || 0}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">Average Per Day</p>
+                      <p className="text-2xl font-bold">{transactionStats.averagePerDay || 0}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <div className="col-span-4 text-center py-6">
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-muted-foreground">No transaction statistics available</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
 
           {/* Main Dashboard Grid */}
@@ -279,30 +264,38 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Station Name</p>
-                      <p>{stationData?.stationName || "City Fuel Station"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Registration Number</p>
-                      <p>{stationData?.registrationNumber || "FS-2023-001"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Owner Name</p>
-                      <p>{stationData?.ownerName || "Jane Smith"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
-                      <p>{stationData?.contactNumber || "+94712345678"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p>{stationData?.email || "citystation@example.com"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Operating Hours</p>
-                      <p className="text-sm">{stationData?.operatingHours || "6:00 AM - 10:00 PM"}</p>
-                    </div>
+                    {stationData ? (
+                      <>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Station Name</p>
+                          <p>{stationData.stationName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Registration Number</p>
+                          <p>{stationData.registrationNumber}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Owner Name</p>
+                          <p>{stationData.ownerName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
+                          <p>{stationData.contactNumber}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Email</p>
+                          <p>{stationData.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Operating Hours</p>
+                          <p className="text-sm">{stationData.operatingHours}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No station profile data available</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -320,81 +313,93 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {/* Petrol 92 */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Petrol 92</span>
-                        <span className="text-sm font-medium">
-                          {fuelInventory?.petrol92?.remaining || 0} / {fuelInventory?.petrol92?.total || 0} {fuelInventory?.petrol92?.unit || "liters"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-                          style={{
-                            width: `${fuelInventory?.petrol92 ?
-                              calculatePercentage(fuelInventory.petrol92.remaining, fuelInventory.petrol92.total) : 0}%`
-                          }}
-                        ></div>
-                      </div>
-                    </div>
+                    {fuelInventory ? (
+                      <>
+                        {/* Petrol 92 */}
+                        {fuelInventory.petrol92 && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Petrol 92</span>
+                              <span className="text-sm font-medium">
+                                {fuelInventory.petrol92.remaining} / {fuelInventory.petrol92.total} {fuelInventory.petrol92.unit || "liters"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                              <div
+                                className="bg-green-500 h-full transition-all duration-500 ease-in-out"
+                                style={{
+                                  width: `${calculatePercentage(fuelInventory.petrol92.remaining, fuelInventory.petrol92.total)}%`
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Petrol 95 */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Petrol 95</span>
-                        <span className="text-sm font-medium">
-                          {fuelInventory?.petrol95?.remaining || 0} / {fuelInventory?.petrol95?.total || 0} {fuelInventory?.petrol95?.unit || "liters"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className="bg-yellow-500 h-full transition-all duration-500 ease-in-out"
-                          style={{
-                            width: `${fuelInventory?.petrol95 ?
-                              calculatePercentage(fuelInventory.petrol95.remaining, fuelInventory.petrol95.total) : 0}%`
-                          }}
-                        ></div>
-                      </div>
-                    </div>
+                        {/* Petrol 95 */}
+                        {fuelInventory.petrol95 && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Petrol 95</span>
+                              <span className="text-sm font-medium">
+                                {fuelInventory.petrol95.remaining} / {fuelInventory.petrol95.total} {fuelInventory.petrol95.unit || "liters"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                              <div
+                                className="bg-yellow-500 h-full transition-all duration-500 ease-in-out"
+                                style={{
+                                  width: `${calculatePercentage(fuelInventory.petrol95.remaining, fuelInventory.petrol95.total)}%`
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Diesel */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Diesel</span>
-                        <span className="text-sm font-medium">
-                          {fuelInventory?.diesel?.remaining || 0} / {fuelInventory?.diesel?.total || 0} {fuelInventory?.diesel?.unit || "liters"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-                          style={{
-                            width: `${fuelInventory?.diesel ?
-                              calculatePercentage(fuelInventory.diesel.remaining, fuelInventory.diesel.total) : 0}%`
-                          }}
-                        ></div>
-                      </div>
-                    </div>
+                        {/* Diesel */}
+                        {fuelInventory.diesel && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Diesel</span>
+                              <span className="text-sm font-medium">
+                                {fuelInventory.diesel.remaining} / {fuelInventory.diesel.total} {fuelInventory.diesel.unit || "liters"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                              <div
+                                className="bg-green-500 h-full transition-all duration-500 ease-in-out"
+                                style={{
+                                  width: `${calculatePercentage(fuelInventory.diesel.remaining, fuelInventory.diesel.total)}%`
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Super Diesel */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Super Diesel</span>
-                        <span className="text-sm font-medium">
-                          {fuelInventory?.superDiesel?.remaining || 0} / {fuelInventory?.superDiesel?.total || 0} {fuelInventory?.superDiesel?.unit || "liters"}
-                        </span>
+                        {/* Super Diesel */}
+                        {fuelInventory.superDiesel && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Super Diesel</span>
+                              <span className="text-sm font-medium">
+                                {fuelInventory.superDiesel.remaining} / {fuelInventory.superDiesel.total} {fuelInventory.superDiesel.unit || "liters"}
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                              <div
+                                className="bg-green-500 h-full transition-all duration-500 ease-in-out"
+                                style={{
+                                  width: `${calculatePercentage(fuelInventory.superDiesel.remaining, fuelInventory.superDiesel.total)}%`
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No fuel inventory data available</p>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-                          style={{
-                            width: `${fuelInventory?.superDiesel ?
-                              calculatePercentage(fuelInventory.superDiesel.remaining, fuelInventory.superDiesel.total) : 0}%`
-                          }}
-                        ></div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -427,27 +432,43 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockRecentTransactions.map((transaction, index) => (
-                      <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
-                          <Fuel className="h-4 w-4 text-primary" />
+                    {recentTransactions.length > 0 ? (
+                      recentTransactions.map((transaction, index) => (
+                        <div key={transaction.id || index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
+                            <Fuel className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex justify-between">
+                              <p className="font-medium">{transaction.amount} liters</p>
+                              <p className="text-sm text-muted-foreground">
+                                {transaction.transactionDate
+                                  ? new Date(transaction.transactionDate).toLocaleString()
+                                  : `${transaction.date} ${transaction.time || ''}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              <span>{transaction.vehicleOwner || 'Vehicle Owner'}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Droplet className="h-3 w-3" />
+                              <span>
+                                {transaction.fuelType
+                                  ? (typeof transaction.fuelType === 'string'
+                                    ? transaction.fuelType
+                                    : transaction.fuelType.name || 'Unknown')
+                                  : 'Unknown'} - {transaction.vehicleRegistrationNumber || transaction.vehicleId || 'Unknown'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between">
-                            <p className="font-medium">{transaction.amount} liters</p>
-                            <p className="text-sm text-muted-foreground">{transaction.date} {transaction.time}</p>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            <span>{transaction.vehicleOwner}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Droplet className="h-3 w-3" />
-                            <span>{transaction.fuelType} - {transaction.vehicleId}</span>
-                          </div>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No recent transactions</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -465,8 +486,8 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockSystemNotifications.length > 0 ? (
-                      mockSystemNotifications.map((notification) => (
+                    {systemNotifications.length > 0 ? (
+                      systemNotifications.map((notification) => (
                         <div key={notification.id} className="flex gap-3 pb-3 border-b last:border-0 last:pb-0">
                           <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
                             notification.type === "warning" ? "bg-yellow-100 text-yellow-600" : "bg-blue-100 text-blue-600"
@@ -481,7 +502,9 @@ export default function Dashboard() {
                             <p className="text-sm">{notification.message}</p>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              <span>{notification.date}</span>
+                              <span>{notification.timestamp
+                                ? new Date(notification.timestamp).toLocaleDateString()
+                                : notification.date}</span>
                             </div>
                           </div>
                         </div>

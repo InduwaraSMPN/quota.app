@@ -284,4 +284,68 @@ public class StationQuotaController {
 
         return ResponseEntity.ok(ApiResponse.success("Transaction history retrieved successfully", transactionHistory));
     }
+
+    /**
+     * Get recent transactions for a station
+     *
+     * @param limit the maximum number of transactions to return
+     * @return the recent transactions
+     */
+    @GetMapping("/transactions/recent")
+    public ResponseEntity<ApiResponse<List<TransactionDetailsDTO>>> getRecentTransactions(
+            @RequestParam(defaultValue = "5") int limit) {
+        try {
+            // Get the authenticated user
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
+
+            log.info("Fetching recent transactions for user: {}", email);
+
+            // Find the user in the database
+            Optional<User> userOpt = userRepository.findByEmail(email);
+
+            if (userOpt.isEmpty()) {
+                log.warn("User not found: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Verify that the user is a station owner
+            if (!user.getRole().name().equals("STATION_OWNER")) {
+                log.warn("User is not a station owner: {}", email);
+                return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Station owner privileges required."));
+            }
+
+            // Find the station owner details
+            Optional<StationOwner> stationOwnerOpt = stationOwnerRepository.findByUser(user);
+
+            if (stationOwnerOpt.isEmpty()) {
+                log.warn("Station owner details not found for user: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("Station owner details not found"));
+            }
+
+            StationOwner stationOwner = stationOwnerOpt.get();
+
+            // Get the station ID directly to avoid loading the full entity with collections
+            Long stationId = fuelStationRepository.findIdByOwner(stationOwner);
+
+            if (stationId == null) {
+                log.warn("Fuel station not found for owner: {}", stationOwner.getId());
+                return ResponseEntity.status(404).body(ApiResponse.error("Fuel station not found"));
+            }
+
+            // Create pageable with sorting by transaction date (descending) and limit
+            Pageable pageable = PageRequest.of(0, limit, Sort.by("transactionDate").descending());
+
+            // Get recent transactions for the station
+            Page<TransactionDetailsDTO> transactionsPage = fuelTransactionService.getTransactionsByStationId(stationId, pageable);
+            List<TransactionDetailsDTO> recentTransactions = transactionsPage.getContent();
+
+            return ResponseEntity.ok(ApiResponse.success("Recent transactions retrieved successfully", recentTransactions));
+        } catch (Exception e) {
+            log.error("Error fetching recent transactions", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("An error occurred while fetching recent transactions"));
+        }
+    }
 }

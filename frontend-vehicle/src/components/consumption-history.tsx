@@ -42,13 +42,15 @@ export function ConsumptionHistory({
   const getFuelTypeDisplay = (fuelType: string) => {
     return fuelType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
-  
+
   // Get fuel type color
   const getFuelTypeColor = (fuelType: string) => {
     switch (fuelType) {
       case "92_OCTANE_PETROL":
+      case "OCTANE_92":
         return "text-green-500";
       case "95_OCTANE_PETROL":
+      case "OCTANE_95":
         return "text-blue-500";
       case "AUTO_DIESEL":
         return "text-amber-500";
@@ -60,7 +62,7 @@ export function ConsumptionHistory({
         return "text-gray-500";
     }
   };
-  
+
   return (
     <Card className={cn("shadow-md", className)}>
       <CardHeader className="pb-2">
@@ -106,7 +108,7 @@ export function ConsumptionHistory({
                 </div>
               ))}
             </div>
-            
+
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-2">
                 <Button
