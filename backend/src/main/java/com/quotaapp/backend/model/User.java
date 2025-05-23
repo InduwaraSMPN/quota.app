@@ -65,6 +65,9 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
     // Constructor for testing
     public User(String email) {
         this.email = email;

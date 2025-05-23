@@ -72,6 +72,12 @@ public class AuthService implements UserDetailsService {
             // Get the user details
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
+            // Update last login time
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userDetails.getUsername()));
+            user.setLastLogin(LocalDateTime.now());
+            userRepository.save(user);
+
             // Generate JWT token
             String token = jwtTokenUtil.generateToken(userDetails.getUsername());
 
