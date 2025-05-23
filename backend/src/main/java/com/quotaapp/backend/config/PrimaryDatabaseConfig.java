@@ -46,6 +46,7 @@ public class PrimaryDatabaseConfig {
         properties.put("hibernate.hbm2ddl.auto", "update");
         properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
 
+        // Explicitly specify the main model package but exclude the DMT subpackage
         return builder
                 .dataSource(dataSource)
                 .packages("com.quotaapp.backend.model")

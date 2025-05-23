@@ -44,6 +44,9 @@ public class DMTDatabaseConfig {
         properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         properties.put("hibernate.physical_naming_strategy", "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl");
         properties.put("hibernate.implicit_naming_strategy", "org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl");
+        // Add this to show more detailed logging for entity scanning issues
+        properties.put("hibernate.show_sql", "true");
+        properties.put("hibernate.format_sql", "true");
 
         return builder
                 .dataSource(dataSource)

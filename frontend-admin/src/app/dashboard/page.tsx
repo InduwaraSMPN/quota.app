@@ -33,49 +33,26 @@ import Link from "next/link";
 import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { Toaster } from "@/components/ui/sonner";
 
-// These will be replaced with real data from API in future updates
-const mockRecentTransactions = [
-  { id: "TRX-001", date: "2023-06-28", vehicleOwner: "John Doe", station: "Fuel Station A", amount: 5.5, status: "Completed" },
-  { id: "TRX-002", date: "2023-06-28", vehicleOwner: "Jane Smith", station: "Fuel Station B", amount: 4.2, status: "Completed" },
-  { id: "TRX-003", date: "2023-06-27", vehicleOwner: "Robert Johnson", station: "Fuel Station C", amount: 6.0, status: "Completed" },
-  { id: "TRX-004", date: "2023-06-27", vehicleOwner: "Emily Davis", station: "Fuel Station A", amount: 3.8, status: "Completed" },
-  { id: "TRX-005", date: "2023-06-26", vehicleOwner: "Michael Wilson", station: "Fuel Station D", amount: 5.0, status: "Completed" }
-];
 
-// These will be replaced with real data from API in future updates
-const mockSystemNotifications = [
-  { id: 1, type: "warning", message: "Fuel station 'Station X' reported technical issues with QR scanning", date: "2023-06-28" },
-  { id: 2, type: "info", message: "Monthly quota allocation completed successfully", date: "2023-06-25" },
-  { id: 3, type: "warning", message: "System backup scheduled for tonight at 02:00 AM", date: "2023-06-24" },
-  { id: 4, type: "info", message: "15 new vehicle owners registered this week", date: "2023-06-22" }
-];
-
-// These will be replaced with real data from API in future updates
-const mockPendingApprovals = [
-  { id: "REQ-001", type: "Station Registration", name: "City Fuel Station", date: "2023-06-27" },
-  { id: "REQ-002", type: "Quota Increase", name: "John Doe", date: "2023-06-26" },
-  { id: "REQ-003", type: "Vehicle Registration", name: "Emily Davis", date: "2023-06-25" },
-  { id: "REQ-004", type: "Station Registration", name: "Highway Fuels", date: "2023-06-24" },
-  { id: "REQ-005", type: "Quota Increase", name: "Michael Wilson", date: "2023-06-23" }
-];
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [adminData, setAdminData] = useState<any>(null);
   const [systemStats, setSystemStats] = useState<any>(null);
-  const [isClient, setIsClient] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [systemNotifications, setSystemNotifications] = useState<any[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const { isAuthenticated } = useAuth();
 
   // Fetch admin profile and system stats
   useEffect(() => {
-    setIsClient(true);
     const fetchDashboardData = async () => {
       if (!isAuthenticated) return;
 
       setIsLoading(true);
+      setError(null);
 
       try {
         // Fetch admin profile
@@ -83,18 +60,12 @@ export default function Dashboard() {
         if (profileResponse.error) {
           console.error("Error fetching admin profile:", profileResponse.error);
           toast.error("Failed to load admin profile");
+          setAdminData(null);
         } else if (profileResponse.data) {
           setAdminData(profileResponse.data);
         } else {
-          // Fallback to mock data if API returns empty data
-          setAdminData({
-            fullName: "Admin User",
-            employeeId: "EMP-001",
-            email: "admin@quota.app",
-            department: "IT Administration",
-            role: "System Administrator",
-            lastLogin: "2023-06-25 14:30:45"
-          });
+          setAdminData(null);
+          toast.error("No admin profile data available");
         }
 
         // Fetch system statistics
@@ -102,48 +73,70 @@ export default function Dashboard() {
         if (statsResponse.error) {
           console.error("Error fetching system stats:", statsResponse.error);
           toast.error("Failed to load system statistics");
+          setSystemStats(null);
         } else if (statsResponse.data) {
           setSystemStats(statsResponse.data);
         } else {
-          // Fallback to mock data if API returns empty data
-          setSystemStats({
-            totalVehicleOwners: 1250,
-            totalStationOwners: 85,
-            totalFuelStations: 120,
-            totalTransactions: 15680,
-            fuelAllocated: 125000,
-            fuelConsumed: 98500,
-            activeUsers: 950,
-            pendingApprovals: 15
-          });
+          setSystemStats(null);
+          toast.error("No system statistics available");
         }
 
-        setError(null);
+        // Fetch recent transactions
+        const transactionsResponse = await apiService.getRecentTransactions(5);
+        if (transactionsResponse.error) {
+          console.error("Error fetching recent transactions:", transactionsResponse.error);
+          toast.error("Failed to load recent transactions");
+          setRecentTransactions([]);
+        } else if (transactionsResponse.data && Array.isArray(transactionsResponse.data)) {
+          setRecentTransactions(transactionsResponse.data);
+        } else {
+          setRecentTransactions([]);
+        }
+
+        // Fetch system notifications
+        const notificationsResponse = await apiService.getSystemNotifications();
+        if (notificationsResponse.error) {
+          console.error("Error fetching system notifications:", notificationsResponse.error);
+          toast.error("Failed to load system notifications");
+          setSystemNotifications([]);
+        } else if (notificationsResponse.data && Array.isArray(notificationsResponse.data)) {
+          setSystemNotifications(notificationsResponse.data);
+        } else {
+          setSystemNotifications([]);
+        }
+
+        // Fetch pending approvals (station verifications)
+        const approvalsResponse = await apiService.getStationVerifications();
+        if (approvalsResponse.error) {
+          console.error("Error fetching station verifications:", approvalsResponse.error);
+          toast.error("Failed to load station verifications");
+          setPendingApprovals([]);
+        } else if (approvalsResponse.data && Array.isArray(approvalsResponse.data)) {
+          // Filter only pending verifications
+          const pendingVerifications = approvalsResponse.data
+            .filter(verification => verification.status === "PENDING")
+            .map(verification => ({
+              id: verification.id,
+              type: "Station Registration",
+              name: verification.stationName || verification.businessName,
+              date: new Date(verification.createdAt).toISOString().split('T')[0]
+            }));
+
+          setPendingApprovals(pendingVerifications);
+        } else {
+          setPendingApprovals([]);
+        }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data. Please try again.");
         toast.error("Failed to load dashboard data");
 
-        // Set fallback mock data on error
-        setAdminData({
-          fullName: "Admin User",
-          employeeId: "EMP-001",
-          email: "admin@quota.app",
-          department: "IT Administration",
-          role: "System Administrator",
-          lastLogin: "2023-06-25 14:30:45"
-        });
-
-        setSystemStats({
-          totalVehicleOwners: 1250,
-          totalStationOwners: 85,
-          totalFuelStations: 120,
-          totalTransactions: 15680,
-          fuelAllocated: 125000,
-          fuelConsumed: 98500,
-          activeUsers: 950,
-          pendingApprovals: 15
-        });
+        // Reset all state to empty values
+        setAdminData(null);
+        setSystemStats(null);
+        setRecentTransactions([]);
+        setSystemNotifications([]);
+        setPendingApprovals([]);
       } finally {
         setIsLoading(false);
       }
@@ -202,38 +195,50 @@ export default function Dashboard() {
 
           {/* Stats Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">Vehicle Owners</p>
-                  <p className="text-2xl font-bold">{systemStats?.totalVehicleOwners || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">Station Owners</p>
-                  <p className="text-2xl font-bold">{systemStats?.totalStationOwners || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">Fuel Stations</p>
-                  <p className="text-2xl font-bold">{systemStats?.totalFuelStations || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm text-muted-foreground">Pending Approvals</p>
-                  <p className="text-2xl font-bold">{systemStats?.pendingApprovals || 0}</p>
-                </div>
-              </CardContent>
-            </Card>
+            {systemStats ? (
+              <>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">Vehicle Owners</p>
+                      <p className="text-2xl font-bold">{systemStats.totalVehicleOwners}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">Station Owners</p>
+                      <p className="text-2xl font-bold">{systemStats.totalStationOwners}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">Fuel Stations</p>
+                      <p className="text-2xl font-bold">{systemStats.totalFuelStations}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm text-muted-foreground">Pending Approvals</p>
+                      <p className="text-2xl font-bold">{systemStats.pendingApprovals}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <div className="col-span-4 text-center py-6">
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-muted-foreground">No system statistics available</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
 
           {/* Main Dashboard Grid */}
@@ -257,30 +262,38 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                      <p>{adminData?.fullName || "Admin User"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Employee ID</p>
-                      <p>{adminData?.employeeId || "EMP-001"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Department</p>
-                      <p>{adminData?.department || "IT Administration"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Role</p>
-                      <p>{adminData?.role || "System Administrator"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p>{adminData?.email || "admin@quota.app"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Last Login</p>
-                      <p className="text-sm">{adminData?.lastLogin || "2023-06-25 14:30:45"}</p>
-                    </div>
+                    {adminData ? (
+                      <>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Full Name</p>
+                          <p>{adminData.fullName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Employee ID</p>
+                          <p>{adminData.employeeId}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Department</p>
+                          <p>{adminData.department}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Role</p>
+                          <p>{adminData.role}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Email</p>
+                          <p>{adminData.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Last Login</p>
+                          <p className="text-sm">{adminData.lastLogin}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No admin profile data available</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -298,28 +311,36 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Total Allocated</span>
-                      <span className="text-lg font-bold">{systemStats?.fuelAllocated || 0} liters</span>
-                    </div>
+                    {systemStats ? (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Total Allocated</span>
+                          <span className="text-lg font-bold">{systemStats.fuelAllocated} liters</span>
+                        </div>
 
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Total Consumed</span>
-                      <span className="text-lg font-bold">{systemStats?.fuelConsumed || 0} liters</span>
-                    </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Total Consumed</span>
+                          <span className="text-lg font-bold">{systemStats.fuelConsumed} liters</span>
+                        </div>
 
-                    {/* Consumption Progress Bar */}
-                    <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
-                      <div
-                        className="bg-primary h-full transition-all duration-500 ease-in-out"
-                        style={{ width: `${systemStats ? (systemStats.fuelConsumed / systemStats.fuelAllocated) * 100 : 0}%` }}
-                      ></div>
-                    </div>
+                        {/* Consumption Progress Bar */}
+                        <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
+                          <div
+                            className="bg-primary h-full transition-all duration-500 ease-in-out"
+                            style={{ width: `${(systemStats.fuelConsumed / systemStats.fuelAllocated) * 100}%` }}
+                          ></div>
+                        </div>
 
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>0 liters</span>
-                      <span>{systemStats?.fuelAllocated || 0} liters</span>
-                    </div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>0 liters</span>
+                          <span>{systemStats.fuelAllocated} liters</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No fuel allocation data available</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -352,27 +373,37 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockRecentTransactions.map((transaction, index) => (
-                      <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
-                          <Fuel className="h-4 w-4 text-primary" />
+                    {recentTransactions.length > 0 ? (
+                      recentTransactions.map((transaction, index) => (
+                        <div key={transaction.id || index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
+                            <Fuel className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex justify-between">
+                              <p className="font-medium">{transaction.amount} liters</p>
+                              <p className="text-sm text-muted-foreground">
+                                {transaction.transactionDate
+                                  ? new Date(transaction.transactionDate).toLocaleDateString()
+                                  : transaction.date}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              <span>{transaction.vehicleRegistrationNumber || transaction.vehicleOwner}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Building className="h-3 w-3" />
+                              <span>{transaction.stationName || transaction.station}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between">
-                            <p className="font-medium">{transaction.amount} liters</p>
-                            <p className="text-sm text-muted-foreground">{transaction.date}</p>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            <span>{transaction.vehicleOwner}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Building className="h-3 w-3" />
-                            <span>{transaction.station}</span>
-                          </div>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No recent transactions</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -395,20 +426,26 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockPendingApprovals.map((approval, index) => (
-                      <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-600">
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between">
-                            <p className="font-medium">{approval.type}</p>
-                            <p className="text-sm text-muted-foreground">{approval.date}</p>
+                    {pendingApprovals.length > 0 ? (
+                      pendingApprovals.map((approval, index) => (
+                        <div key={approval.id || index} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-yellow-100 text-yellow-600">
+                            <AlertTriangle className="h-4 w-4" />
                           </div>
-                          <p className="text-sm text-muted-foreground">{approval.name}</p>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex justify-between">
+                              <p className="font-medium">{approval.type}</p>
+                              <p className="text-sm text-muted-foreground">{approval.date}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{approval.name}</p>
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground">No pending approvals</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -426,8 +463,8 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockSystemNotifications.length > 0 ? (
-                      mockSystemNotifications.map((notification) => (
+                    {systemNotifications.length > 0 ? (
+                      systemNotifications.map((notification) => (
                         <div key={notification.id} className="flex gap-3 pb-3 border-b last:border-0 last:pb-0">
                           <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
                             notification.type === "warning" ? "bg-yellow-100 text-yellow-600" : "bg-blue-100 text-blue-600"
@@ -442,7 +479,9 @@ export default function Dashboard() {
                             <p className="text-sm">{notification.message}</p>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              <span>{notification.date}</span>
+                              <span>{notification.timestamp
+                                ? new Date(notification.timestamp).toLocaleDateString()
+                                : notification.date}</span>
                             </div>
                           </div>
                         </div>
