@@ -504,7 +504,7 @@ export const apiService = {
    */
   updateUserProfile: async (profileData: any): Promise<ApiResponse<any>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+      const response = await fetch(`${API_BASE_URL}/api/vehicle-owner/profile`, {
         method: 'PUT',
         headers: getAuthHeader(),
         body: JSON.stringify(profileData),
