@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Logo } from "@/components/logo";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
 import {
   Card,
@@ -35,12 +34,6 @@ import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
-
-// Helper function to calculate percentage
-const calculatePercentage = (remaining: number, total: number) => {
-  if (!total) return 0;
-  return Math.min(100, Math.max(0, (remaining / total) * 100));
-};
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -144,10 +137,7 @@ export default function Dashboard() {
     }
   }, [isAuthenticated]);
 
-  // Calculate inventory percentages
-  const calculatePercentage = (remaining: number, total: number) => {
-    return (remaining / total) * 100;
-  };
+
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
@@ -156,6 +146,8 @@ export default function Dashboard() {
       <div className="fixed bottom-6 right-6 z-50">
         <ModeToggle />
       </div>
+
+      <Toaster />
 
       {/* Loading state */}
       {isLoading && (
@@ -328,7 +320,7 @@ export default function Dashboard() {
                               <div
                                 className="bg-green-500 h-full transition-all duration-500 ease-in-out"
                                 style={{
-                                  width: `${calculatePercentage(fuelInventory.petrol92.remaining, fuelInventory.petrol92.total)}%`
+                                  width: `${Math.min(100, Math.max(0, (fuelInventory.petrol92.remaining / fuelInventory.petrol92.total) * 100))}%`
                                 }}
                               ></div>
                             </div>
@@ -348,7 +340,7 @@ export default function Dashboard() {
                               <div
                                 className="bg-yellow-500 h-full transition-all duration-500 ease-in-out"
                                 style={{
-                                  width: `${calculatePercentage(fuelInventory.petrol95.remaining, fuelInventory.petrol95.total)}%`
+                                  width: `${Math.min(100, Math.max(0, (fuelInventory.petrol95.remaining / fuelInventory.petrol95.total) * 100))}%`
                                 }}
                               ></div>
                             </div>
@@ -368,7 +360,7 @@ export default function Dashboard() {
                               <div
                                 className="bg-green-500 h-full transition-all duration-500 ease-in-out"
                                 style={{
-                                  width: `${calculatePercentage(fuelInventory.diesel.remaining, fuelInventory.diesel.total)}%`
+                                  width: `${Math.min(100, Math.max(0, (fuelInventory.diesel.remaining / fuelInventory.diesel.total) * 100))}%`
                                 }}
                               ></div>
                             </div>
@@ -388,7 +380,7 @@ export default function Dashboard() {
                               <div
                                 className="bg-green-500 h-full transition-all duration-500 ease-in-out"
                                 style={{
-                                  width: `${calculatePercentage(fuelInventory.superDiesel.remaining, fuelInventory.superDiesel.total)}%`
+                                  width: `${Math.min(100, Math.max(0, (fuelInventory.superDiesel.remaining / fuelInventory.superDiesel.total) * 100))}%`
                                 }}
                               ></div>
                             </div>
@@ -538,6 +530,18 @@ export default function Dashboard() {
                       <Link href="/dashboard/scanner">
                         <QrCode className="h-5 w-5" />
                         <span>QR Scanner</span>
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
+                      <Link href="/dashboard/inventory">
+                        <Droplet className="h-5 w-5" />
+                        <span>Inventory</span>
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
+                      <Link href="/dashboard/transactions">
+                        <History className="h-5 w-5" />
+                        <span>Transactions</span>
                       </Link>
                     </Button>
                     <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>

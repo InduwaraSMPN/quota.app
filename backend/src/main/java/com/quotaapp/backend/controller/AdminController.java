@@ -2,13 +2,13 @@ package com.quotaapp.backend.controller;
 
 import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.model.AdminUser;
-import com.quotaapp.backend.model.FuelStation;
 import com.quotaapp.backend.model.FuelTransaction;
 import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.repository.primary.AdminUserRepository;
 import com.quotaapp.backend.repository.primary.FuelStationRepository;
 import com.quotaapp.backend.repository.primary.FuelTransactionRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
+import com.quotaapp.backend.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +29,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ public class AdminController {
     private final AdminUserRepository adminUserRepository;
     private final FuelStationRepository fuelStationRepository;
     private final FuelTransactionRepository fuelTransactionRepository;
+    private final NotificationService notificationService;
 
     /**
      * Get the admin user's profile
@@ -252,63 +254,105 @@ public class AdminController {
      */
     @GetMapping("/notifications")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getNotifications() {
-        // Get the authenticated user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        try {
+            // Get the authenticated user
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
 
-        log.info("Fetching notifications for admin: {}", email);
+            log.info("Fetching notifications for admin: {}", email);
 
-        // Find the user in the database
-        Optional<User> userOpt = userRepository.findByEmail(email);
+            // Find the user in the database
+            Optional<User> userOpt = userRepository.findByEmail(email);
 
-        if (userOpt.isEmpty()) {
-            log.warn("User not found: {}", email);
-            return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            if (userOpt.isEmpty()) {
+                log.warn("User not found: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Verify that the user is an admin
+            if (!user.getRole().name().equals("ADMIN")) {
+                log.warn("User is not an admin: {}", email);
+                return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Admin privileges required."));
+            }
+
+            // Find the admin user details
+            Optional<AdminUser> adminUserOpt = adminUserRepository.findByUser(user);
+
+            if (adminUserOpt.isEmpty()) {
+                log.warn("Admin user details not found for user: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("Admin user details not found"));
+            }
+
+            AdminUser adminUser = adminUserOpt.get();
+
+            // Initialize default notifications if none exist
+            notificationService.initializeDefaultNotifications();
+
+            // Get notifications for the admin
+            List<Map<String, Object>> notifications = notificationService.getAdminNotifications(adminUser.getId());
+
+            return ResponseEntity.ok(ApiResponse.success("Admin notifications retrieved successfully", notifications));
+        } catch (Exception e) {
+            log.error("Error fetching admin notifications", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("An error occurred while fetching admin notifications"));
         }
+    }
 
-        User user = userOpt.get();
+    /**
+     * Mark a notification as read
+     *
+     * @param notificationId the notification ID
+     * @return success or error response
+     */
+    @PostMapping("/notifications/{notificationId}/read")
+    public ResponseEntity<ApiResponse<String>> markNotificationAsRead(@PathVariable Long notificationId) {
+        try {
+            // Get the authenticated user
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String email = authentication.getName();
 
-        // Verify that the user is an admin
-        if (!user.getRole().name().equals("ADMIN")) {
-            log.warn("User is not an admin: {}", email);
-            return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Admin privileges required."));
+            log.info("Marking notification as read: {} for admin: {}", notificationId, email);
+
+            // Find the user in the database
+            Optional<User> userOpt = userRepository.findByEmail(email);
+
+            if (userOpt.isEmpty()) {
+                log.warn("User not found: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Verify that the user is an admin
+            if (!user.getRole().name().equals("ADMIN")) {
+                log.warn("User is not an admin: {}", email);
+                return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Admin privileges required."));
+            }
+
+            // Find the admin user details
+            Optional<AdminUser> adminUserOpt = adminUserRepository.findByUser(user);
+
+            if (adminUserOpt.isEmpty()) {
+                log.warn("Admin user details not found for user: {}", email);
+                return ResponseEntity.status(404).body(ApiResponse.error("Admin user details not found"));
+            }
+
+            AdminUser adminUser = adminUserOpt.get();
+
+            // Mark the notification as read
+            boolean success = notificationService.markAdminNotificationAsRead(notificationId, adminUser.getId());
+
+            if (success) {
+                return ResponseEntity.ok(ApiResponse.success("Notification marked as read successfully"));
+            } else {
+                return ResponseEntity.status(404).body(ApiResponse.error("Notification not found or does not belong to this admin"));
+            }
+        } catch (Exception e) {
+            log.error("Error marking notification as read", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("An error occurred while marking notification as read"));
         }
-
-        // For now, return some sample notifications
-        // In a real implementation, this would fetch from a notifications table
-        List<Map<String, Object>> notifications = new ArrayList<>();
-
-        // Sample notification 1
-        Map<String, Object> notification1 = new HashMap<>();
-        notification1.put("id", 1);
-        notification1.put("title", "New Station Registration");
-        notification1.put("message", "A new fuel station has registered and is pending verification.");
-        notification1.put("type", "INFO");
-        notification1.put("isRead", false);
-        notification1.put("createdAt", LocalDateTime.now().minusDays(1));
-        notifications.add(notification1);
-
-        // Sample notification 2
-        Map<String, Object> notification2 = new HashMap<>();
-        notification2.put("id", 2);
-        notification2.put("title", "System Update");
-        notification2.put("message", "The system will undergo maintenance tonight from 2 AM to 4 AM.");
-        notification2.put("type", "WARNING");
-        notification2.put("isRead", true);
-        notification2.put("createdAt", LocalDateTime.now().minusDays(3));
-        notifications.add(notification2);
-
-        // Sample notification 3
-        Map<String, Object> notification3 = new HashMap<>();
-        notification3.put("id", 3);
-        notification3.put("title", "Quota Allocation Complete");
-        notification3.put("message", "Monthly fuel quota allocation has been completed for all vehicles.");
-        notification3.put("type", "SUCCESS");
-        notification3.put("isRead", false);
-        notification3.put("createdAt", LocalDateTime.now().minusDays(5));
-        notifications.add(notification3);
-
-        return ResponseEntity.ok(ApiResponse.success("Admin notifications retrieved successfully", notifications));
     }
 
     /**
