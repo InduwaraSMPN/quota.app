@@ -111,10 +111,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",  // Vehicle frontend
             "http://localhost:3001",  // Station frontend
-            "http://localhost:3002",  // Admin frontend
-            "http://localhost:9000",  // Alternative Vehicle frontend
-            "http://localhost:9001",  // Alternative Station frontend
-            "http://localhost:9002"   // Alternative Admin frontend
+            "http://localhost:3002"   // Admin frontend
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(

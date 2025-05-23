@@ -30,10 +30,7 @@ public class SimpleCorsFilter implements Filter {
     private final List<String> allowedOrigins = Arrays.asList(
         "http://localhost:3000",
         "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:9000",
-        "http://localhost:9001",
-        "http://localhost:9002"
+        "http://localhost:3002"
     );
 
     @Override
