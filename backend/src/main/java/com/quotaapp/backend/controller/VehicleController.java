@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.quotaapp.backend.dto.ApiResponse;
+import com.quotaapp.backend.model.FuelQuota;
 import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.model.Vehicle;
 import com.quotaapp.backend.model.VehicleOwner;
+import com.quotaapp.backend.repository.primary.FuelQuotaRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
 import com.quotaapp.backend.repository.primary.VehicleOwnerRepository;
 import com.quotaapp.backend.repository.primary.VehicleRepository;
@@ -39,6 +41,7 @@ public class VehicleController {
     private final UserRepository userRepository;
     private final VehicleOwnerRepository vehicleOwnerRepository;
     private final VehicleRepository vehicleRepository;
+    private final FuelQuotaRepository fuelQuotaRepository;
 
     /**
      * Get vehicles for the authenticated user
@@ -105,17 +108,29 @@ public class VehicleController {
             // Add quota information
             Map<String, Object> quotaData = new HashMap<>();
 
-            // For now, we'll use the vehicle class's fuel quota amount as the total quota
-            BigDecimal totalQuota = vehicle.getVehicleClass().getFuelQuotaAmount();
+            // Get the current quota from the FuelQuotaService
+            Optional<FuelQuota> currentQuotaOpt = fuelQuotaRepository.findCurrentQuotaByVehicleId(vehicle.getId(), LocalDate.now());
 
-            // Mock remaining quota (in a real implementation, this would come from the fuel_quotas table)
-            BigDecimal remainingQuota = totalQuota.multiply(new BigDecimal("0.75")); // 75% of total quota
+            // Default quota amount from vehicle class
+            BigDecimal totalQuota = vehicle.getVehicleClass().getFuelQuotaAmount();
+            BigDecimal remainingQuota = BigDecimal.ZERO;
+            LocalDate lastUpdated = LocalDate.now();
+            LocalDate expiryDate = LocalDate.now().plusDays(30); // Default expiry
+
+            if (currentQuotaOpt.isPresent()) {
+                FuelQuota currentQuota = currentQuotaOpt.get();
+                totalQuota = currentQuota.getAllocatedAmount();
+                remainingQuota = currentQuota.getRemainingAmount();
+                lastUpdated = currentQuota.getUpdatedAt() != null ?
+                    currentQuota.getUpdatedAt().toLocalDate() : currentQuota.getAllocationDate();
+                expiryDate = currentQuota.getExpiryDate();
+            }
 
             quotaData.put("totalQuota", totalQuota);
             quotaData.put("remainingQuota", remainingQuota);
             quotaData.put("quotaUnit", "liters");
-            quotaData.put("lastUpdated", LocalDate.now().minusDays(5).format(DateTimeFormatter.ISO_DATE));
-            quotaData.put("nextRefill", LocalDate.now().plusDays(10).format(DateTimeFormatter.ISO_DATE));
+            quotaData.put("lastUpdated", lastUpdated.format(DateTimeFormatter.ISO_DATE));
+            quotaData.put("nextRefill", expiryDate.format(DateTimeFormatter.ISO_DATE));
 
             vehicleData.put("quota", quotaData);
 

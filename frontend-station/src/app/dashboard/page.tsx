@@ -24,42 +24,25 @@ import {
   Clock,
   BarChart3,
   Edit,
-  FileText,
   Fuel,
   Droplet,
+  QrCode,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
 import Link from "next/link";
+import { apiService } from "@/services/api";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { Toaster } from "@/components/ui/sonner";
 
-// Mock data for the station dashboard
-const mockStationData = {
-  stationName: "City Fuel Station",
-  registrationNumber: "FS-2023-001",
-  ownerName: "Jane Smith",
-  address: "123 Main Street, Colombo 05",
-  contactNumber: "+94712345678",
-  email: "citystation@example.com",
-  operatingHours: "6:00 AM - 10:00 PM",
-  lastLogin: "2023-06-25 14:30:45"
+// Helper function to calculate percentage
+const calculatePercentage = (remaining: number, total: number) => {
+  if (!total) return 0;
+  return Math.min(100, Math.max(0, (remaining / total) * 100));
 };
 
-const mockFuelInventory = {
-  petrol92: { total: 5000, remaining: 3200, unit: "liters" },
-  petrol95: { total: 4000, remaining: 1800, unit: "liters" },
-  diesel: { total: 8000, remaining: 5500, unit: "liters" },
-  superDiesel: { total: 2000, remaining: 1200, unit: "liters" }
-};
-
-const mockTransactionStats = {
-  today: 45,
-  thisWeek: 320,
-  thisMonth: 1250,
-  totalTransactions: 15680,
-  totalRevenue: 3250000,
-  averagePerDay: 42
-};
-
+// These will be replaced with real data from API in future updates
 const mockRecentTransactions = [
   { id: "TRX-001", date: "2023-06-28", time: "14:30", vehicleOwner: "John Doe", vehicleId: "ABC1234", fuelType: "Petrol 92", amount: 5.5, status: "Completed" },
   { id: "TRX-002", date: "2023-06-28", time: "13:15", vehicleOwner: "Jane Smith", vehicleId: "DEF5678", fuelType: "Diesel", amount: 4.2, status: "Completed" },
@@ -68,6 +51,7 @@ const mockRecentTransactions = [
   { id: "TRX-005", date: "2023-06-26", time: "11:05", vehicleOwner: "Michael Wilson", vehicleId: "MNO7890", fuelType: "Petrol 92", amount: 5.0, status: "Completed" }
 ];
 
+// These will be replaced with real data from API in future updates
 const mockSystemNotifications = [
   { id: 1, type: "warning", message: "Petrol 95 inventory below 30%. Consider restocking soon.", date: "2023-06-28" },
   { id: 2, type: "info", message: "System maintenance scheduled for tonight at 02:00 AM", date: "2023-06-25" },
@@ -76,49 +60,116 @@ const mockSystemNotifications = [
 ];
 
 export default function Dashboard() {
-  const [isClient, setIsClient] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stationData, setStationData] = useState<any>(null);
+  const [fuelInventory, setFuelInventory] = useState<any>(null);
+  const [transactionStats, setTransactionStats] = useState<any>(null);
+  const { isAuthenticated } = useAuth();
 
-  // Use the auth hook to check authentication
+  // Fetch station profile and stats
   useEffect(() => {
-    // In a real application, we would use the useAuth hook
-    // For now, we'll simulate authentication
-    const checkAuth = async () => {
+    const fetchDashboardData = async () => {
+      if (!isAuthenticated) return;
+
+      setIsLoading(true);
+
       try {
-        setIsLoading(true);
-        // Mock authentication check
-        // Check if token exists, but we'll always set authenticated to true for demo
-        const hasToken = !!localStorage.getItem("token");
-        console.log("Token exists:", hasToken);
+        // Fetch station profile
+        const profileResponse = await apiService.getStationDetails();
+        if (profileResponse.error) {
+          console.error("Error fetching station profile:", profileResponse.error);
+          toast.error("Failed to load station profile");
+        } else if (profileResponse.data) {
+          setStationData(profileResponse.data);
+        } else {
+          // Fallback to mock data if API returns empty data
+          setStationData({
+            stationName: "City Fuel Station",
+            registrationNumber: "FS-2023-001",
+            ownerName: "Jane Smith",
+            address: "123 Main Street, Colombo 05",
+            contactNumber: "+94712345678",
+            email: "citystation@example.com",
+            operatingHours: "6:00 AM - 10:00 PM",
+            lastLogin: "2023-06-25 14:30:45"
+          });
+        }
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Fetch station statistics
+        // Note: We'll use the station details endpoint for now since getStationStats is not implemented yet
+        const statsResponse = await apiService.getStationDetails();
+        if (statsResponse.error) {
+          console.error("Error fetching station stats:", statsResponse.error);
+          toast.error("Failed to load station statistics");
+        } else if (statsResponse.data) {
+          if (statsResponse.data.fuelInventory) {
+            setFuelInventory(statsResponse.data.fuelInventory);
+          }
+          if (statsResponse.data.transactionStats) {
+            setTransactionStats(statsResponse.data.transactionStats);
+          }
+        } else {
+          // Fallback to mock data if API returns empty data
+          setFuelInventory({
+            petrol92: { total: 5000, remaining: 3200, unit: "liters" },
+            petrol95: { total: 4000, remaining: 1800, unit: "liters" },
+            diesel: { total: 8000, remaining: 5500, unit: "liters" },
+            superDiesel: { total: 2000, remaining: 1200, unit: "liters" }
+          });
 
-        setIsAuthenticated(true); // For demo purposes, always set to true
-        setIsClient(true);
+          setTransactionStats({
+            today: 45,
+            thisWeek: 320,
+            thisMonth: 1250,
+            totalTransactions: 15680,
+            totalRevenue: 3250000,
+            averagePerDay: 42
+          });
+        }
+
         setError(null);
       } catch (err) {
-        console.error("Authentication error:", err);
-        setError("Failed to authenticate. Please try again.");
-        setIsAuthenticated(false);
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again.");
+        toast.error("Failed to load dashboard data");
+
+        // Set fallback mock data on error
+        setStationData({
+          stationName: "City Fuel Station",
+          registrationNumber: "FS-2023-001",
+          ownerName: "Jane Smith",
+          address: "123 Main Street, Colombo 05",
+          contactNumber: "+94712345678",
+          email: "citystation@example.com",
+          operatingHours: "6:00 AM - 10:00 PM",
+          lastLogin: "2023-06-25 14:30:45"
+        });
+
+        setFuelInventory({
+          petrol92: { total: 5000, remaining: 3200, unit: "liters" },
+          petrol95: { total: 4000, remaining: 1800, unit: "liters" },
+          diesel: { total: 8000, remaining: 5500, unit: "liters" },
+          superDiesel: { total: 2000, remaining: 1200, unit: "liters" }
+        });
+
+        setTransactionStats({
+          today: 45,
+          thisWeek: 320,
+          thisMonth: 1250,
+          totalTransactions: 15680,
+          totalRevenue: 3250000,
+          averagePerDay: 42
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, []);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (isClient && !isAuthenticated) {
-      // In a real application, redirect to login page
-      // Uncomment the following line to enable redirection
-      // window.location.href = "/auth/login";
+    if (isAuthenticated) {
+      fetchDashboardData();
     }
-  }, [isClient, isAuthenticated]);
+  }, [isAuthenticated]);
 
   // Calculate inventory percentages
   const calculatePercentage = (remaining: number, total: number) => {
@@ -177,7 +228,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">Today's Transactions</p>
-                  <p className="text-2xl font-bold">{mockTransactionStats.today}</p>
+                  <p className="text-2xl font-bold">{transactionStats?.today || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -185,7 +236,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">This Week</p>
-                  <p className="text-2xl font-bold">{mockTransactionStats.thisWeek}</p>
+                  <p className="text-2xl font-bold">{transactionStats?.thisWeek || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -193,7 +244,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold">{mockTransactionStats.thisMonth}</p>
+                  <p className="text-2xl font-bold">{transactionStats?.thisMonth || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -201,7 +252,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">Average Per Day</p>
-                  <p className="text-2xl font-bold">{mockTransactionStats.averagePerDay}</p>
+                  <p className="text-2xl font-bold">{transactionStats?.averagePerDay || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -230,27 +281,27 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Station Name</p>
-                      <p>{mockStationData.stationName}</p>
+                      <p>{stationData?.stationName || "City Fuel Station"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Registration Number</p>
-                      <p>{mockStationData.registrationNumber}</p>
+                      <p>{stationData?.registrationNumber || "FS-2023-001"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Owner Name</p>
-                      <p>{mockStationData.ownerName}</p>
+                      <p>{stationData?.ownerName || "Jane Smith"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Contact Number</p>
-                      <p>{mockStationData.contactNumber}</p>
+                      <p>{stationData?.contactNumber || "+94712345678"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p>{mockStationData.email}</p>
+                      <p>{stationData?.email || "citystation@example.com"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Operating Hours</p>
-                      <p className="text-sm">{mockStationData.operatingHours}</p>
+                      <p className="text-sm">{stationData?.operatingHours || "6:00 AM - 10:00 PM"}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -273,12 +324,17 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Petrol 92</span>
-                        <span className="text-sm font-medium">{mockFuelInventory.petrol92.remaining} / {mockFuelInventory.petrol92.total} {mockFuelInventory.petrol92.unit}</span>
+                        <span className="text-sm font-medium">
+                          {fuelInventory?.petrol92?.remaining || 0} / {fuelInventory?.petrol92?.total || 0} {fuelInventory?.petrol92?.unit || "liters"}
+                        </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                         <div
                           className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-                          style={{ width: `${calculatePercentage(mockFuelInventory.petrol92.remaining, mockFuelInventory.petrol92.total)}%` }}
+                          style={{
+                            width: `${fuelInventory?.petrol92 ?
+                              calculatePercentage(fuelInventory.petrol92.remaining, fuelInventory.petrol92.total) : 0}%`
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -287,12 +343,17 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Petrol 95</span>
-                        <span className="text-sm font-medium">{mockFuelInventory.petrol95.remaining} / {mockFuelInventory.petrol95.total} {mockFuelInventory.petrol95.unit}</span>
+                        <span className="text-sm font-medium">
+                          {fuelInventory?.petrol95?.remaining || 0} / {fuelInventory?.petrol95?.total || 0} {fuelInventory?.petrol95?.unit || "liters"}
+                        </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                         <div
                           className="bg-yellow-500 h-full transition-all duration-500 ease-in-out"
-                          style={{ width: `${calculatePercentage(mockFuelInventory.petrol95.remaining, mockFuelInventory.petrol95.total)}%` }}
+                          style={{
+                            width: `${fuelInventory?.petrol95 ?
+                              calculatePercentage(fuelInventory.petrol95.remaining, fuelInventory.petrol95.total) : 0}%`
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -301,12 +362,17 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Diesel</span>
-                        <span className="text-sm font-medium">{mockFuelInventory.diesel.remaining} / {mockFuelInventory.diesel.total} {mockFuelInventory.diesel.unit}</span>
+                        <span className="text-sm font-medium">
+                          {fuelInventory?.diesel?.remaining || 0} / {fuelInventory?.diesel?.total || 0} {fuelInventory?.diesel?.unit || "liters"}
+                        </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                         <div
                           className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-                          style={{ width: `${calculatePercentage(mockFuelInventory.diesel.remaining, mockFuelInventory.diesel.total)}%` }}
+                          style={{
+                            width: `${fuelInventory?.diesel ?
+                              calculatePercentage(fuelInventory.diesel.remaining, fuelInventory.diesel.total) : 0}%`
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -315,12 +381,17 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Super Diesel</span>
-                        <span className="text-sm font-medium">{mockFuelInventory.superDiesel.remaining} / {mockFuelInventory.superDiesel.total} {mockFuelInventory.superDiesel.unit}</span>
+                        <span className="text-sm font-medium">
+                          {fuelInventory?.superDiesel?.remaining || 0} / {fuelInventory?.superDiesel?.total || 0} {fuelInventory?.superDiesel?.unit || "liters"}
+                        </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                         <div
                           className="bg-green-500 h-full transition-all duration-500 ease-in-out"
-                          style={{ width: `${calculatePercentage(mockFuelInventory.superDiesel.remaining, mockFuelInventory.superDiesel.total)}%` }}
+                          style={{
+                            width: `${fuelInventory?.superDiesel ?
+                              calculatePercentage(fuelInventory.superDiesel.remaining, fuelInventory.superDiesel.total) : 0}%`
+                          }}
                         ></div>
                       </div>
                     </div>
@@ -435,15 +506,15 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-3">
                     <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
-                      <Link href="/dashboard/scanner">
-                        <FileText className="h-5 w-5" />
-                        <span>QR Scanner</span>
+                      <Link href="/dashboard/dispense">
+                        <Fuel className="h-5 w-5" />
+                        <span>Dispense Fuel</span>
                       </Link>
                     </Button>
                     <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
-                      <Link href="/dashboard/inventory">
-                        <Fuel className="h-5 w-5" />
-                        <span>Inventory</span>
+                      <Link href="/dashboard/scanner">
+                        <QrCode className="h-5 w-5" />
+                        <span>QR Scanner</span>
                       </Link>
                     </Button>
                     <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>

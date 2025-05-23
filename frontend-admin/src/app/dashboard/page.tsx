@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Logo } from "@/components/logo";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
 import {
   Card,
@@ -31,28 +30,12 @@ import {
 import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
 import Link from "next/link";
+import { apiService } from "@/services/api";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { Toaster } from "@/components/ui/sonner";
 
-// Mock data for the admin dashboard
-const mockAdminData = {
-  fullName: "Admin User",
-  employeeId: "EMP-001",
-  email: "admin@quota.app",
-  department: "IT Administration",
-  role: "System Administrator",
-  lastLogin: "2023-06-25 14:30:45"
-};
-
-const mockSystemStats = {
-  totalVehicleOwners: 1250,
-  totalStationOwners: 85,
-  totalFuelStations: 120,
-  totalTransactions: 15680,
-  fuelAllocated: 125000,
-  fuelConsumed: 98500,
-  activeUsers: 950,
-  pendingApprovals: 15
-};
-
+// These will be replaced with real data from API in future updates
 const mockRecentTransactions = [
   { id: "TRX-001", date: "2023-06-28", vehicleOwner: "John Doe", station: "Fuel Station A", amount: 5.5, status: "Completed" },
   { id: "TRX-002", date: "2023-06-28", vehicleOwner: "Jane Smith", station: "Fuel Station B", amount: 4.2, status: "Completed" },
@@ -61,6 +44,7 @@ const mockRecentTransactions = [
   { id: "TRX-005", date: "2023-06-26", vehicleOwner: "Michael Wilson", station: "Fuel Station D", amount: 5.0, status: "Completed" }
 ];
 
+// These will be replaced with real data from API in future updates
 const mockSystemNotifications = [
   { id: 1, type: "warning", message: "Fuel station 'Station X' reported technical issues with QR scanning", date: "2023-06-28" },
   { id: 2, type: "info", message: "Monthly quota allocation completed successfully", date: "2023-06-25" },
@@ -68,6 +52,7 @@ const mockSystemNotifications = [
   { id: 4, type: "info", message: "15 new vehicle owners registered this week", date: "2023-06-22" }
 ];
 
+// These will be replaced with real data from API in future updates
 const mockPendingApprovals = [
   { id: "REQ-001", type: "Station Registration", name: "City Fuel Station", date: "2023-06-27" },
   { id: "REQ-002", type: "Quota Increase", name: "John Doe", date: "2023-06-26" },
@@ -77,49 +62,97 @@ const mockPendingApprovals = [
 ];
 
 export default function Dashboard() {
-  const [isClient, setIsClient] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adminData, setAdminData] = useState<any>(null);
+  const [systemStats, setSystemStats] = useState<any>(null);
+  const [isClient, setIsClient] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  // Use the auth hook to check authentication
+  // Fetch admin profile and system stats
   useEffect(() => {
-    // In a real application, we would use the useAuth hook
-    // For now, we'll simulate authentication
-    const checkAuth = async () => {
+    setIsClient(true);
+    const fetchDashboardData = async () => {
+      if (!isAuthenticated) return;
+
+      setIsLoading(true);
+
       try {
-        setIsLoading(true);
-        // Mock authentication check
-        // Check if token exists, but we'll always set authenticated to true for demo
-        const hasToken = !!localStorage.getItem("token");
-        console.log("Token exists:", hasToken);
+        // Fetch admin profile
+        const profileResponse = await apiService.getAdminProfile();
+        if (profileResponse.error) {
+          console.error("Error fetching admin profile:", profileResponse.error);
+          toast.error("Failed to load admin profile");
+        } else if (profileResponse.data) {
+          setAdminData(profileResponse.data);
+        } else {
+          // Fallback to mock data if API returns empty data
+          setAdminData({
+            fullName: "Admin User",
+            employeeId: "EMP-001",
+            email: "admin@quota.app",
+            department: "IT Administration",
+            role: "System Administrator",
+            lastLogin: "2023-06-25 14:30:45"
+          });
+        }
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Fetch system statistics
+        const statsResponse = await apiService.getSystemStats();
+        if (statsResponse.error) {
+          console.error("Error fetching system stats:", statsResponse.error);
+          toast.error("Failed to load system statistics");
+        } else if (statsResponse.data) {
+          setSystemStats(statsResponse.data);
+        } else {
+          // Fallback to mock data if API returns empty data
+          setSystemStats({
+            totalVehicleOwners: 1250,
+            totalStationOwners: 85,
+            totalFuelStations: 120,
+            totalTransactions: 15680,
+            fuelAllocated: 125000,
+            fuelConsumed: 98500,
+            activeUsers: 950,
+            pendingApprovals: 15
+          });
+        }
 
-        setIsAuthenticated(true); // For demo purposes, always set to true
-        setIsClient(true);
         setError(null);
       } catch (err) {
-        console.error("Authentication error:", err);
-        setError("Failed to authenticate. Please try again.");
-        setIsAuthenticated(false);
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again.");
+        toast.error("Failed to load dashboard data");
+
+        // Set fallback mock data on error
+        setAdminData({
+          fullName: "Admin User",
+          employeeId: "EMP-001",
+          email: "admin@quota.app",
+          department: "IT Administration",
+          role: "System Administrator",
+          lastLogin: "2023-06-25 14:30:45"
+        });
+
+        setSystemStats({
+          totalVehicleOwners: 1250,
+          totalStationOwners: 85,
+          totalFuelStations: 120,
+          totalTransactions: 15680,
+          fuelAllocated: 125000,
+          fuelConsumed: 98500,
+          activeUsers: 950,
+          pendingApprovals: 15
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, []);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (isClient && !isAuthenticated) {
-      // In a real application, redirect to login page
-      // Uncomment the following line to enable redirection
-      // window.location.href = "/auth/login";
+    if (isAuthenticated) {
+      fetchDashboardData();
     }
-  }, [isClient, isAuthenticated]);
+  }, [isAuthenticated]);
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
@@ -173,7 +206,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">Vehicle Owners</p>
-                  <p className="text-2xl font-bold">{mockSystemStats.totalVehicleOwners}</p>
+                  <p className="text-2xl font-bold">{systemStats?.totalVehicleOwners || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -181,7 +214,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">Station Owners</p>
-                  <p className="text-2xl font-bold">{mockSystemStats.totalStationOwners}</p>
+                  <p className="text-2xl font-bold">{systemStats?.totalStationOwners || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -189,7 +222,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">Fuel Stations</p>
-                  <p className="text-2xl font-bold">{mockSystemStats.totalFuelStations}</p>
+                  <p className="text-2xl font-bold">{systemStats?.totalFuelStations || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -197,7 +230,7 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm text-muted-foreground">Pending Approvals</p>
-                  <p className="text-2xl font-bold">{mockSystemStats.pendingApprovals}</p>
+                  <p className="text-2xl font-bold">{systemStats?.pendingApprovals || 0}</p>
                 </div>
               </CardContent>
             </Card>
@@ -226,27 +259,27 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                      <p>{mockAdminData.fullName}</p>
+                      <p>{adminData?.fullName || "Admin User"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Employee ID</p>
-                      <p>{mockAdminData.employeeId}</p>
+                      <p>{adminData?.employeeId || "EMP-001"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Department</p>
-                      <p>{mockAdminData.department}</p>
+                      <p>{adminData?.department || "IT Administration"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Role</p>
-                      <p>{mockAdminData.role}</p>
+                      <p>{adminData?.role || "System Administrator"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Email</p>
-                      <p>{mockAdminData.email}</p>
+                      <p>{adminData?.email || "admin@quota.app"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Last Login</p>
-                      <p className="text-sm">{mockAdminData.lastLogin}</p>
+                      <p className="text-sm">{adminData?.lastLogin || "2023-06-25 14:30:45"}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -267,25 +300,25 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Total Allocated</span>
-                      <span className="text-lg font-bold">{mockSystemStats.fuelAllocated} liters</span>
+                      <span className="text-lg font-bold">{systemStats?.fuelAllocated || 0} liters</span>
                     </div>
 
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Total Consumed</span>
-                      <span className="text-lg font-bold">{mockSystemStats.fuelConsumed} liters</span>
+                      <span className="text-lg font-bold">{systemStats?.fuelConsumed || 0} liters</span>
                     </div>
 
                     {/* Consumption Progress Bar */}
                     <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
                       <div
                         className="bg-primary h-full transition-all duration-500 ease-in-out"
-                        style={{ width: `${(mockSystemStats.fuelConsumed / mockSystemStats.fuelAllocated) * 100}%` }}
+                        style={{ width: `${systemStats ? (systemStats.fuelConsumed / systemStats.fuelAllocated) * 100 : 0}%` }}
                       ></div>
                     </div>
 
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>0 liters</span>
-                      <span>{mockSystemStats.fuelAllocated} liters</span>
+                      <span>{systemStats?.fuelAllocated || 0} liters</span>
                     </div>
                   </div>
                 </CardContent>
@@ -433,6 +466,12 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
+                      <Link href="/dashboard/fuel-allocation">
+                        <Fuel className="h-5 w-5" />
+                        <span>Fuel Allocation</span>
+                      </Link>
+                    </Button>
                     <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-2" asChild>
                       <Link href="/dashboard/users">
                         <Users className="h-5 w-5" />

@@ -1,5 +1,6 @@
 package com.quotaapp.backend.repository.primary;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,14 @@ import com.quotaapp.backend.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    /**
+     * Count users who have logged in after a specific date
+     *
+     * @param date the date to check against
+     * @return the count of users who have logged in after the date
+     */
+    long countByLastLoginAfter(LocalDateTime date);
 
     /**
      * Find a user by email
