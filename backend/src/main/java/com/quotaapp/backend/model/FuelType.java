@@ -3,8 +3,8 @@ package com.quotaapp.backend.model;
 import java.util.Arrays;
 
 public enum FuelType {
-    OCTANE_92("92 OCTANE PETROL"),
-    OCTANE_95("95 OCTANE PETROL"),
+    PETROL_92("92 OCTANE PETROL"),
+    PETROL_95("95 OCTANE PETROL"),
     AUTO_DIESEL("AUTO DIESEL"),
     SUPER_DIESEL("SUPER DIESEL"),
     KEROSENE("KEROSENE");
