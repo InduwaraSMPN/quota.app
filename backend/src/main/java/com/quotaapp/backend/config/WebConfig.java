@@ -23,10 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
             .allowedOrigins(
                 "http://localhost:3000",  // Vehicle frontend
                 "http://localhost:3001",  // Station frontend
-                "http://localhost:3002",  // Admin frontend
-                "http://localhost:9000",  // Alternative Vehicle frontend
-                "http://localhost:9001",  // Alternative Station frontend
-                "http://localhost:9002"   // Alternative Admin frontend
+                "http://localhost:3002"   // Admin frontend
             )
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
             .allowedHeaders(
