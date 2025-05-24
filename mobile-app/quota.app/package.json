@@ -4,10 +4,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start --port 3003",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "android": "expo run:android --port 3003",
+    "ios": "expo start --ios --port 3003",
+    "web": "expo start --web --port 3003",
     "lint": "expo lint"
   },
   "dependencies": {
