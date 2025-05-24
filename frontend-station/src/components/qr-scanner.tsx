@@ -88,7 +88,7 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
       // Use a QR code library to decode the image
       // For this example, we'll simulate a successful scan after a random delay
       // In a real implementation, you would use a library like jsQR or a service worker
-      
+
       // Simulate QR code detection (replace with actual QR code detection)
       if (Math.random() > 0.7) { // 30% chance of "detecting" a QR code
         const qrData = "VEHICLE:ABC1234:OWNER:123"; // Example QR code data
@@ -114,7 +114,7 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
       // In a real implementation, you would validate this with the backend
       // For now, we'll simulate a successful validation
       toast.success(`QR code scanned: ${registrationNumber}`);
-      
+
       // Call the API to get vehicle ID by registration number
       fetchVehicleIdByRegistrationNumber(registrationNumber);
     } else {
@@ -131,7 +131,7 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
 
     // Format registration number (remove hyphens)
     const formattedRegistrationNumber = manualInput.replace(/-/g, "").toUpperCase();
-    
+
     // Call the API to get vehicle ID by registration number
     fetchVehicleIdByRegistrationNumber(formattedRegistrationNumber);
   };
@@ -139,13 +139,19 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
   // Fetch vehicle ID by registration number
   const fetchVehicleIdByRegistrationNumber = async (registrationNumber: string) => {
     try {
-      // In a real implementation, you would call an API endpoint
-      // For now, we'll simulate a successful API call
-      setTimeout(() => {
-        // Simulate a vehicle ID (replace with actual API call)
-        const vehicleId = Math.floor(Math.random() * 1000) + 1;
-        onScanSuccess(vehicleId);
-      }, 500);
+      // Call the API to get vehicle by registration number
+      const response = await apiService.getVehicleByRegistrationNumber(registrationNumber);
+
+      if (response.error) {
+        console.error("Error fetching vehicle:", response.error);
+        toast.error("Vehicle not found. Please check the registration number.");
+      } else if (response.data && response.data.vehicleId) {
+        // Successfully found the vehicle
+        toast.success(`Vehicle found: ${response.data.make} ${response.data.model}`);
+        onScanSuccess(response.data.vehicleId);
+      } else {
+        toast.error("Vehicle not found. Please check the registration number.");
+      }
     } catch (error) {
       console.error("Error fetching vehicle ID:", error);
       toast.error("Failed to validate vehicle. Please try again.");
@@ -158,7 +164,7 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
       if (scanIntervalRef.current) {
         clearInterval(scanIntervalRef.current);
       }
-      
+
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
@@ -177,13 +183,13 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
       <CardContent className="space-y-4">
         {scanning ? (
           <div className="relative">
-            <video 
-              ref={videoRef} 
+            <video
+              ref={videoRef}
               className="w-full h-64 object-cover rounded-md bg-black"
               playsInline
             />
-            <canvas 
-              ref={canvasRef} 
+            <canvas
+              ref={canvasRef}
               className="hidden"
             />
             <div className="absolute inset-0 border-2 border-primary/50 rounded-md pointer-events-none">
