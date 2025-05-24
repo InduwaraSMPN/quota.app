@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import { ModeToggle } from "@/components/mode-toggle";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
 import { Logo } from "@/components/logo";
@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -31,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -43,7 +41,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -61,7 +58,6 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import {
   Search,
-  User,
   Edit,
   Eye,
   MoreHorizontal,
@@ -69,8 +65,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Filter,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -89,7 +85,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { formatDate } from "@/lib/utils";
 
@@ -126,7 +121,6 @@ const searchSchema = z.object({
 });
 
 export default function UsersManagementPage() {
-  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +130,7 @@ export default function UsersManagementPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [statusAction, setStatusAction] = useState<"enable" | "disable">("enable");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
@@ -233,7 +228,18 @@ export default function UsersManagementPage() {
     if (!selectedUser) return;
 
     try {
-      const response = await apiService.updateUser(selectedUser.id, data);
+      // Prepare update data based on user type
+      const updateData: any = {
+        fullName: data.fullName,
+        contactNumber: data.contactNumber,
+      };
+
+      // Only include address for Vehicle Owners
+      if (selectedUser.userType === 'VEHICLE_OWNER' && data.address) {
+        updateData.address = data.address;
+      }
+
+      const response = await apiService.updateUser(selectedUser.id, updateData);
 
       if (response.error) {
         toast.error("Failed to update user");
@@ -297,11 +303,11 @@ export default function UsersManagementPage() {
   // Function to handle edit user
   const handleEditUser = (user: UserDetails) => {
     setSelectedUser(user);
-    // Set form default values
+    // Set form default values, ensuring no null/undefined values are passed to inputs
     editForm.reset({
-      fullName: user.fullName,
-      address: user.address,
-      contactNumber: user.contactNumber,
+      fullName: user.fullName || "",
+      address: user.address || "", // Ensure empty string instead of undefined/null
+      contactNumber: user.contactNumber || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -311,6 +317,32 @@ export default function UsersManagementPage() {
     setSelectedUser(user);
     setStatusAction(action);
     setIsStatusDialogOpen(true);
+  };
+
+  // Function to handle delete user dialog
+  const handleDeleteDialog = (user: UserDetails) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Function to handle user deletion
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const response = await apiService.deleteUser(selectedUser.id);
+
+      if (response.error) {
+        toast.error("Failed to delete user");
+      } else {
+        toast.success("User deleted successfully");
+        setIsDeleteDialogOpen(false);
+        fetchUsers(); // Refresh the user list
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      toast.error("Failed to delete user");
+    }
   };
 
   return (
@@ -541,6 +573,14 @@ export default function UsersManagementPage() {
                                     Enable Account
                                   </DropdownMenuItem>
                                 )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteDialog(user)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4 text-destructive focus:text-destructive" />
+                                  Delete User
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -743,19 +783,22 @@ export default function UsersManagementPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={editForm.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Address field - only show for Vehicle Owners */}
+                {selectedUser.userType === 'VEHICLE_OWNER' && (
+                  <FormField
+                    control={editForm.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={editForm.control}
                   name="contactNumber"
@@ -798,6 +841,24 @@ export default function UsersManagementPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleStatusChange}>
               {statusAction === "enable" ? "Enable Account" : "Disable Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this user account? This action cannot be undone and will permanently remove the user from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
