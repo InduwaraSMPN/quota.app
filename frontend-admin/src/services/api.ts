@@ -448,6 +448,108 @@ export const apiService = {
   },
 
   /**
+   * Get all users across all types with pagination, sorting, and filtering
+   */
+  getAllUsers: async (queryParams: string = ''): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/all-users?${queryParams}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get user details by ID (works for all user types)
+   */
+  getUserById: async (id: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/all-users/${id}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update user information (works for all user types)
+   */
+  updateUser: async (id: number, data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/all-users/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update user account status (enable/disable) - works for all user types
+   */
+  updateUserStatus: async (id: number, data: { isActive: boolean }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/all-users/${id}/status`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Delete user (soft delete by deactivating) - works for all user types
+   */
+  deleteUser: async (id: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/all-users/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
    * Get all station owners
    */
   getStationOwners: async (page: number = 1, limit: number = 10): Promise<ApiResponse<any>> => {
