@@ -1,3 +1,4 @@
+
 # === Global Settings ===
 .DS_Store
 Thumbs.db
@@ -50,371 +51,103 @@ Thumbs.db
 **/.mvn/wrapper/maven-wrapper.properties
 
 # === Next.js Frontends ===
+# These broad rules will also apply to your Expo app if it's a JS/TS project
 **/node_modules/
 **/.next/
 **/.turbo/
 **/.vercel/
 **/.cache/
 **/dist/
-**/build/
+# **/build/ # Already covered in Java/Spring Boot section, good
 **/.eslintcache
 **/coverage/
 **/npm-debug.log*
 **/yarn-debug.log*
 **/yarn-error.log*
 **/pnpm-debug.log*
+# Note: It's generally recommended to commit lock files (package-lock.json, yarn.lock, pnpm-lock.yaml)
+# to ensure consistent installs, but your current setup ignores them.
 **/package-lock.json
 **/yarn.lock
 **/pnpm-lock.yaml
 
-# === Android Mobile App ===
-/mobile-app/.gradle/
-/mobile-app/.idea/
-/mobile-app/build/
-/mobile-app/local.properties
-/mobile-app/.DS_Store
-/mobile-app/*.iml
-/mobile-app/captures/
-/mobile-app/.externalNativeBuild/
-/mobile-app/.cxx/
-/mobile-app/.settings/
-/mobile-app/.vscode/
-/mobile-app/.gradle/
-/mobile-app/.idea/
-/mobile-app/.classpath
-/mobile-app/.project
-/mobile-app/.settings/
-/mobile-app/.factorypath
-/mobile-app/.springBeans
-/mobile-app/.sts4-cache
-/mobile-app/.metadata
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app/.bzr/
-/mobile-app/.CVS/
-/mobile-app/.svn/
-/mobile-app/.git/
-/mobile-app/.hg/
-/mobile-app
-::contentReference[oaicite:0]{index=0}
+# === Expo Mobile App ===
+# (Assuming the Expo project is in /mobile-app/)
+
+# Expo specific files and directories
+/mobile-app/.expo/
+/mobile-app/.expo-shared/
+/mobile-app/web-build/ # For Expo web builds
+
+# EAS Build specific (optional, but good practice if using EAS)
+/mobile-app/.eas/ # Cache and local credentials for EAS CLI. eas.json is usually committed.
+# More specific EAS ignores if needed:
+# /mobile-app/.eas/cache/
+# /mobile-app/.eas/keys/
+# /mobile-app/.eas/build/
+
+# Android specific (after 'npx expo prebuild' or if ejected)
+# Note: `**/build/` and `**/.gradle/` from Java section might already cover these,
+# but explicit paths can be clearer.
+/mobile-app/android/app/build/
+/mobile-app/android/build/
+/mobile-app/android/.gradle/
+/mobile-app/android/local.properties # Contains machine-specific paths, API keys
+/mobile-app/android/.idea/ # If android folder opened as separate project
+/mobile-app/android/.cxx/
+/mobile-app/android/.externalNativeBuild/
+/mobile-app/android/captures/
+/mobile-app/android/**/*.iml # IDE module files
+
+# iOS specific (after 'npx expo prebuild' or if ejected)
+# Note: `**/build/` from Java section might already cover ios/build/,
+# but explicit path can be clearer.
+/mobile-app/ios/build/
+/mobile-app/ios/Pods/ # Managed by CocoaPods, should not be versioned
+/mobile-app/ios/.xcode.env.local # For local Xcode environment variables
+/mobile-app/ios/DerivedData/
+/mobile-app/ios/.hmap/
+# User-specific Xcode files (these ensure project files can be shared)
+/mobile-app/ios/*.xcworkspace/contents.xcworkspacedata
+/mobile-app/ios/*.xcodeproj/project.xcworkspace/
+/mobile-app/ios/*.xcodeproj/xcuserdata/
+/mobile-app/ios/xcuserdata/
+
+# Keystore files (NEVER commit these for security reasons)
+/mobile-app/*.keystore
+/mobile-app/*.jks
+/mobile-app/android/*.keystore
+/mobile-app/android/*.jks
+/mobile-app/android/app/*.keystore
+/mobile-app/android/app/*.jks
+
+# Temporary bundler files (if they appear outside .expo or node_modules/.cache)
+# /mobile-app/metro-cache/ # Usually handled by .cache or .expo
+
+# The numerous repeated .git, .svn, .hg, .bzr, .CVS, and Java-specific
+# entries from your original /mobile-app/ section have been removed as they
+# were either incorrect for a mobile app project, redundant, or would
+# interfere with the root project's version control.
+
+
+Key changes and considerations:
+
+Cleaned Up Original Android Section: Removed the vast number of redundant and irrelevant entries (like .git/, .svn/, Java-specific files) from the old /mobile-app/ section.
+
+Expo Specific: Added .expo/, .expo-shared/, and web-build/.
+
+EAS Build: Added common ignores for EAS CLI.
+
+Native Directories: Included standard ignores for the android/ and ios/ directories that are created when you run npx expo prebuild (for development builds or custom native code) or eject from Expo's managed workflow.
+
+local.properties for Android is crucial to ignore.
+
+Pods/ for iOS is crucial to ignore.
+
+Keystores: Explicitly added patterns to ignore Android keystore files. These should never be committed to your repository.
+
+Leveraged Global/Next.js Ignores: Your existing global and Next.js rules (like **/node_modules/, **/build/, **/dist/, **/.cache/, *.log, .idea/, .vscode/, .DS_Store) are quite comprehensive and will cover many common files within the /mobile-app/ directory as well, so I didn't repeat them unless specificity was beneficial.
+
+Lock Files: I've kept your pattern of ignoring package-lock.json, yarn.lock, and pnpm-lock.yaml as per your "Next.js Frontends" section, but added a comment. For most projects, especially team-based ones, committing these lock files is highly recommended to ensure everyone gets the exact same dependency versions.
+
+This revised section should serve an Expo project well. Remember to adjust paths if your Expo project isn't directly inside /mobile-app/.
