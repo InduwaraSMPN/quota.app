@@ -176,17 +176,17 @@ export default function UsersManagementPage() {
       params.append("size", pageSize.toString());
       params.append("sort", sortField);
       params.append("direction", sortDirection);
-      
+
       if (searchTerm) {
         params.append("search", searchTerm);
       }
-      
+
       if (statusFilter !== null) {
         params.append("status", statusFilter === "active" ? "true" : "false");
       }
 
       const response = await apiService.getVehicleOwners(params.toString());
-      
+
       if (response.error) {
         setError(response.error);
         toast.error("Failed to load users");
@@ -220,10 +220,10 @@ export default function UsersManagementPage() {
   // Function to handle user edit submission
   const onEditSubmit = async (data: z.infer<typeof userEditSchema>) => {
     if (!selectedUser) return;
-    
+
     try {
       const response = await apiService.updateVehicleOwner(selectedUser.id, data);
-      
+
       if (response.error) {
         toast.error("Failed to update user");
       } else {
@@ -240,13 +240,13 @@ export default function UsersManagementPage() {
   // Function to handle user status change
   const handleStatusChange = async () => {
     if (!selectedUser) return;
-    
+
     try {
       const response = await apiService.updateVehicleOwnerStatus(
-        selectedUser.id, 
+        selectedUser.id,
         { isActive: statusAction === "enable" }
       );
-      
+
       if (response.error) {
         toast.error(`Failed to ${statusAction} user`);
       } else {
@@ -341,9 +341,9 @@ export default function UsersManagementPage() {
                 <p className="text-muted-foreground">Manage vehicle owners in the system</p>
               </div>
             </div>
-            <Button 
-              onClick={() => fetchUsers()} 
-              variant="outline" 
+            <Button
+              onClick={() => fetchUsers()}
+              variant="outline"
               className="flex items-center gap-2"
               disabled={isRefreshing}
             >
@@ -422,13 +422,13 @@ export default function UsersManagementPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer"
                         onClick={() => handleSortChange("id")}
                       >
                         ID {sortField === "id" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer"
                         onClick={() => handleSortChange("email")}
                       >
@@ -436,7 +436,7 @@ export default function UsersManagementPage() {
                       </TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>NIC</TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer"
                         onClick={() => handleSortChange("isActive")}
                       >
