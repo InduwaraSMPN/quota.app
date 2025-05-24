@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { format } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -66,4 +67,59 @@ export function formatDateTime(dateString: string): string {
     console.error('Error formatting date-time:', error);
     return 'Error formatting date-time';
   }
+}
+
+/**
+ * Safely format a date using date-fns format function
+ * @param dateValue The date value (string, Date, or null/undefined)
+ * @param formatString The format string for date-fns
+ * @param fallback The fallback string to return if date is invalid
+ * @returns Formatted date string or fallback
+ */
+export function safeFormatDate(
+  dateValue: string | Date | null | undefined,
+  formatString: string,
+  fallback: string = 'N/A'
+): string {
+  if (!dateValue) return fallback;
+
+  try {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+
+    // Check if date is valid
+    if (!date || isNaN(date.getTime())) {
+      return fallback;
+    }
+
+    return format(date, formatString);
+  } catch (error) {
+    console.error('Error formatting date with date-fns:', error);
+    return fallback;
+  }
+}
+
+/**
+ * Safely format a date for display in short format (MMM d, yyyy)
+ * @param dateValue The date value (string, Date, or null/undefined)
+ * @param fallback The fallback string to return if date is invalid
+ * @returns Formatted date string or fallback
+ */
+export function safeFormatDateShort(
+  dateValue: string | Date | null | undefined,
+  fallback: string = 'Not available'
+): string {
+  return safeFormatDate(dateValue, "MMM d, yyyy", fallback);
+}
+
+/**
+ * Safely format a date for display with time (MMM d, yyyy h:mm a)
+ * @param dateValue The date value (string, Date, or null/undefined)
+ * @param fallback The fallback string to return if date is invalid
+ * @returns Formatted date string or fallback
+ */
+export function safeFormatDateWithTime(
+  dateValue: string | Date | null | undefined,
+  fallback: string = 'Not available'
+): string {
+  return safeFormatDate(dateValue, "MMM d, yyyy h:mm a", fallback);
 }
