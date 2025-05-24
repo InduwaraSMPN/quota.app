@@ -90,6 +90,8 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
     @Query("SELECT t FROM FuelTransaction t WHERE t.vehicle.id = :vehicleId ORDER BY t.transactionDate DESC")
     Page<FuelTransaction> findByVehicleId(@Param("vehicleId") Long vehicleId, Pageable pageable);
 
+
+
     /**
      * Find all transactions for a station by station ID
      *
@@ -124,6 +126,56 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
             @Param("endDate") LocalDateTime endDate);
 
     /**
+     * Find all transactions for a vehicle by vehicle ID and date range with pagination
+     *
+     * @param vehicleId the vehicle ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.vehicle.id = :vehicleId AND t.transactionDate BETWEEN :startDate AND :endDate ORDER BY t.transactionDate DESC")
+    Page<FuelTransaction> findByVehicleIdAndTransactionDateBetween(
+            @Param("vehicleId") Long vehicleId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable);
+
+    /**
+     * Find all transactions for a vehicle by vehicle ID, date range, and fuel type
+     *
+     * @param vehicleId the vehicle ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param fuelType the fuel type to search for
+     * @return a list of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.vehicle.id = :vehicleId AND t.transactionDate BETWEEN :startDate AND :endDate AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    List<FuelTransaction> findByVehicleIdAndTransactionDateBetweenAndFuelType(
+            @Param("vehicleId") Long vehicleId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("fuelType") FuelType fuelType);
+
+    /**
+     * Find all transactions for a vehicle by vehicle ID, date range, and fuel type with pagination
+     *
+     * @param vehicleId the vehicle ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param fuelType the fuel type to search for
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.vehicle.id = :vehicleId AND t.transactionDate BETWEEN :startDate AND :endDate AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    Page<FuelTransaction> findByVehicleIdAndTransactionDateBetweenAndFuelType(
+            @Param("vehicleId") Long vehicleId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("fuelType") FuelType fuelType,
+            Pageable pageable);
+
+    /**
      * Find all transactions for a station by station ID and date range
      *
      * @param stationId the station ID to search for
@@ -136,6 +188,56 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
             @Param("stationId") Long stationId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    /**
+     * Find all transactions for a station by station ID and date range with pagination
+     *
+     * @param stationId the station ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId AND t.transactionDate BETWEEN :startDate AND :endDate ORDER BY t.transactionDate DESC")
+    Page<FuelTransaction> findByStationIdAndTransactionDateBetween(
+            @Param("stationId") Long stationId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable);
+
+    /**
+     * Find all transactions for a station by station ID, date range, and fuel type
+     *
+     * @param stationId the station ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param fuelType the fuel type to search for
+     * @return a list of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId AND t.transactionDate BETWEEN :startDate AND :endDate AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    List<FuelTransaction> findByStationIdAndTransactionDateBetweenAndFuelType(
+            @Param("stationId") Long stationId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("fuelType") FuelType fuelType);
+
+    /**
+     * Find all transactions for a station by station ID, date range, and fuel type with pagination
+     *
+     * @param stationId the station ID to search for
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param fuelType the fuel type to search for
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId AND t.transactionDate BETWEEN :startDate AND :endDate AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    Page<FuelTransaction> findByStationIdAndTransactionDateBetweenAndFuelType(
+            @Param("stationId") Long stationId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("fuelType") FuelType fuelType,
+            Pageable pageable);
 
     /**
      * Count transactions for a station by station ID and date range
@@ -162,4 +264,108 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
     List<FuelTransaction> findByVehicleIdAndFuelType(
             @Param("vehicleId") Long vehicleId,
             @Param("fuelType") FuelType fuelType);
+
+    /**
+     * Find all transactions for a vehicle by vehicle ID and fuel type with pagination
+     *
+     * @param vehicleId the vehicle ID to search for
+     * @param fuelType the fuel type to search for
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.vehicle.id = :vehicleId AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    Page<FuelTransaction> findByVehicleIdAndFuelType(
+            @Param("vehicleId") Long vehicleId,
+            @Param("fuelType") FuelType fuelType,
+            Pageable pageable);
+
+    /**
+     * Find all transactions for a station by station ID and fuel type
+     *
+     * @param stationId the station ID to search for
+     * @param fuelType the fuel type to search for
+     * @return a list of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    List<FuelTransaction> findByStationIdAndFuelType(
+            @Param("stationId") Long stationId,
+            @Param("fuelType") FuelType fuelType);
+
+    /**
+     * Find all transactions for a station by station ID and fuel type with pagination
+     *
+     * @param stationId the station ID to search for
+     * @param fuelType the fuel type to search for
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId AND t.fuelType = :fuelType ORDER BY t.transactionDate DESC")
+    Page<FuelTransaction> findByStationIdAndFuelType(
+            @Param("stationId") Long stationId,
+            @Param("fuelType") FuelType fuelType,
+            Pageable pageable);
+
+    /**
+     * Find all transactions by fuel type
+     *
+     * @param fuelType the fuel type to search for
+     * @return a list of fuel transactions
+     */
+    List<FuelTransaction> findByFuelType(FuelType fuelType);
+
+    /**
+     * Find all transactions by fuel type with pagination
+     *
+     * @param fuelType the fuel type to search for
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    Page<FuelTransaction> findByFuelType(FuelType fuelType, Pageable pageable);
+
+    /**
+     * Find all transactions by date range
+     *
+     * @param startDate the start date
+     * @param endDate the end date
+     * @return a list of fuel transactions
+     */
+    List<FuelTransaction> findByTransactionDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    /**
+     * Find all transactions by date range with pagination
+     *
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    Page<FuelTransaction> findByTransactionDateBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+
+    /**
+     * Find all transactions by date range and fuel type
+     *
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param fuelType the fuel type to search for
+     * @return a list of fuel transactions
+     */
+    List<FuelTransaction> findByTransactionDateBetweenAndFuelType(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            FuelType fuelType);
+
+    /**
+     * Find all transactions by date range and fuel type with pagination
+     *
+     * @param startDate the start date
+     * @param endDate the end date
+     * @param fuelType the fuel type to search for
+     * @param pageable the pagination information
+     * @return a page of fuel transactions
+     */
+    Page<FuelTransaction> findByTransactionDateBetweenAndFuelType(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            FuelType fuelType,
+            Pageable pageable);
 }

@@ -2,6 +2,7 @@ package com.quotaapp.backend.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,14 +23,22 @@ import org.springframework.web.bind.annotation.RestController;
 import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.dto.quota.QuotaAllocationDTO;
 import com.quotaapp.backend.dto.quota.QuotaDetailsDTO;
+import com.quotaapp.backend.dto.quota.QuotaHistoryDTO;
+import com.quotaapp.backend.dto.quota.QuotaUpdateDTO;
+import com.quotaapp.backend.dto.quota.VehicleClassQuotaDTO;
 import com.quotaapp.backend.exception.ResourceNotFoundException;
+import com.quotaapp.backend.model.FuelQuota;
+import com.quotaapp.backend.model.QuotaHistory;
 import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.model.Vehicle;
 import com.quotaapp.backend.model.VehicleClass;
+import com.quotaapp.backend.repository.primary.FuelQuotaRepository;
+import com.quotaapp.backend.repository.primary.QuotaHistoryRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
 import com.quotaapp.backend.repository.primary.VehicleClassRepository;
 import com.quotaapp.backend.repository.primary.VehicleRepository;
 import com.quotaapp.backend.service.FuelQuotaService;
+import com.quotaapp.backend.service.NotificationService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +57,9 @@ public class AdminQuotaController {
     private final VehicleRepository vehicleRepository;
     private final VehicleClassRepository vehicleClassRepository;
     private final FuelQuotaService fuelQuotaService;
+    private final FuelQuotaRepository fuelQuotaRepository;
+    private final QuotaHistoryRepository quotaHistoryRepository;
+    private final NotificationService notificationService;
 
     /**
      * Get all vehicle classes with their quota amounts
@@ -157,9 +169,34 @@ public class AdminQuotaController {
 
         VehicleClass vehicleClass = vehicleClassOpt.get();
 
+        // Get the old quota amount for history
+        BigDecimal oldQuotaAmount = vehicleClass.getFuelQuotaAmount();
+
         // Update the quota amount
         vehicleClass.setFuelQuotaAmount(fuelQuotaAmount);
         vehicleClass = vehicleClassRepository.save(vehicleClass);
+
+        // Create quota history entry
+        QuotaHistory quotaHistory = new QuotaHistory();
+        quotaHistory.setVehicleClass(vehicleClass);
+        quotaHistory.setOldQuotaAmount(oldQuotaAmount.doubleValue());
+        quotaHistory.setNewQuotaAmount(fuelQuotaAmount.doubleValue());
+        quotaHistory.setChangedBy(user.getEmail()); // Use admin email
+        quotaHistory.setChangedAt(LocalDateTime.now());
+
+        // Get reason if provided
+        String reason = null;
+        if (requestBody.containsKey("reason")) {
+            reason = (String) requestBody.get("reason");
+            quotaHistory.setReason(reason);
+        }
+
+        // Save quota history
+        quotaHistoryRepository.save(quotaHistory);
+
+        // Skip notifications for now as we need to implement a VehicleOwnerNotification model
+        // and update the NotificationService to support vehicle owner notifications
+        log.info("Quota updated for vehicle class: {}, new amount: {}", vehicleClass.getCode(), fuelQuotaAmount);
 
         // Map to response format
         Map<String, Object> response = new HashMap<>();
@@ -168,8 +205,64 @@ public class AdminQuotaController {
         response.put("name", vehicleClass.getName());
         response.put("description", vehicleClass.getDescription());
         response.put("fuelQuotaAmount", vehicleClass.getFuelQuotaAmount());
+        response.put("updatedAt", LocalDateTime.now());
 
         return ResponseEntity.ok(ApiResponse.success("Vehicle class quota updated successfully", response));
+    }
+
+    /**
+     * Get quota change history
+     *
+     * @return a list of quota change history entries
+     */
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getQuotaHistory() {
+        // Get the authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        log.info("Getting quota change history by user: {}", email);
+
+        // Find the user in the database
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            log.warn("User not found: {}", email);
+            return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+        }
+
+        User user = userOpt.get();
+
+        // Verify that the user is an admin
+        if (!user.getRole().name().equals("ADMIN")) {
+            log.warn("User is not an admin: {}", email);
+            return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Admin privileges required."));
+        }
+
+        try {
+            List<QuotaHistory> quotaHistoryList = quotaHistoryRepository.findAllByOrderByChangedAtDesc();
+
+            List<Map<String, Object>> result = quotaHistoryList.stream()
+                    .map(history -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", history.getId());
+                        map.put("vehicleClassId", history.getVehicleClass().getId());
+                        map.put("vehicleClassCode", history.getVehicleClass().getCode());
+                        map.put("vehicleClassName", history.getVehicleClass().getName());
+                        map.put("oldQuotaAmount", history.getOldQuotaAmount());
+                        map.put("newQuotaAmount", history.getNewQuotaAmount());
+                        map.put("changedBy", history.getChangedBy());
+                        map.put("changedAt", history.getChangedAt());
+                        map.put("reason", history.getReason());
+                        return map;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ApiResponse.success("Quota change history retrieved successfully", result));
+        } catch (Exception e) {
+            log.error("Error getting quota change history", e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Error getting quota change history: " + e.getMessage()));
+        }
     }
 
     /**

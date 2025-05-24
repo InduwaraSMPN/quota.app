@@ -2,20 +2,15 @@ package com.quotaapp.backend.controller;
 
 import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.model.AdminUser;
-import com.quotaapp.backend.model.FuelTransaction;
 import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.repository.primary.AdminUserRepository;
 import com.quotaapp.backend.repository.primary.FuelStationRepository;
-import com.quotaapp.backend.repository.primary.FuelTransactionRepository;
 import com.quotaapp.backend.repository.primary.UserRepository;
 import com.quotaapp.backend.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +42,6 @@ public class AdminController {
     private final UserRepository userRepository;
     private final AdminUserRepository adminUserRepository;
     private final FuelStationRepository fuelStationRepository;
-    private final FuelTransactionRepository fuelTransactionRepository;
     private final NotificationService notificationService;
 
     /**
@@ -194,58 +188,7 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Admin profile updated successfully", updatedProfileData));
     }
 
-    /**
-     * Get recent transactions for admin dashboard
-     *
-     * @return list of recent transactions
-     */
-    @GetMapping("/transactions/recent")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRecentTransactions() {
-        // Get the authenticated user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
 
-        log.info("Fetching recent transactions for admin: {}", email);
-
-        // Find the user in the database
-        Optional<User> userOpt = userRepository.findByEmail(email);
-
-        if (userOpt.isEmpty()) {
-            log.warn("User not found: {}", email);
-            return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
-        }
-
-        User user = userOpt.get();
-
-        // Verify that the user is an admin
-        if (!user.getRole().name().equals("ADMIN")) {
-            log.warn("User is not an admin: {}", email);
-            return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Admin privileges required."));
-        }
-
-        // Get recent transactions (limit to 10)
-        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "transactionDate"));
-        List<FuelTransaction> recentTransactions = fuelTransactionRepository.findAll(pageable).getContent();
-
-        // Convert to response format
-        List<Map<String, Object>> transactionsList = new ArrayList<>();
-        for (FuelTransaction transaction : recentTransactions) {
-            Map<String, Object> transactionMap = new HashMap<>();
-            transactionMap.put("id", transaction.getId());
-            transactionMap.put("stationId", transaction.getStation().getId());
-            transactionMap.put("stationName", transaction.getStation().getStationName());
-            transactionMap.put("vehicleId", transaction.getVehicle().getId());
-            transactionMap.put("vehicleRegistrationNumber", transaction.getVehicle().getRegistrationNumber());
-            transactionMap.put("fuelType", transaction.getFuelType().name());
-            transactionMap.put("amount", transaction.getAmount());
-            transactionMap.put("unitPrice", transaction.getUnitPrice());
-            transactionMap.put("totalPrice", transaction.getTotalPrice());
-            transactionMap.put("transactionDate", transaction.getTransactionDate());
-            transactionsList.add(transactionMap);
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("Recent transactions retrieved successfully", transactionsList));
-    }
 
     /**
      * Get notifications for admin dashboard

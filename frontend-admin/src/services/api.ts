@@ -366,13 +366,75 @@ export const apiService = {
   },
 
   /**
-   * Get all vehicle owners
+   * Get all vehicle owners with pagination, sorting, and filtering
    */
-  getVehicleOwners: async (page: number = 1, limit: number = 10): Promise<ApiResponse<any>> => {
+  getVehicleOwners: async (queryParams: string = ''): Promise<ApiResponse<any>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/vehicle-owners?page=${page}&limit=${limit}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users?${queryParams}`, {
         method: 'GET',
         headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get vehicle owner details by ID
+   */
+  getVehicleOwnerById: async (id: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${id}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update vehicle owner information
+   */
+  updateVehicleOwner: async (id: number, data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update vehicle owner account status (enable/disable)
+   */
+  updateVehicleOwnerStatus: async (id: number, data: { isActive: boolean }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${id}/status`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
       });
 
       return handleResponse(response);
@@ -406,13 +468,75 @@ export const apiService = {
   },
 
   /**
-   * Get all fuel stations
+   * Get all fuel stations with pagination, sorting, and filtering
    */
-  getFuelStations: async (page: number = 1, limit: number = 10): Promise<ApiResponse<any>> => {
+  getFuelStations: async (queryParams: string = ''): Promise<ApiResponse<any>> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/stations?page=${page}&limit=${limit}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/stations?${queryParams}`, {
         method: 'GET',
         headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get fuel station details by ID
+   */
+  getFuelStationById: async (id: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/stations/${id}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update fuel station information
+   */
+  updateFuelStation: async (id: number, data: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/stations/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Update fuel station verification status
+   */
+  updateFuelStationVerificationStatus: async (id: number, data: { status: string, rejectionReason?: string }): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/stations/${id}/verification`, {
+        method: 'PUT',
+        headers: getAuthHeader(),
+        body: JSON.stringify(data),
       });
 
       return handleResponse(response);
@@ -431,6 +555,95 @@ export const apiService = {
   getRecentTransactions: async (limit: number = 10): Promise<ApiResponse<any>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/transactions/recent?limit=${limit}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get all transactions with pagination, sorting, and filtering
+   */
+  getAllTransactions: async (
+    page: number = 0,
+    size: number = 10,
+    sort: string = 'transactionDate',
+    direction: string = 'desc',
+    filters: {
+      vehicleId?: number,
+      stationId?: number,
+      startDate?: string,
+      endDate?: string,
+      fuelType?: string
+    } = {}
+  ): Promise<ApiResponse<any>> => {
+    try {
+      // Build the URL with query parameters
+      let url = `${API_BASE_URL}/api/admin/transactions?page=${page}&size=${size}&sort=${sort}&direction=${direction}`;
+
+      // Add optional filters if provided
+      if (filters.vehicleId) url += `&vehicleId=${filters.vehicleId}`;
+      if (filters.stationId) url += `&stationId=${filters.stationId}`;
+      if (filters.startDate) url += `&startDate=${encodeURIComponent(filters.startDate)}`;
+      if (filters.endDate) url += `&endDate=${encodeURIComponent(filters.endDate)}`;
+      if (filters.fuelType) url += `&fuelType=${encodeURIComponent(filters.fuelType)}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get transaction details by ID
+   */
+  getTransactionById: async (id: number): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/transactions/${id}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get transaction statistics
+   */
+  getTransactionStats: async (startDate?: string, endDate?: string): Promise<ApiResponse<any>> => {
+    try {
+      // Build the URL with query parameters
+      let url = `${API_BASE_URL}/api/admin/transactions/stats`;
+
+      // Add optional filters if provided
+      if (startDate) url += `?startDate=${encodeURIComponent(startDate)}`;
+      if (endDate) url += `${startDate ? '&' : '?'}endDate=${encodeURIComponent(endDate)}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeader(),
       });
@@ -733,12 +946,19 @@ export const apiService = {
   /**
    * Update vehicle class quota amount
    */
-  updateVehicleClassQuota: async (data: { vehicleClassId: number, fuelQuotaAmount: number }): Promise<ApiResponse<any>> => {
+  updateVehicleClassQuota: async (data: {
+    vehicleClassId: number,
+    fuelQuotaAmount: number,
+    reason?: string
+  }): Promise<ApiResponse<any>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/quota/vehicle-classes/${data.vehicleClassId}`, {
         method: 'PUT',
         headers: getAuthHeader(),
-        body: JSON.stringify({ fuelQuotaAmount: data.fuelQuotaAmount }),
+        body: JSON.stringify({
+          fuelQuotaAmount: data.fuelQuotaAmount,
+          reason: data.reason
+        }),
       });
 
       return handleResponse(response);
@@ -811,6 +1031,26 @@ export const apiService = {
   getQuotaDetailsByVehicleId: async (vehicleId: number): Promise<ApiResponse<any>> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/quota/details/${vehicleId}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get quota change history
+   */
+  getQuotaHistory: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/quota/history`, {
         method: 'GET',
         headers: getAuthHeader(),
       });
