@@ -34,6 +34,7 @@ import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { safeFormatDateWithTime } from "@/lib/utils";
+import { FuelConsumptionCard } from "@/components/fuel-consumption-card";
 
 
 
@@ -501,6 +502,9 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Fuel Consumption Statistics Card */}
+              <FuelConsumptionCard />
 
               {/* Quick Actions Card */}
               <Card>
