@@ -1166,4 +1166,59 @@ export const apiService = {
       };
     }
   },
+
+  /**
+   * Get fuel consumption statistics for dashboard
+   */
+  getFuelConsumptionStats: async (): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/fuel-consumption/stats`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
+   * Get detailed fuel consumption analytics with filtering
+   */
+  getFuelConsumptionAnalytics: async (filters: {
+    startDate?: string,
+    endDate?: string,
+    fuelType?: string,
+    stationId?: number
+  } = {}): Promise<ApiResponse<any>> => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      if (filters.fuelType) params.append('fuelType', filters.fuelType);
+      if (filters.stationId) params.append('stationId', filters.stationId.toString());
+
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/api/admin/fuel-consumption/analytics${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
 };
