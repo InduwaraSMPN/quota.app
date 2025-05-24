@@ -116,7 +116,7 @@ interface UserDetails {
 // Define form schema for user edit
 const userEditSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
+  address: z.string().optional(), // Make address optional for Admin and Station Owner users
   contactNumber: z.string().regex(/^\+?[0-9]{10,15}$/, "Invalid contact number format"),
 });
 
