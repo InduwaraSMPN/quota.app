@@ -580,4 +580,25 @@ export const apiService = {
       };
     }
   },
+
+  /**
+   * Add a new vehicle to the authenticated user
+   */
+  addVehicle: async (vehicleData: any): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/vehicle/add`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: JSON.stringify(vehicleData),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
 };

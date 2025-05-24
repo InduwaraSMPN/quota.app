@@ -2,20 +2,18 @@
 
 import { ModeToggle } from "@/components/mode-toggle";
 import { MagicBackButton } from "@/components/ui/magic-back-button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Car } from "lucide-react";
+import { Logo } from "@/components/logo";
+import { VehicleAddForm } from "@/components/vehicle/VehicleAddForm";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function AddVehiclePage() {
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
+      {/* Logo at the top */}
+      <div className="absolute top-0 left-0 z-10">
+        <Logo />
+      </div>
+
       {/* Theme toggle button */}
       <div className="fixed bottom-6 right-6 z-50">
         <ModeToggle />
@@ -33,35 +31,13 @@ export default function AddVehiclePage() {
             </div>
           </div>
 
-          {/* Form Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Vehicle Information</CardTitle>
-              <CardDescription>
-                Please provide your vehicle details as per the registration certificate
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="bg-primary/10 p-3 rounded-full inline-flex mb-4">
-                    <Car className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md">
-                    The vehicle registration form is under development. Please check back later.
-                  </p>
-                  <Button asChild>
-                    <a href="/dashboard/vehicles">
-                      Return to Vehicles
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Vehicle Add Form */}
+          <VehicleAddForm />
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <Toaster richColors position="bottom-right" />
     </div>
   );
 }
