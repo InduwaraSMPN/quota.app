@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -83,6 +83,8 @@ export function FuelDispensingForm({
 }: FuelDispensingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stationId, setStationId] = useState<number | null>(null);
+  const [isLoadingStation, setIsLoadingStation] = useState(true);
 
   // Calculate percentage of remaining quota
   const percentRemaining = vehicleDetails.quotaDetails.allocatedAmount > 0
@@ -95,6 +97,35 @@ export function FuelDispensingForm({
     if (percent <= 50) return "bg-warning";
     return "bg-primary";
   };
+
+  // Fetch station details to get station ID
+  useEffect(() => {
+    const fetchStationDetails = async () => {
+      try {
+        setIsLoadingStation(true);
+        const response = await apiService.getStationDetails();
+
+        if (response.error) {
+          setError(`Failed to load station details: ${response.error}`);
+          toast.error("Failed to load station details");
+        } else if (response.data && response.data.id) {
+          setStationId(response.data.id);
+          setError(null);
+        } else {
+          setError("Station details not found");
+          toast.error("Station details not found");
+        }
+      } catch (err) {
+        console.error("Error fetching station details:", err);
+        setError("Failed to load station details");
+        toast.error("Failed to load station details");
+      } finally {
+        setIsLoadingStation(false);
+      }
+    };
+
+    fetchStationDetails();
+  }, []);
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -111,6 +142,13 @@ export function FuelDispensingForm({
     setIsSubmitting(true);
     setError(null);
 
+    // Check if station ID is available
+    if (!stationId) {
+      setError("Station details not loaded. Please try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
     // Convert string values to numbers
     const amount = parseFloat(data.amount);
     const unitPrice = parseFloat(data.unitPrice);
@@ -126,7 +164,7 @@ export function FuelDispensingForm({
       // Prepare transaction data
       const transactionData = {
         vehicleId,
-        stationId: 1, // This would come from the authenticated station owner
+        stationId, // Use the fetched station ID
         fuelType: data.fuelType,
         amount,
         unitPrice,
@@ -301,13 +339,18 @@ export function FuelDispensingForm({
         </Button>
         <Button
           onClick={form.handleSubmit(onSubmit)}
-          disabled={isSubmitting || !vehicleDetails.quotaDetails.quotaStatus.includes("ACTIVE")}
+          disabled={isSubmitting || isLoadingStation || !stationId || !vehicleDetails.quotaDetails.quotaStatus.includes("ACTIVE")}
           className="flex-1"
         >
           {isSubmitting ? (
             <div className="flex items-center gap-1">
               <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
               <span>Processing...</span>
+            </div>
+          ) : isLoadingStation ? (
+            <div className="flex items-center gap-1">
+              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
+              <span>Loading...</span>
             </div>
           ) : (
             <div className="flex items-center gap-1">

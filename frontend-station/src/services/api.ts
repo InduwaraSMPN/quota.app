@@ -494,6 +494,26 @@ export const apiService = {
   },
 
   /**
+   * Get vehicle by registration number
+   */
+  getVehicleByRegistrationNumber: async (registrationNumber: string): Promise<ApiResponse<any>> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/station/quota/vehicle/by-registration/${encodeURIComponent(registrationNumber)}`, {
+        method: 'GET',
+        headers: getAuthHeader(),
+      });
+
+      return handleResponse(response);
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Network error',
+        status: 0,
+      };
+    }
+  },
+
+  /**
    * Validate vehicle quota by vehicle ID
    */
   validateVehicleQuota: async (vehicleId: number): Promise<ApiResponse<any>> => {
