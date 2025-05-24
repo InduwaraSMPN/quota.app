@@ -12,18 +12,18 @@ export const API_ENDPOINTS = {
   REFRESH_TOKEN: '/api/auth/refresh-token',
   SEND_VERIFICATION: '/api/auth/send-verification-code',
   VERIFY_CODE: '/api/auth/verify-email-code',
-  
+
   // Station
   STATION_DETAILS: '/api/station/details',
   STATION_TRANSACTIONS: '/api/station/transactions',
   STATION_NOTIFICATIONS: '/api/station/notifications',
   STATION_PROFILE: '/api/station/profile',
-  
+
   // Vehicle & Quota
   VEHICLE_BY_REGISTRATION: '/api/station/quota/vehicle',
   VALIDATE_QUOTA: '/api/station/quota/validate',
   DISPENSE_FUEL: '/api/station/quota/dispense',
-  
+
   // Registration
   STATION_REGISTER_STEP1: '/api/auth/register/station/step1',
   STATION_REGISTER_STEP2: '/api/auth/register/station/step2',
@@ -51,7 +51,7 @@ export const COLORS = {
   warning: '#FFC107',
   error: '#DC3545',
   info: '#17A2B8',
-  
+
   // Grays
   gray50: '#F9FAFB',
   gray100: '#F3F4F6',
@@ -63,12 +63,12 @@ export const COLORS = {
   gray700: '#374151',
   gray800: '#1F2937',
   gray900: '#111827',
-  
+
   // Background
   background: '#FFFFFF',
   backgroundSecondary: '#F8F9FA',
   surface: '#FFFFFF',
-  
+
   // Text
   textPrimary: '#1F2937',
   textSecondary: '#6B7280',
@@ -181,14 +181,14 @@ export const SCREEN_NAMES = {
   WELCOME: 'Welcome',
   LOGIN: 'Login',
   REGISTER: 'Register',
-  
+
   // Main Tab Stack
   DASHBOARD: 'Dashboard',
   SCANNER: 'Scanner',
   HISTORY: 'History',
   NOTIFICATIONS: 'Notifications',
   SETTINGS: 'Settings',
-  
+
   // Scanner Stack
   QR_SCANNER: 'QRScanner',
   MANUAL_ENTRY: 'ManualEntry',
@@ -197,16 +197,19 @@ export const SCREEN_NAMES = {
   FUEL_DISPENSING: 'FuelDispensing',
   DISPENSING_CONFIRMATION: 'DispensingConfirmation',
   TRANSACTION_SUCCESS: 'TransactionSuccess',
-  
+
   // History Stack
   TRANSACTION_HISTORY: 'TransactionHistory',
   TRANSACTION_DETAILS: 'TransactionDetails',
-  
+
   // Settings Stack
   PROFILE: 'Profile',
   PROFILE_EDIT: 'ProfileEdit',
   APP_SETTINGS: 'AppSettings',
   ABOUT: 'About',
+
+  // Debug/Development
+  SITEMAP: 'Sitemap',
 } as const;
 
 // Error Messages

@@ -22,17 +22,21 @@ const SettingsScreen: React.FC = () => {
     navigation.navigate(SCREEN_NAMES.ABOUT as never);
   };
 
+  const handleSitemapPress = () => {
+    navigation.navigate(SCREEN_NAMES.SITEMAP as never);
+  };
+
   const handleLogout = async () => {
     await logout();
   };
 
-  const SettingsItem = ({ 
-    icon, 
-    title, 
-    subtitle, 
-    onPress, 
+  const SettingsItem = ({
+    icon,
+    title,
+    subtitle,
+    onPress,
     showArrow = true,
-    iconColor = COLORS.textSecondary 
+    iconColor = COLORS.textSecondary
   }: {
     icon: keyof typeof Ionicons.glyphMap;
     title: string;
@@ -107,6 +111,15 @@ const SettingsScreen: React.FC = () => {
             subtitle="App version and information"
             onPress={handleAboutPress}
           />
+          {__DEV__ && (
+            <SettingsItem
+              icon="map-outline"
+              title="App Sitemap"
+              subtitle="Development tool - View all app routes"
+              onPress={handleSitemapPress}
+              iconColor={COLORS.primary}
+            />
+          )}
         </View>
 
         {/* Logout */}

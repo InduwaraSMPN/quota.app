@@ -6,6 +6,7 @@ import ProfileScreen from '../../screens/settings/ProfileScreen';
 import ProfileEditScreen from '../../screens/settings/ProfileEditScreen';
 import AppSettingsScreen from '../../screens/settings/AppSettingsScreen';
 import AboutScreen from '../../screens/settings/AboutScreen';
+import { SitemapScreen } from '../../screens/debug';
 
 const Stack = createStackNavigator();
 
@@ -36,6 +37,10 @@ const SettingsNavigator: React.FC = () => {
       <Stack.Screen
         name={SCREEN_NAMES.ABOUT}
         component={AboutScreen}
+      />
+      <Stack.Screen
+        name={SCREEN_NAMES.SITEMAP}
+        component={SitemapScreen}
       />
     </Stack.Navigator>
   );
