@@ -86,5 +86,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     Page<User> findByRoleAndEmailContainingIgnoreCase(Role role, String email, Pageable pageable);
 
+    /**
+     * Find users by email containing a search term (case-insensitive)
+     *
+     * @param email the email search term
+     * @param pageable the pagination information
+     * @return a page of users with email containing the search term
+     */
+    Page<User> findByEmailContainingIgnoreCase(String email, Pageable pageable);
+
+    /**
+     * Find users by active status
+     *
+     * @param isActive the active status to search for
+     * @param pageable the pagination information
+     * @return a page of users with the specified active status
+     */
+    Page<User> findByIsActive(boolean isActive, Pageable pageable);
 
 }

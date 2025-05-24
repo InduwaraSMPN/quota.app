@@ -93,18 +93,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { formatDate } from "@/lib/utils";
 
-// Define user type
+// Define comprehensive user type
 interface UserDetails {
   id: number;
   email: string;
+  userType: 'VEHICLE_OWNER' | 'STATION_OWNER' | 'ADMIN';
   fullName: string;
   nicNumber: string;
-  address: string;
+  address?: string;
   contactNumber: string;
   isActive: boolean;
   emailVerified: boolean;
   createdAt: string;
   lastLogin: string;
+  // Additional fields for specific user types
+  employeeId?: string; // For admin users
+  departmentName?: string; // For admin users
+  businessName?: string; // For station owners
+  businessRegistrationNumber?: string; // For station owners
 }
 
 // Define form schema for user edit
@@ -137,6 +143,7 @@ export default function UsersManagementPage() {
   const [sortField, setSortField] = useState("id");
   const [sortDirection, setSortDirection] = useState("asc");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [userTypeFilter, setUserTypeFilter] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Create form for search
@@ -161,7 +168,7 @@ export default function UsersManagementPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchUsers();
-  }, [isAuthenticated, currentPage, pageSize, sortField, sortDirection, statusFilter]);
+  }, [isAuthenticated, currentPage, pageSize, sortField, sortDirection, statusFilter, userTypeFilter]);
 
   // Function to fetch users from API
   const fetchUsers = async (searchTerm?: string) => {
@@ -185,7 +192,11 @@ export default function UsersManagementPage() {
         params.append("status", statusFilter === "active" ? "true" : "false");
       }
 
-      const response = await apiService.getVehicleOwners(params.toString());
+      if (userTypeFilter !== null) {
+        params.append("userType", userTypeFilter);
+      }
+
+      const response = await apiService.getAllUsers(params.toString());
 
       if (response.error) {
         setError(response.error);
@@ -222,7 +233,7 @@ export default function UsersManagementPage() {
     if (!selectedUser) return;
 
     try {
-      const response = await apiService.updateVehicleOwner(selectedUser.id, data);
+      const response = await apiService.updateUser(selectedUser.id, data);
 
       if (response.error) {
         toast.error("Failed to update user");
@@ -242,7 +253,7 @@ export default function UsersManagementPage() {
     if (!selectedUser) return;
 
     try {
-      const response = await apiService.updateVehicleOwnerStatus(
+      const response = await apiService.updateUserStatus(
         selectedUser.id,
         { isActive: statusAction === "enable" }
       );
@@ -338,7 +349,7 @@ export default function UsersManagementPage() {
               <MagicBackButton backLink="/dashboard" />
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold">Users Management</h1>
-                <p className="text-muted-foreground">Manage vehicle owners in the system</p>
+                <p className="text-muted-foreground">Manage all users in the quota.app system</p>
               </div>
             </div>
             <Button
@@ -356,7 +367,7 @@ export default function UsersManagementPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle>Search & Filters</CardTitle>
-              <CardDescription>Find and filter vehicle owners</CardDescription>
+              <CardDescription>Find and filter users across all types</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4">
@@ -389,6 +400,22 @@ export default function UsersManagementPage() {
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="w-full md:w-[200px]">
                     <Select
+                      value={userTypeFilter === null ? "all" : userTypeFilter}
+                      onValueChange={(value) => setUserTypeFilter(value === "all" ? null : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filter by user type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All User Types</SelectItem>
+                        <SelectItem value="VEHICLE_OWNER">Vehicle Owners</SelectItem>
+                        <SelectItem value="STATION_OWNER">Station Owners</SelectItem>
+                        <SelectItem value="ADMIN">Admin Users</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-full md:w-[200px]">
+                    <Select
                       value={statusFilter === null ? "all" : statusFilter}
                       onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
                     >
@@ -411,7 +438,7 @@ export default function UsersManagementPage() {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
-                <CardTitle>Vehicle Owners</CardTitle>
+                <CardTitle>All Users</CardTitle>
                 <div className="text-sm text-muted-foreground">
                   Total: {totalItems} users
                 </div>
@@ -434,6 +461,7 @@ export default function UsersManagementPage() {
                       >
                         Email {sortField === "email" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
+                      <TableHead>User Type</TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>NIC</TableHead>
                       <TableHead
@@ -452,6 +480,7 @@ export default function UsersManagementPage() {
                         <TableRow key={`skeleton-${index}`}>
                           <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                           <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
@@ -460,7 +489,7 @@ export default function UsersManagementPage() {
                       ))
                     ) : users.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           No users found
                         </TableCell>
                       </TableRow>
@@ -469,6 +498,13 @@ export default function UsersManagementPage() {
                         <TableRow key={user.id}>
                           <TableCell>{user.id}</TableCell>
                           <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {user.userType === 'VEHICLE_OWNER' ? 'Vehicle Owner' :
+                               user.userType === 'STATION_OWNER' ? 'Station Owner' :
+                               user.userType === 'ADMIN' ? 'Admin' : user.userType}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{user.fullName}</TableCell>
                           <TableCell>{user.nicNumber}</TableCell>
                           <TableCell>
@@ -577,7 +613,7 @@ export default function UsersManagementPage() {
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
             <DialogDescription>
-              Detailed information about the vehicle owner.
+              Detailed information about the user.
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
@@ -592,6 +628,14 @@ export default function UsersManagementPage() {
                   <p>{selectedUser.email}</p>
                 </div>
                 <div className="space-y-1">
+                  <h4 className="text-sm font-medium text-muted-foreground">User Type</h4>
+                  <Badge variant="outline">
+                    {selectedUser.userType === 'VEHICLE_OWNER' ? 'Vehicle Owner' :
+                     selectedUser.userType === 'STATION_OWNER' ? 'Station Owner' :
+                     selectedUser.userType === 'ADMIN' ? 'Admin' : selectedUser.userType}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Full Name</h4>
                   <p>{selectedUser.fullName}</p>
                 </div>
@@ -599,14 +643,42 @@ export default function UsersManagementPage() {
                   <h4 className="text-sm font-medium text-muted-foreground">NIC Number</h4>
                   <p>{selectedUser.nicNumber}</p>
                 </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
-                  <p>{selectedUser.address}</p>
-                </div>
+                {selectedUser.address && (
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
+                    <p>{selectedUser.address}</p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Contact Number</h4>
                   <p>{selectedUser.contactNumber}</p>
                 </div>
+                {/* Admin-specific fields */}
+                {selectedUser.userType === 'ADMIN' && selectedUser.employeeId && (
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-muted-foreground">Employee ID</h4>
+                    <p>{selectedUser.employeeId}</p>
+                  </div>
+                )}
+                {selectedUser.userType === 'ADMIN' && selectedUser.departmentName && (
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-muted-foreground">Department</h4>
+                    <p>{selectedUser.departmentName}</p>
+                  </div>
+                )}
+                {/* Station Owner-specific fields */}
+                {selectedUser.userType === 'STATION_OWNER' && selectedUser.businessName && (
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-muted-foreground">Business Name</h4>
+                    <p>{selectedUser.businessName}</p>
+                  </div>
+                )}
+                {selectedUser.userType === 'STATION_OWNER' && selectedUser.businessRegistrationNumber && (
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-muted-foreground">Business Registration Number</h4>
+                    <p>{selectedUser.businessRegistrationNumber}</p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
                   <Badge variant={selectedUser.isActive ? "success" : "destructive"}>
@@ -652,7 +724,7 @@ export default function UsersManagementPage() {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Update vehicle owner information.
+              Update user information.
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
