@@ -15,12 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -48,7 +42,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
@@ -59,18 +52,12 @@ import { apiService } from "@/services/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import Link from "next/link";
 import {
   Fuel,
   Droplet,
   Edit,
   History,
-  Plus,
   RefreshCw,
-  Calendar,
-  ChevronRight,
-  ArrowUpDown,
-  BarChart3
 } from "lucide-react";
 import { safeFormatDateShort, safeFormatDateWithTime } from "@/lib/utils";
 
