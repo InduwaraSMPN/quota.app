@@ -58,7 +58,7 @@ import {
   Building2,
   Fuel,
 } from "lucide-react";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate, formatDateTime, safeFormatDate, safeFormatDateWithTime } from "@/lib/utils";
 
 // Define transaction type
 interface Transaction {
@@ -105,13 +105,13 @@ export default function TransactionsPage() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // Pagination and sorting state
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [sortField, setSortField] = useState("transactionDate");
   const [sortDirection, setSortDirection] = useState("desc");
-  
+
   // Filter state
   const [filters, setFilters] = useState<Filters>({});
   const [tempFilters, setTempFilters] = useState<Filters>({});
@@ -138,7 +138,7 @@ export default function TransactionsPage() {
         sortDirection,
         filters
       );
-      
+
       if (response.error) {
         setError(response.error);
         toast.error("Failed to load transactions");
@@ -288,17 +288,17 @@ export default function TransactionsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button 
-                  onClick={() => setIsFilterDialogOpen(true)} 
-                  variant="outline" 
+                <Button
+                  onClick={() => setIsFilterDialogOpen(true)}
+                  variant="outline"
                   className="flex items-center gap-2"
                 >
                   <Filter className="h-4 w-4" />
                   Filter
                 </Button>
-                <Button 
-                  onClick={fetchTransactions} 
-                  variant="outline" 
+                <Button
+                  onClick={fetchTransactions}
+                  variant="outline"
                   className="flex items-center gap-2"
                   disabled={isRefreshing}
                 >
@@ -313,7 +313,7 @@ export default function TransactionsPage() {
               <CardHeader>
                 <CardTitle>All Transactions</CardTitle>
                 <CardDescription>
-                  {pagination.totalItems > 0 
+                  {pagination.totalItems > 0
                     ? `Showing ${currentPage * pageSize + 1}-${Math.min((currentPage + 1) * pageSize, pagination.totalItems)} of ${pagination.totalItems} transactions`
                     : "No transactions found"
                   }
@@ -324,19 +324,19 @@ export default function TransactionsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead 
+                        <TableHead
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => handleSortChange("id")}
                         >
                           ID {sortField === "id" && (sortDirection === "asc" ? "↑" : "↓")}
                         </TableHead>
-                        <TableHead 
+                        <TableHead
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => handleSortChange("vehicleRegistrationNumber")}
                         >
                           Vehicle {sortField === "vehicleRegistrationNumber" && (sortDirection === "asc" ? "↑" : "↓")}
                         </TableHead>
-                        <TableHead 
+                        <TableHead
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => handleSortChange("stationName")}
                         >
@@ -346,7 +346,7 @@ export default function TransactionsPage() {
                         <TableHead className="text-right">Amount (L)</TableHead>
                         <TableHead className="text-right">Unit Price</TableHead>
                         <TableHead className="text-right">Total Price</TableHead>
-                        <TableHead 
+                        <TableHead
                           className="cursor-pointer hover:bg-muted/50"
                           onClick={() => handleSortChange("transactionDate")}
                         >
@@ -391,11 +391,11 @@ export default function TransactionsPage() {
                             <TableCell className="text-right">{transaction.amount.toLocaleString()}</TableCell>
                             <TableCell className="text-right">Rs. {transaction.unitPrice.toLocaleString()}</TableCell>
                             <TableCell className="text-right">Rs. {transaction.totalPrice.toLocaleString()}</TableCell>
-                            <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
+                            <TableCell>{safeFormatDate(transaction.transactionDate, "MMM d, yyyy")}</TableCell>
                             <TableCell>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleViewTransaction(transaction)}
                               >
                                 <Eye className="h-4 w-4" />
@@ -408,7 +408,7 @@ export default function TransactionsPage() {
                   </Table>
                 </div>
               </CardContent>
-              
+
               {/* Pagination */}
               {pagination.totalPages > 1 && (
                 <CardFooter className="flex items-center justify-between">
@@ -426,7 +426,7 @@ export default function TransactionsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -436,11 +436,11 @@ export default function TransactionsPage() {
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    
+
                     <span className="text-sm">
                       Page {currentPage + 1} of {pagination.totalPages}
                     </span>
-                    
+
                     <Button
                       variant="outline"
                       size="icon"
@@ -466,7 +466,7 @@ export default function TransactionsPage() {
               Detailed information about transaction #{selectedTransaction?.id}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedTransaction && (
             <div className="space-y-4">
               <div>
@@ -499,7 +499,7 @@ export default function TransactionsPage() {
                 <h4 className="text-sm font-medium flex items-center gap-1">
                   <Calendar className="h-4 w-4" /> Transaction Date
                 </h4>
-                <p className="text-sm">{formatDateTime(selectedTransaction.transactionDate)}</p>
+                <p className="text-sm">{safeFormatDateWithTime(selectedTransaction.transactionDate)}</p>
               </div>
             </div>
           )}
@@ -519,7 +519,7 @@ export default function TransactionsPage() {
               Apply filters to narrow down the transaction list
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <Label htmlFor="vehicleId">Vehicle ID</Label>
@@ -577,8 +577,8 @@ export default function TransactionsPage() {
 
             <div>
               <Label htmlFor="fuelType">Fuel Type</Label>
-              <Select 
-                value={tempFilters.fuelType || ""} 
+              <Select
+                value={tempFilters.fuelType || ""}
                 onValueChange={(value) => setTempFilters({
                   ...tempFilters,
                   fuelType: value || undefined

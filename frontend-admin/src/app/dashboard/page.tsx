@@ -33,6 +33,7 @@ import Link from "next/link";
 import { apiService } from "@/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { safeFormatDateWithTime } from "@/lib/utils";
 
 
 
@@ -384,7 +385,7 @@ export default function Dashboard() {
                               <p className="font-medium">{transaction.amount} liters</p>
                               <p className="text-sm text-muted-foreground">
                                 {transaction.transactionDate
-                                  ? new Date(transaction.transactionDate).toLocaleDateString()
+                                  ? safeFormatDateWithTime(transaction.transactionDate)
                                   : transaction.date}
                               </p>
                             </div>
@@ -480,7 +481,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               <span>{notification.timestamp
-                                ? new Date(notification.timestamp).toLocaleDateString()
+                                ? safeFormatDateWithTime(notification.timestamp)
                                 : notification.date}</span>
                             </div>
                           </div>
