@@ -480,9 +480,15 @@ export default function Dashboard() {
                             <p className="text-sm">{notification.message}</p>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              <span>{notification.timestamp
-                                ? safeFormatDateWithTime(notification.timestamp)
-                                : notification.date}</span>
+                              <span>
+                                {notification.createdAt
+                                  ? safeFormatDateWithTime(notification.createdAt)
+                                  : notification.timestamp
+                                  ? safeFormatDateWithTime(notification.timestamp)
+                                  : notification.date
+                                  ? notification.date
+                                  : 'No date available'}
+                              </span>
                             </div>
                           </div>
                         </div>

@@ -137,6 +137,11 @@ export default function Dashboard() {
           toast.error(`Failed to load station notifications: ${notificationsResponse.error}`);
           setSystemNotifications([]);
         } else if (notificationsResponse.data && Array.isArray(notificationsResponse.data)) {
+          console.log("Notifications data structure:", notificationsResponse.data);
+          // Log the first notification to see its structure
+          if (notificationsResponse.data.length > 0) {
+            console.log("First notification structure:", notificationsResponse.data[0]);
+          }
           setSystemNotifications(notificationsResponse.data);
         } else {
           setSystemNotifications([]);
@@ -519,9 +524,15 @@ export default function Dashboard() {
                             <p className="text-sm">{notification.message}</p>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              <span>{notification.timestamp
-                                ? safeFormatDateWithTime(notification.timestamp)
-                                : notification.date}</span>
+                              <span>
+                                {notification.createdAt
+                                  ? safeFormatDateWithTime(notification.createdAt)
+                                  : notification.timestamp
+                                  ? safeFormatDateWithTime(notification.timestamp)
+                                  : notification.date
+                                  ? notification.date
+                                  : 'No date available'}
+                              </span>
                             </div>
                           </div>
                         </div>
