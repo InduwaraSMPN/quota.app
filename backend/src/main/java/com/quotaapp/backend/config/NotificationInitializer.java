@@ -20,16 +20,16 @@ public class NotificationInitializer {
     private final NotificationService notificationService;
 
     /**
-     * Initialize default notifications when the application starts
-     * 
-     * @return a CommandLineRunner that initializes notifications
+     * Initialize notification system when the application starts
+     *
+     * @return a CommandLineRunner that initializes the notification system
      */
     @Bean
     public CommandLineRunner initializeNotifications() {
         return args -> {
-            log.info("Initializing default notifications...");
+            log.info("Initializing notification system...");
             notificationService.initializeDefaultNotifications();
-            log.info("Default notifications initialized successfully");
+            log.info("Notification system initialized successfully");
         };
     }
 }

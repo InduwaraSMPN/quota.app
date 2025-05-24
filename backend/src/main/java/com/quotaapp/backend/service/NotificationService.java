@@ -1,6 +1,5 @@
 package com.quotaapp.backend.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -291,102 +290,22 @@ public class NotificationService {
     }
 
     /**
-     * Initialize the system with some default notifications if none exist
+     * Initialize the system with notifications
+     *
+     * Note: Default notifications have been removed as requested.
+     * This method is kept for future use if needed.
      */
     @Transactional
     public void initializeDefaultNotifications() {
         // Check if we have any admin notifications
-        if (adminNotificationRepository.count() == 0) {
-            log.info("Initializing default admin notifications");
-
-            // Get all admins
-            List<AdminUser> admins = adminUserRepository.findAll();
-            if (!admins.isEmpty()) {
-                AdminUser admin = admins.get(0);
-
-                // Create some default notifications
-                AdminNotification notification1 = AdminNotification.builder()
-                        .admin(admin)
-                        .title("Welcome to Quota App")
-                        .message("Welcome to the Quota App admin dashboard. You can manage fuel stations, vehicle owners, and more from here.")
-                        .isRead(false)
-                        .createdAt(LocalDateTime.now().minusDays(1))
-                        .build();
-
-                AdminNotification notification2 = AdminNotification.builder()
-                        .admin(admin)
-                        .title("System Update")
-                        .message("The system will undergo maintenance tonight from 2 AM to 4 AM.")
-                        .isRead(true)
-                        .createdAt(LocalDateTime.now().minusDays(3))
-                        .build();
-
-                AdminNotification notification3 = AdminNotification.builder()
-                        .admin(admin)
-                        .title("Quota Allocation Complete")
-                        .message("Monthly fuel quota allocation has been completed for all vehicles.")
-                        .isRead(false)
-                        .createdAt(LocalDateTime.now().minusDays(5))
-                        .build();
-
-                adminNotificationRepository.saveAll(List.of(notification1, notification2, notification3));
-            }
-        }
+        long adminNotificationCount = adminNotificationRepository.count();
+        log.info("Found {} admin notifications", adminNotificationCount);
 
         // Check if we have any station notifications
-        if (stationNotificationRepository.count() == 0) {
-            log.info("Initializing default station notifications");
+        long stationNotificationCount = stationNotificationRepository.count();
+        log.info("Found {} station notifications", stationNotificationCount);
 
-            // Get all station IDs to avoid loading full entities with collections
-            List<Long> stationIds = fuelStationRepository.findAllStationIds();
-            log.info("Found {} stations for notification initialization", stationIds.size());
-
-            for (Long stationId : stationIds) {
-                try {
-                    // Load each station individually by ID to avoid collection issues
-                    Optional<FuelStation> stationOpt = fuelStationRepository.findById(stationId);
-                    if (stationOpt.isEmpty()) {
-                        log.warn("Station not found with ID: {}", stationId);
-                        continue;
-                    }
-
-                    FuelStation station = stationOpt.get();
-
-                    // Create some default notifications
-                    StationNotification notification1 = StationNotification.builder()
-                            .station(station)
-                            .title("Welcome to Quota App")
-                            .message("Welcome to the Quota App station dashboard. You can manage fuel inventory, transactions, and more from here.")
-                            .isRead(false)
-                            .createdAt(LocalDateTime.now().minusDays(1))
-                            .build();
-
-                    StationNotification notification2 = StationNotification.builder()
-                            .station(station)
-                            .title("Fuel Price Update")
-                            .message("Fuel prices have been updated. Please check the latest prices.")
-                            .isRead(false)
-                            .createdAt(LocalDateTime.now().minusDays(2))
-                            .build();
-
-                    StationNotification notification3 = StationNotification.builder()
-                            .station(station)
-                            .title("System Maintenance")
-                            .message("System maintenance scheduled for tonight from 2 AM to 4 AM.")
-                            .isRead(true)
-                            .createdAt(LocalDateTime.now().minusDays(3))
-                            .build();
-
-                    // Save notifications for this station
-                    stationNotificationRepository.saveAll(List.of(notification1, notification2, notification3));
-                    log.debug("Created default notifications for station ID: {}", stationId);
-                } catch (Exception e) {
-                    // Log the error but continue with other stations
-                    log.error("Error creating notifications for station ID: {}", stationId, e);
-                }
-            }
-
-            log.info("Finished initializing default station notifications");
-        }
+        // Default notifications have been removed as requested
+        log.info("Default notifications initialization skipped as requested");
     }
 }

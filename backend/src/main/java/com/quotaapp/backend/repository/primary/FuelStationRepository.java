@@ -3,6 +3,8 @@ package com.quotaapp.backend.repository.primary;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -69,6 +71,28 @@ public interface FuelStationRepository extends JpaRepository<FuelStation, Long> 
      * @return a list of fuel stations with the given verification status
      */
     List<FuelStation> findByVerificationStatus(String verificationStatus);
+
+    /**
+     * Find all fuel stations by verification status with pagination
+     *
+     * @param verificationStatus the verification status to search for
+     * @param pageable the pagination information
+     * @return a page of fuel stations with the given verification status
+     */
+    Page<FuelStation> findByVerificationStatus(String verificationStatus, Pageable pageable);
+
+    /**
+     * Find all fuel stations by business name containing search term (case-insensitive) or business address containing search term (case-insensitive)
+     *
+     * @param businessName the business name search term
+     * @param businessAddress the business address search term
+     * @param pageable the pagination information
+     * @return a page of fuel stations matching the search criteria
+     */
+    Page<FuelStation> findByBusinessNameContainingIgnoreCaseOrBusinessAddressContainingIgnoreCase(
+            String businessName, String businessAddress, Pageable pageable);
+
+
 
     /**
      * Find all pending stations for verification using a native query to avoid lazy loading issues

@@ -3,11 +3,14 @@ package com.quotaapp.backend.repository.primary;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.quotaapp.backend.model.Role;
 import com.quotaapp.backend.model.User;
 
 @Repository
@@ -53,4 +56,35 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT COUNT(u) > 0 FROM User u JOIN VehicleOwner vo ON u.id = vo.user.id WHERE u.email = :email")
     boolean existsByEmailAndHasVehicleOwner(@Param("email") String email);
+
+    /**
+     * Find users by role
+     *
+     * @param role the role to search for
+     * @param pageable the pagination information
+     * @return a page of users with the specified role
+     */
+    Page<User> findByRole(Role role, Pageable pageable);
+
+    /**
+     * Find users by role and active status
+     *
+     * @param role the role to search for
+     * @param isActive the active status to search for
+     * @param pageable the pagination information
+     * @return a page of users with the specified role and active status
+     */
+    Page<User> findByRoleAndIsActive(Role role, boolean isActive, Pageable pageable);
+
+    /**
+     * Find users by role and email containing a search term (case-insensitive)
+     *
+     * @param role the role to search for
+     * @param email the email search term
+     * @param pageable the pagination information
+     * @return a page of users with the specified role and email containing the search term
+     */
+    Page<User> findByRoleAndEmailContainingIgnoreCase(Role role, String email, Pageable pageable);
+
+
 }
