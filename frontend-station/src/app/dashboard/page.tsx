@@ -56,24 +56,42 @@ export default function Dashboard() {
 
       try {
         // Fetch station profile
+        console.log("Fetching station profile...");
         const profileResponse = await apiService.getStationDetails();
+        console.log("Station profile response:", profileResponse);
+
         if (profileResponse.error) {
           console.error("Error fetching station profile:", profileResponse.error);
-          toast.error("Failed to load station profile");
+          toast.error(`Failed to load station profile: ${profileResponse.error}`);
           setStationData(null);
         } else if (profileResponse.data) {
-          setStationData(profileResponse.data);
+          // Map backend response to frontend expected format
+          const mappedStationData = {
+            id: profileResponse.data.id,
+            stationName: profileResponse.data.name || 'Unknown Station',
+            registrationNumber: profileResponse.data.registrationNumber || 'Unknown',
+            ownerName: profileResponse.data.owner?.fullName || 'Unknown Owner',
+            contactNumber: profileResponse.data.owner?.contactNumber || 'Unknown',
+            email: profileResponse.data.owner?.email || 'Unknown',
+            operatingHours: `${profileResponse.data.openingTime || '09:00'} - ${profileResponse.data.closingTime || '17:00'}`,
+            address: profileResponse.data.address || 'Unknown Address',
+            verificationStatus: profileResponse.data.verificationStatus || 'PENDING',
+            fuelTypes: profileResponse.data.fuelTypes || []
+          };
+          setStationData(mappedStationData);
         } else {
           setStationData(null);
           toast.error("No station profile data available");
         }
 
-        // Fetch station statistics
-        // Note: We'll use the station details endpoint for now since getStationStats is not implemented yet
-        const statsResponse = await apiService.getStationDetails();
+        // Fetch station statistics using the correct endpoint
+        console.log("Fetching station statistics...");
+        const statsResponse = await apiService.getStationStats();
+        console.log("Station stats response:", statsResponse);
+
         if (statsResponse.error) {
           console.error("Error fetching station stats:", statsResponse.error);
-          toast.error("Failed to load station statistics");
+          toast.error(`Failed to load station statistics: ${statsResponse.error}`);
           setFuelInventory(null);
           setTransactionStats(null);
         } else if (statsResponse.data) {
@@ -95,10 +113,13 @@ export default function Dashboard() {
         }
 
         // Fetch recent transactions
+        console.log("Fetching recent transactions...");
         const transactionsResponse = await apiService.getRecentTransactions(5);
+        console.log("Recent transactions response:", transactionsResponse);
+
         if (transactionsResponse.error) {
           console.error("Error fetching recent transactions:", transactionsResponse.error);
-          toast.error("Failed to load recent transactions");
+          toast.error(`Failed to load recent transactions: ${transactionsResponse.error}`);
           setRecentTransactions([]);
         } else if (transactionsResponse.data && Array.isArray(transactionsResponse.data)) {
           setRecentTransactions(transactionsResponse.data);
@@ -107,10 +128,13 @@ export default function Dashboard() {
         }
 
         // Fetch station notifications
+        console.log("Fetching station notifications...");
         const notificationsResponse = await apiService.getStationNotifications();
+        console.log("Station notifications response:", notificationsResponse);
+
         if (notificationsResponse.error) {
           console.error("Error fetching station notifications:", notificationsResponse.error);
-          toast.error("Failed to load station notifications");
+          toast.error(`Failed to load station notifications: ${notificationsResponse.error}`);
           setSystemNotifications([]);
         } else if (notificationsResponse.data && Array.isArray(notificationsResponse.data)) {
           setSystemNotifications(notificationsResponse.data);
