@@ -9,6 +9,7 @@ import { Scan, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/services/api";
 import { cn } from "@/lib/utils";
+import jsQR from "jsqr";
 
 interface QRScannerProps {
   onScanSuccess: (vehicleId: number) => void;
@@ -75,7 +76,7 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
 
-    if (!context) return;
+    if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
     // Set canvas dimensions to match video
     canvas.width = video.videoWidth;
@@ -85,15 +86,20 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     try {
-      // Use a QR code library to decode the image
-      // For this example, we'll simulate a successful scan after a random delay
-      // In a real implementation, you would use a library like jsQR or a service worker
+      // Get image data from canvas for QR code detection
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-      // Simulate QR code detection (replace with actual QR code detection)
-      if (Math.random() > 0.7) { // 30% chance of "detecting" a QR code
-        const qrData = "VEHICLE:ABC1234:OWNER:123"; // Example QR code data
-        handleQRCodeData(qrData);
+      // Use jsQR to decode QR code from image data
+      const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+
+      // If QR code is detected, process the data
+      if (qrCode && qrCode.data) {
+        console.log("QR Code detected:", qrCode.data);
+        handleQRCodeData(qrCode.data);
       }
+      // If no QR code is detected, continue scanning (no action needed)
     } catch (error) {
       console.error("Error decoding QR code:", error);
     }
@@ -111,8 +117,7 @@ export function QRScanner({ onScanSuccess, className }: QRScannerProps) {
       const registrationNumber = parts[1];
       const ownerId = parts[3];
 
-      // In a real implementation, you would validate this with the backend
-      // For now, we'll simulate a successful validation
+      // Show success message for QR code detection
       toast.success(`QR code scanned: ${registrationNumber}`);
 
       // Call the API to get vehicle ID by registration number
