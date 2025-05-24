@@ -77,23 +77,56 @@ export function formatDateTime(dateString: string): string {
  * @returns Formatted date string or fallback
  */
 export function safeFormatDate(
-  dateValue: string | Date | null | undefined,
+  dateValue: any,
   formatString: string,
   fallback: string = 'N/A'
 ): string {
   if (!dateValue) return fallback;
 
   try {
-    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    // Debug logging to see what we're receiving
+    console.log('safeFormatDate input:', {
+      value: dateValue,
+      type: typeof dateValue,
+      isArray: Array.isArray(dateValue),
+      constructor: dateValue?.constructor?.name,
+      keys: typeof dateValue === 'object' ? Object.keys(dateValue) : 'N/A'
+    });
 
-    // Check if date is valid
-    if (!date || isNaN(date.getTime())) {
+    let date: Date;
+
+    if (typeof dateValue === 'string') {
+      date = new Date(dateValue);
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else if (typeof dateValue === 'object' && dateValue !== null) {
+      // Handle LocalDateTime objects that might come from backend
+      if (Array.isArray(dateValue) && dateValue.length >= 3) {
+        // Handle array format like [2025, 5, 24, 15, 15, 42, 239286000]
+        const [year, month, day, hour = 0, minute = 0, second = 0, nano = 0] = dateValue;
+        date = new Date(year, month - 1, day, hour, minute, second, Math.floor(nano / 1000000));
+      } else if (dateValue.year && dateValue.month && dateValue.day) {
+        // Handle object format like {year: 2025, month: 5, day: 24, hour: 15, minute: 15, second: 42}
+        const { year, month, day, hour = 0, minute = 0, second = 0 } = dateValue;
+        date = new Date(year, month - 1, day, hour, minute, second);
+      } else {
+        // Try to convert object to string and parse
+        date = new Date(String(dateValue));
+      }
+    } else {
+      console.warn('Invalid date value type:', typeof dateValue, dateValue);
+      return fallback;
+    }
+
+    // Check if date is valid and has getTime method
+    if (!date || typeof date.getTime !== 'function' || isNaN(date.getTime())) {
+      console.warn('Invalid date object:', date);
       return fallback;
     }
 
     return format(date, formatString);
   } catch (error) {
-    console.error('Error formatting date with date-fns:', error);
+    console.error('Error formatting date with date-fns:', error, 'Input:', dateValue);
     return fallback;
   }
 }

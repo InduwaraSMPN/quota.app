@@ -70,9 +70,10 @@ import {
   User,
   Fuel,
   Clock,
-  DollarSign
+  DollarSign,
+  Droplet
 } from "lucide-react";
-import { format } from "date-fns";
+import { safeFormatDate, safeFormatDateWithTime } from "@/lib/utils";
 
 // Define the transaction item type
 interface Transaction {
@@ -352,7 +353,7 @@ export default function TransactionHistory() {
                           <TableCell className="text-right">{transaction.amount.toLocaleString()}</TableCell>
                           <TableCell className="text-right">{transaction.unitPrice.toLocaleString()}</TableCell>
                           <TableCell className="text-right">{transaction.totalPrice.toLocaleString()}</TableCell>
-                          <TableCell>{format(new Date(transaction.transactionDate), "MMM d, yyyy")}</TableCell>
+                          <TableCell>{safeFormatDate(transaction.transactionDate, "MMM d, yyyy")}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
@@ -495,7 +496,7 @@ export default function TransactionHistory() {
                 <h4 className="text-sm font-medium flex items-center gap-1">
                   <Clock className="h-4 w-4" /> Transaction Date
                 </h4>
-                <p className="text-sm">{format(new Date(selectedTransaction.transactionDate), "PPpp")}</p>
+                <p className="text-sm">{safeFormatDateWithTime(selectedTransaction.transactionDate)}</p>
               </div>
             </div>
           )}
