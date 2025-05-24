@@ -12,11 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.quotaapp.backend.model.AdminNotification;
 import com.quotaapp.backend.model.AdminUser;
 import com.quotaapp.backend.model.FuelStation;
+import com.quotaapp.backend.model.Notification;
 import com.quotaapp.backend.model.StationNotification;
+import com.quotaapp.backend.model.User;
 import com.quotaapp.backend.repository.primary.AdminNotificationRepository;
 import com.quotaapp.backend.repository.primary.AdminUserRepository;
 import com.quotaapp.backend.repository.primary.FuelStationRepository;
+import com.quotaapp.backend.repository.primary.NotificationRepository;
 import com.quotaapp.backend.repository.primary.StationNotificationRepository;
+import com.quotaapp.backend.repository.primary.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +37,9 @@ public class NotificationService {
     private final StationNotificationRepository stationNotificationRepository;
     private final AdminUserRepository adminUserRepository;
     private final FuelStationRepository fuelStationRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
+    private final SmsService smsService;
 
     /**
      * Create a notification for an admin
@@ -287,6 +294,132 @@ public class NotificationService {
         } else {
             return "INFO";
         }
+    }
+
+    /**
+     * Create a notification for a user (Mobile App)
+     *
+     * @param userId the user ID
+     * @param title the notification title
+     * @param message the notification message
+     * @param type the notification type
+     * @return the created notification
+     */
+    @Transactional
+    public Notification createUserNotification(Long userId, String title, String message, String type) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            log.warn("User not found with ID: {}", userId);
+            throw new IllegalArgumentException("User not found");
+        }
+
+        Notification notification = Notification.builder()
+                .user(userOpt.get())
+                .title(title)
+                .message(message)
+                .type(type)
+                .isRead(false)
+                .build();
+
+        return notificationRepository.save(notification);
+    }
+
+    /**
+     * Create a notification for a user with SMS (Mobile App)
+     *
+     * @param userId the user ID
+     * @param title the notification title
+     * @param message the notification message
+     * @param type the notification type
+     * @param phoneNumber the phone number for SMS
+     * @param smsMessage the SMS message content
+     * @return the created notification
+     */
+    @Transactional
+    public Notification createUserNotificationWithSms(Long userId, String title, String message,
+            String type, String phoneNumber, String smsMessage) {
+
+        Notification notification = createUserNotification(userId, title, message, type);
+
+        // Send SMS if phone number is provided
+        if (phoneNumber != null && !phoneNumber.isEmpty()) {
+            try {
+                smsService.sendSms(notification.getUser(), phoneNumber, smsMessage);
+                log.info("SMS sent for notification {} to {}", notification.getId(), phoneNumber);
+            } catch (Exception e) {
+                log.error("Failed to send SMS for notification {}: {}", notification.getId(), e.getMessage());
+            }
+        }
+
+        return notification;
+    }
+
+    /**
+     * Get all notifications for a user (Mobile App)
+     *
+     * @param userId the user ID
+     * @return a list of notifications
+     */
+    @Transactional(readOnly = true)
+    public List<Notification> getUserNotifications(Long userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            log.warn("User not found with ID: {}", userId);
+            throw new IllegalArgumentException("User not found");
+        }
+
+        return notificationRepository.findByUserOrderByCreatedAtDesc(userOpt.get());
+    }
+
+    /**
+     * Mark a user notification as read (Mobile App)
+     *
+     * @param notificationId the notification ID
+     * @param userId the user ID
+     * @return true if the notification was marked as read, false otherwise
+     */
+    @Transactional
+    public boolean markUserNotificationAsRead(Long notificationId, Long userId) {
+        Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
+        if (notificationOpt.isEmpty()) {
+            log.warn("User notification not found with ID: {}", notificationId);
+            return false;
+        }
+
+        Notification notification = notificationOpt.get();
+
+        // Verify that the notification belongs to the user
+        if (!notification.getUser().getId().equals(userId)) {
+            log.warn("User notification {} does not belong to user {}", notificationId, userId);
+            return false;
+        }
+
+        notification.setIsRead(true);
+        notificationRepository.save(notification);
+        return true;
+    }
+
+    /**
+     * Send transaction notification with SMS
+     *
+     * @param userId the user ID
+     * @param phoneNumber the phone number
+     * @param vehicleRegistration the vehicle registration
+     * @param fuelAmount the fuel amount
+     * @param totalPrice the total price
+     * @param stationName the station name
+     * @return the created notification
+     */
+    @Transactional
+    public Notification sendTransactionNotification(Long userId, String phoneNumber,
+            String vehicleRegistration, String fuelAmount, String totalPrice, String stationName) {
+
+        String title = "Fuel Transaction Completed";
+        String message = String.format("Fuel dispensed for vehicle %s at %s", vehicleRegistration, stationName);
+
+        return createUserNotificationWithSms(userId, title, message, "TRANSACTION",
+                phoneNumber, String.format("quota.app: Fuel dispensed for %s. Amount: %sL, Total: Rs.%s at %s",
+                        vehicleRegistration, fuelAmount, totalPrice, stationName));
     }
 
     /**

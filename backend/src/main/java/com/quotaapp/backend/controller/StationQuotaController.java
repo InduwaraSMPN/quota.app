@@ -24,6 +24,8 @@ import com.quotaapp.backend.dto.ApiResponse;
 import com.quotaapp.backend.dto.quota.QuotaDetailsDTO;
 import com.quotaapp.backend.dto.transaction.TransactionCreateDTO;
 import com.quotaapp.backend.dto.transaction.TransactionDetailsDTO;
+import com.quotaapp.backend.dto.mobile.VehicleValidationDTO;
+import com.quotaapp.backend.dto.mobile.MobileTransactionDTO;
 import com.quotaapp.backend.exception.InsufficientQuotaException;
 import com.quotaapp.backend.exception.ResourceNotFoundException;
 import com.quotaapp.backend.model.FuelStation;
@@ -57,6 +59,65 @@ public class StationQuotaController {
     private final VehicleRepository vehicleRepository;
     private final FuelQuotaService fuelQuotaService;
     private final FuelTransactionService fuelTransactionService;
+
+    /**
+     * Get vehicle details by registration number (Mobile App Endpoint)
+     *
+     * @param registrationNumber the vehicle registration number
+     * @return the vehicle details if found
+     */
+    @GetMapping("/vehicle/{registrationNumber}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getVehicleByRegistration(@PathVariable String registrationNumber) {
+        // Get the authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        log.info("Getting vehicle by registration number: {} by user: {}", registrationNumber, email);
+
+        // Find the user in the database
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            log.warn("User not found: {}", email);
+            return ResponseEntity.status(404).body(ApiResponse.error("User not found"));
+        }
+
+        User user = userOpt.get();
+
+        // Verify that the user is a station owner or operator
+        boolean isStationOwner = user.getRole().name().equals("STATION_OWNER");
+        boolean isStationOperator = user.getRole().name().equals("STATION_OPERATOR");
+
+        if (!isStationOwner && !isStationOperator) {
+            log.warn("User is not a station owner or operator: {}", email);
+            return ResponseEntity.status(403).body(ApiResponse.error("Access denied. Station owner or operator privileges required."));
+        }
+
+        // Standardize registration number (remove hyphens and convert to uppercase)
+        String standardizedRegNumber = registrationNumber.replaceAll("-", "").toUpperCase();
+
+        // Find the vehicle by registration number
+        Optional<Vehicle> vehicleOpt = vehicleRepository.findByRegistrationNumber(standardizedRegNumber);
+
+        if (vehicleOpt.isEmpty()) {
+            log.warn("Vehicle not found with registration number: {}", standardizedRegNumber);
+            return ResponseEntity.status(404).body(ApiResponse.error("Vehicle not found"));
+        }
+
+        Vehicle vehicle = vehicleOpt.get();
+
+        Map<String, Object> vehicleData = new HashMap<>();
+        vehicleData.put("vehicleId", vehicle.getId());
+        vehicleData.put("registrationNumber", vehicle.getRegistrationNumber());
+        vehicleData.put("make", vehicle.getMake());
+        vehicleData.put("model", vehicle.getModel());
+        vehicleData.put("year", vehicle.getYearOfManufacture());
+        vehicleData.put("fuelType", vehicle.getFuelType());
+        vehicleData.put("vehicleClass", vehicle.getVehicleClass().getCode());
+
+        log.info("Vehicle found with ID: {} for registration number: {}", vehicle.getId(), standardizedRegNumber);
+        return ResponseEntity.ok(ApiResponse.success("Vehicle found successfully", vehicleData));
+    }
 
     /**
      * Get vehicle ID by registration number

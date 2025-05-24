@@ -33,32 +33,48 @@ public class SimpleCorsFilter implements Filter {
         "http://localhost:3002"
     );
 
+    private final boolean allowMobileApps = true; // Allow mobile apps without origin restrictions
+
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        
+
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        
+
         String origin = request.getHeader("Origin");
-        
-        // Check if the origin is allowed
-        if (origin != null && allowedOrigins.contains(origin)) {
-            response.setHeader("Access-Control-Allow-Origin", origin);
-            response.setHeader("Access-Control-Allow-Credentials", "true");
+        String mobileAppHeader = request.getHeader("X-Mobile-App");
+
+        // Check if the origin is allowed (for web frontends)
+        boolean isAllowedOrigin = origin != null && allowedOrigins.contains(origin);
+
+        // Check if this is a mobile app request (no origin or has mobile app header)
+        boolean isMobileApp = allowMobileApps && (origin == null || mobileAppHeader != null);
+
+        if (isAllowedOrigin || isMobileApp) {
+            // Set appropriate origin header
+            if (isAllowedOrigin) {
+                response.setHeader("Access-Control-Allow-Origin", origin);
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+            } else if (isMobileApp) {
+                response.setHeader("Access-Control-Allow-Origin", "*");
+                response.setHeader("Access-Control-Allow-Credentials", "false");
+            }
+
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-            response.setHeader("Access-Control-Allow-Headers", 
+            response.setHeader("Access-Control-Allow-Headers",
                 "Authorization, Content-Type, X-Requested-With, Accept, Origin, " +
-                "Access-Control-Request-Method, Access-Control-Request-Headers");
+                "Access-Control-Request-Method, Access-Control-Request-Headers, " +
+                "X-Mobile-App, X-App-Version");
             response.setHeader("Access-Control-Max-Age", "3600");
-            
+
             // Handle preflight requests
             if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
                 response.setStatus(HttpServletResponse.SC_OK);
                 return;
             }
         }
-        
+
         chain.doFilter(req, res);
     }
 

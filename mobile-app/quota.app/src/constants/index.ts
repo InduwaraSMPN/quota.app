@@ -13,11 +13,11 @@ export const API_ENDPOINTS = {
   SEND_VERIFICATION: '/api/auth/send-verification-code',
   VERIFY_CODE: '/api/auth/verify-email-code',
 
-  // Station
-  STATION_DETAILS: '/api/station/details',
-  STATION_TRANSACTIONS: '/api/station/transactions',
-  STATION_NOTIFICATIONS: '/api/station/notifications',
-  STATION_PROFILE: '/api/station/profile',
+  // Station (Mobile)
+  STATION_DETAILS: '/api/mobile/station/details',
+  STATION_TRANSACTIONS: '/api/mobile/station/transactions',
+  STATION_NOTIFICATIONS: '/api/mobile/station/notifications',
+  STATION_PROFILE: '/api/mobile/station/profile',
 
   // Vehicle & Quota
   VEHICLE_BY_REGISTRATION: '/api/station/quota/vehicle',

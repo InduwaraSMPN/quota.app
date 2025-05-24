@@ -109,11 +109,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // Allow specific web frontend origins
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",  // Vehicle frontend
             "http://localhost:3001",  // Station frontend
             "http://localhost:3002"   // Admin frontend
         ));
+
+        // For mobile apps, we need to allow requests without specific origins
+        // Mobile apps don't send Origin headers like web browsers do
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization",
@@ -122,13 +129,20 @@ public class SecurityConfig {
             "Accept",
             "Origin",
             "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
+            "Access-Control-Request-Headers",
+            "X-Mobile-App",  // Custom header for mobile app identification
+            "X-App-Version"  // Custom header for app version tracking
         ));
         configuration.setExposedHeaders(Arrays.asList(
             "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials"
+            "Access-Control-Allow-Credentials",
+            "X-Total-Count",  // For pagination
+            "X-Rate-Limit-Remaining"  // For rate limiting info
         ));
-        configuration.setAllowCredentials(true);  // Can be true when specific origins are listed
+
+        // Set to false for mobile apps since they don't support credentials the same way
+        // Web frontends can still use credentials with specific origins
+        configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);  // 1 hour cache for preflight requests
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
