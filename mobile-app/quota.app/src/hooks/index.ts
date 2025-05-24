@@ -1,4 +1,4 @@
-export { default as useAuth } from './useAuth';
+export { useAuth } from '../context/AuthContext';
 export { default as useCamera } from './useCamera';
 export { default as useStorage } from './useStorage';
 export { default as useApi } from './useApi';
