@@ -20,6 +20,7 @@ import com.quotaapp.backend.dto.signup.AdminInfoDTO;
 import com.quotaapp.backend.dto.signup.LoginInfoDTO;
 import com.quotaapp.backend.service.EmailService;
 import com.quotaapp.backend.service.SessionService;
+import com.quotaapp.backend.service.SmsService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,6 +37,9 @@ public class TestController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SmsService smsService;
 
     @GetMapping("/public")
     public ResponseEntity<Map<String, String>> publicEndpoint() {
@@ -92,6 +96,105 @@ public class TestController {
             errorResponse.put("error", "Failed to send test email");
             errorResponse.put("message", e.getMessage());
             errorResponse.put("exceptionType", e.getClass().getName());
+
+            return ResponseEntity.internalServerError()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
+        }
+    }
+
+    @PostMapping("/test-sms")
+    public ResponseEntity<Map<String, Object>> testSms(@RequestBody Map<String, String> data) {
+        String phoneNumber = data.get("phoneNumber");
+        log.info("Test SMS endpoint called for: {}", phoneNumber);
+
+        if (phoneNumber == null || phoneNumber.isEmpty()) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Phone number is required");
+            return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
+        }
+
+        try {
+            // Check if SMS service is configured
+            if (!smsService.isSmsConfigured()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "SMS service is not properly configured");
+                errorResponse.put("message", "Please check Twilio environment variables");
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+            }
+
+            // Create a test user for SMS sending (we need a user object for the SMS service)
+            // In a real scenario, this would be the authenticated user
+            com.quotaapp.backend.model.User testUser = new com.quotaapp.backend.model.User();
+            testUser.setEmail("test@quota.app");
+            testUser.setId(1L); // Temporary ID for testing
+
+            // Generate a test verification code
+            String testCode = String.format("%06d", new java.util.Random().nextInt(1000000));
+            String testMessage = String.format("quota.app: Test SMS - Your verification code is %s. This is a test message.", testCode);
+
+            // Send the test SMS
+            log.info("Sending test SMS to: {} with message: {}", phoneNumber, testMessage);
+            var smsNotification = smsService.sendSms(testUser, phoneNumber, testMessage);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Test SMS sent successfully");
+            response.put("phoneNumber", phoneNumber);
+            response.put("testCode", testCode);
+            response.put("smsStatus", smsNotification.getStatus());
+            response.put("twilioSid", smsNotification.getTwilioSid());
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+        } catch (Exception e) {
+            log.error("Error sending test SMS to: {}", phoneNumber, e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to send test SMS");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("exceptionType", e.getClass().getName());
+
+            return ResponseEntity.internalServerError()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
+        }
+    }
+
+    @GetMapping("/sms-config")
+    public ResponseEntity<Map<String, Object>> checkSmsConfig() {
+        log.info("SMS configuration check endpoint called");
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean isConfigured = smsService.isSmsConfigured();
+            response.put("configured", isConfigured);
+            response.put("message", isConfigured ? "SMS service is properly configured" : "SMS service is not configured");
+
+            // Add configuration details (without sensitive data)
+            Map<String, Object> configDetails = new HashMap<>();
+            configDetails.put("twilioEnabled", System.getenv("TWILIO_ENABLED") != null ? System.getenv("TWILIO_ENABLED") : "not set");
+            configDetails.put("accountSidSet", System.getenv("TWILIO_ACCOUNT_SID") != null && !System.getenv("TWILIO_ACCOUNT_SID").isEmpty());
+            configDetails.put("authTokenSet", System.getenv("TWILIO_AUTH_TOKEN") != null && !System.getenv("TWILIO_AUTH_TOKEN").isEmpty());
+            configDetails.put("phoneNumberSet", System.getenv("TWILIO_PHONE_NUMBER") != null && !System.getenv("TWILIO_PHONE_NUMBER").isEmpty());
+
+            response.put("configDetails", configDetails);
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
+        } catch (Exception e) {
+            log.error("Error checking SMS configuration", e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to check SMS configuration");
+            errorResponse.put("message", e.getMessage());
 
             return ResponseEntity.internalServerError()
                 .contentType(MediaType.APPLICATION_JSON)

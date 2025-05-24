@@ -44,6 +44,16 @@ Thumbs.db
 **/.springBeans
 **/.sts4-cache
 
+# === Spring Boot Configuration Files ===
+# Ignore actual application properties files (contain sensitive data)
+/backend/src/main/resources/application.properties
+/backend/src/main/resources/application-*.properties
+/backend/src/test/resources/application.properties
+/backend/src/test/resources/application-*.properties
+# Keep example files (safe templates)
+!/backend/src/main/resources/application-example.properties
+!/backend/src/test/resources/application-example.properties
+
 # === Maven Wrapper ===
 **/mvnw
 **/mvnw.cmd

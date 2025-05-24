@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Application Properties ###
+# Ignore actual application properties files (contain sensitive data)
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+src/test/resources/application.properties
+src/test/resources/application-*.properties
+# Keep example files (safe templates)
+!src/main/resources/application-example.properties
+!src/test/resources/application-example.properties
