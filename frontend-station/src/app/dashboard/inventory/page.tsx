@@ -72,7 +72,7 @@ import {
   ArrowUpDown,
   BarChart3
 } from "lucide-react";
-import { format } from "date-fns";
+import { safeFormatDateShort, safeFormatDateWithTime } from "@/lib/utils";
 
 // Define the inventory item type
 interface InventoryItem {
@@ -239,6 +239,17 @@ export default function InventoryManagement() {
     }
   };
 
+  // Safely convert a date string to Date object
+  const safeStringToDate = (dateString: string | null | undefined): Date | undefined => {
+    if (!dateString) return undefined;
+    try {
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? undefined : date;
+    } catch {
+      return undefined;
+    }
+  };
+
   // Handle opening the update dialog
   const handleOpenUpdateDialog = (item: InventoryItem) => {
     setSelectedInventoryItem(item);
@@ -247,8 +258,8 @@ export default function InventoryManagement() {
     form.reset({
       currentStock: item.currentStock.toString(),
       capacity: item.capacity.toString(),
-      lastRefillDate: item.lastRefillDate ? new Date(item.lastRefillDate) : undefined,
-      nextRefillDate: item.nextRefillDate ? new Date(item.nextRefillDate) : undefined,
+      lastRefillDate: safeStringToDate(item.lastRefillDate),
+      nextRefillDate: safeStringToDate(item.nextRefillDate),
       changeType: "ADJUSTMENT",
       notes: ""
     });
@@ -415,17 +426,13 @@ export default function InventoryManagement() {
                         <div>
                           <p className="text-muted-foreground">Last Refill</p>
                           <p className="font-medium">
-                            {item.lastRefillDate
-                              ? format(new Date(item.lastRefillDate), "MMM d, yyyy")
-                              : "Not available"}
+                            {safeFormatDateShort(item.lastRefillDate, "Not available")}
                           </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Next Refill</p>
                           <p className="font-medium">
-                            {item.nextRefillDate
-                              ? format(new Date(item.nextRefillDate), "MMM d, yyyy")
-                              : "Not scheduled"}
+                            {safeFormatDateShort(item.nextRefillDate, "Not scheduled")}
                           </p>
                         </div>
                       </div>
@@ -433,7 +440,7 @@ export default function InventoryManagement() {
                   </CardContent>
                   <CardFooter className="bg-muted/50 py-2 px-6">
                     <p className="text-xs text-muted-foreground w-full text-right">
-                      Last updated: {format(new Date(item.updatedAt), "MMM d, yyyy h:mm a")}
+                      Last updated: {safeFormatDateWithTime(item.updatedAt, "Unknown")}
                     </p>
                   </CardFooter>
                 </Card>
@@ -604,7 +611,7 @@ export default function InventoryManagement() {
                         </span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(item.createdAt), "MMM d, yyyy h:mm a")}
+                        {safeFormatDateWithTime(item.createdAt, "Unknown")}
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 mb-2">
