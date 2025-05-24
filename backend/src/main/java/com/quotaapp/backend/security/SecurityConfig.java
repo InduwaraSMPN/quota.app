@@ -77,6 +77,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/mobile/auth/**").permitAll()  // Allow mobile authentication endpoints
                 .requestMatchers("/api/dmt/**").permitAll()  // Allow DMT validation without authentication
                 .requestMatchers("/api/session/**").permitAll()  // Allow session endpoints without authentication
                 .requestMatchers("/api/test/**").permitAll()  // Allow all test endpoints without authentication
