@@ -62,18 +62,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
           <Logo width={200} height={40} />
         </Animated.View>
 
-        {/* App Title Animation */}
-        <Animated.View
-          style={[
-            styles.titleContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >              <Logo width={80} height={16} color={COLORS.primary} />
-        </Animated.View>
-
         {/* Tagline Animation */}
         <Animated.View
           style={[

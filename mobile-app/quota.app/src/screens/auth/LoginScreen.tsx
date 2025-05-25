@@ -80,8 +80,6 @@ const LoginScreen: React.FC = () => {
           {/* Logo Section */}
           <View style={styles.logoSection}>
             <Logo width={240} height={48} />
-            <Text style={styles.appTitle}></Text>
-            <Text style={styles.appSubtitle}></Text>
           </View>
 
           {/* Form Section */}
