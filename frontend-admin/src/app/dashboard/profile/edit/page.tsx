@@ -34,7 +34,7 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { toast } from "sonner";
 
-// Define the form schema with Zod
+// Form validation schema with Sri Lankan phone number validation
 const formSchema = z.object({
   fullName: z
     .string()
@@ -66,16 +66,17 @@ const formSchema = z.object({
     .max(200, { message: "Address must be less than 200 characters" }),
 });
 
-// Define the form values type
+// Type inference from validation schema
 type FormValues = z.infer<typeof formSchema>;
 
+// Admin profile editing page with form validation
 export default function ProfileEditPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize the form
+  // Initialize form with validation schema
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,7 +87,7 @@ export default function ProfileEditPage() {
     },
   });
 
-  // Update form values when user data is loaded
+  // Populate form fields when user data loads
   useEffect(() => {
     if (user) {
       form.setValue("fullName", user.fullName || "");
@@ -96,7 +97,7 @@ export default function ProfileEditPage() {
     }
   }, [form, user]);
 
-  // Handle form submission
+  // Process form submission and API update
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     setError(null);
@@ -105,7 +106,7 @@ export default function ProfileEditPage() {
       // Log the data being sent
       console.log("Submitting admin profile update:", data);
 
-      // The backend expects specific fields for admin users
+      // Format data for backend API
       const profileData = {
         fullName: data.fullName,
         contactNumber: data.contactNumber,
@@ -135,31 +136,30 @@ export default function ProfileEditPage() {
     }
   };
 
-  // Combine loading states
+  // Aggregate loading and error states for UI control
   const isPageLoading = authLoading;
-  // Combine error states
   const pageError = authError || error;
 
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">
-      {/* Logo at the top */}
+      {/* Brand logo - fixed top-left */}
       <div className="absolute top-0 left-0 z-10">
         <Logo />
       </div>
 
-      {/* Theme toggle button */}
+      {/* Theme toggle - persistent bottom-right */}
       <div className="fixed bottom-6 right-6 z-50">
         <ModeToggle />
       </div>
 
-      {/* Loading state */}
+      {/* Loading state display */}
       {isPageLoading && (
         <div className="flex-1 flex items-center justify-center">
           <Loading text="Loading profile..." />
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state with retry option */}
       {!isPageLoading && pageError && (
         <div className="flex-1 flex items-center justify-center">
           <ErrorMessage
@@ -169,11 +169,11 @@ export default function ProfileEditPage() {
         </div>
       )}
 
-      {/* Main content - only show when not loading and no errors */}
+      {/* Main content - conditional rendering */}
       {!isPageLoading && !pageError && (
         <div className="flex flex-1 pt-16 px-4 md:px-8 pb-8">
           <div className="w-full max-w-3xl mx-auto space-y-6">
-            {/* Page Header */}
+            {/* Page header with navigation */}
             <div className="flex items-center gap-3">
               <MagicBackButton backLink="/dashboard" />
               <div>
@@ -182,7 +182,7 @@ export default function ProfileEditPage() {
               </div>
             </div>
 
-            {/* Form Card */}
+            {/* Profile form container */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
