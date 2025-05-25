@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING } from '../../constants';
+import { useTheme, useThemedStyles } from '../../context/ThemeContext';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants';
+import { getCardStyle, getColorWithOpacity } from '../../utils/theme';
 
 interface StatsCardProps {
   title: string;
@@ -9,7 +11,6 @@ interface StatsCardProps {
   subtitle?: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
-  backgroundColor?: string;
   onPress?: () => void;
   isLoading?: boolean;
 }
@@ -19,28 +20,31 @@ const StatsCard: React.FC<StatsCardProps> = ({
   value,
   subtitle,
   icon,
-  iconColor = COLORS.primary,
-  backgroundColor = COLORS.background,
+  iconColor,
   onPress,
   isLoading = false,
 }) => {
+  const { theme } = useTheme();
+  const styles = useThemedStyles((theme) => createStyles(theme));
+
   const CardComponent = onPress ? TouchableOpacity : View;
+  const effectiveIconColor = iconColor || theme.primary;
 
   return (
     <CardComponent
-      style={[styles.container, { backgroundColor }]}
+      style={styles.container}
       onPress={onPress}
       disabled={isLoading}
     >
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: iconColor + '20' }]}>
-          <Ionicons name={icon} size={24} color={iconColor} />
+        <View style={[styles.iconContainer, { backgroundColor: getColorWithOpacity(effectiveIconColor, 0.1) }]}>
+          <Ionicons name={icon} size={24} color={effectiveIconColor} />
         </View>
         {onPress && (
-          <Ionicons name="chevron-forward" size={16} color={COLORS.gray400} />
+          <Ionicons name="chevron-forward" size={16} color={theme.mutedForeground} />
         )}
       </View>
-      
+
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
         {isLoading ? (
@@ -58,21 +62,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
-    borderRadius: 16,
+    ...getCardStyle(theme),
     padding: SPACING.lg,
     marginBottom: SPACING.md,
-    shadowColor: COLORS.textPrimary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: COLORS.gray100,
   },
   header: {
     flexDirection: 'row',
@@ -93,26 +87,33 @@ const styles = StyleSheet.create({
   title: {
     fontSize: TYPOGRAPHY.fontSizes.sm,
     fontWeight: TYPOGRAPHY.fontWeights.medium,
-    color: COLORS.textSecondary,
+    color: theme.mutedForeground,
     marginBottom: SPACING.xs,
+    fontFamily: TYPOGRAPHY.fontFamily.sansMedium,
+    letterSpacing: TYPOGRAPHY.letterSpacing.normal,
   },
   value: {
     fontSize: TYPOGRAPHY.fontSizes['2xl'],
     fontWeight: TYPOGRAPHY.fontWeights.bold,
-    color: COLORS.textPrimary,
+    color: theme.foreground,
     marginBottom: SPACING.xs,
+    fontFamily: TYPOGRAPHY.fontFamily.sansBold,
+    letterSpacing: TYPOGRAPHY.letterSpacing.normal,
   },
   subtitle: {
     fontSize: TYPOGRAPHY.fontSizes.xs,
-    color: COLORS.textSecondary,
+    color: theme.mutedForeground,
+    fontFamily: TYPOGRAPHY.fontFamily.sans,
+    letterSpacing: TYPOGRAPHY.letterSpacing.normal,
   },
   loadingContainer: {
     paddingVertical: SPACING.sm,
   },
   loadingText: {
     fontSize: TYPOGRAPHY.fontSizes.base,
-    color: COLORS.textSecondary,
+    color: theme.mutedForeground,
     fontStyle: 'italic',
+    fontFamily: TYPOGRAPHY.fontFamily.sans,
   },
 });
 

@@ -41,43 +41,129 @@ export const STORAGE_KEYS = {
   SETTINGS: 'app_settings',
 } as const;
 
-// App Colors
-export const COLORS = {
-  primary: '#0066CC',
-  primaryDark: '#004499',
-  primaryLight: '#3385D6',
-  secondary: '#FF6B35',
-  success: '#28A745',
-  warning: '#FFC107',
-  error: '#DC3545',
-  info: '#17A2B8',
+// Theme Colors - Matching frontend-station design system
+export const LIGHT_THEME = {
+  background: '#faf9f5',
+  foreground: '#3d3929',
+  card: '#faf9f5',
+  cardForeground: '#141413',
+  popover: '#ffffff',
+  popoverForeground: '#28261b',
+  primary: '#9f0707',
+  primaryForeground: '#ffffff',
+  secondary: '#e9e6dc',
+  secondaryForeground: '#535146',
+  muted: '#ede9de',
+  mutedForeground: '#83827d',
+  accent: '#e9e6dc',
+  accentForeground: '#28261b',
+  destructive: '#141413',
+  destructiveForeground: '#ffffff',
+  border: '#dad9d4',
+  input: '#b4b2a7',
+  ring: '#207fde',
 
-  // Grays
-  gray50: '#F9FAFB',
-  gray100: '#F3F4F6',
-  gray200: '#E5E7EB',
-  gray300: '#D1D5DB',
-  gray400: '#9CA3AF',
-  gray500: '#6B7280',
-  gray600: '#4B5563',
-  gray700: '#374151',
-  gray800: '#1F2937',
-  gray900: '#111827',
+  // Chart colors
+  chart1: '#b05730',
+  chart2: '#9c87f5',
+  chart3: '#ded8c4',
+  chart4: '#dbd3f0',
+  chart5: '#b4552d',
 
-  // Background
-  background: '#FFFFFF',
-  backgroundSecondary: '#F8F9FA',
-  surface: '#FFFFFF',
-
-  // Text
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textLight: '#9CA3AF',
-  textInverse: '#FFFFFF',
+  // Sidebar colors
+  sidebar: '#f5f4ee',
+  sidebarForeground: '#3d3d3a',
+  sidebarPrimary: '#c96442',
+  sidebarPrimaryForeground: '#fbfbfb',
+  sidebarAccent: '#e9e6dc',
+  sidebarAccentForeground: '#343434',
+  sidebarBorder: '#ebebeb',
+  sidebarRing: '#b5b5b5',
 } as const;
 
-// Typography
+export const DARK_THEME = {
+  background: '#262624',
+  foreground: '#c3c0b6',
+  card: '#262624',
+  cardForeground: '#faf9f5',
+  popover: '#30302e',
+  popoverForeground: '#e5e5e2',
+  primary: '#9f0707',
+  primaryForeground: '#ffffff',
+  secondary: '#faf9f5',
+  secondaryForeground: '#30302e',
+  muted: '#1b1b19',
+  mutedForeground: '#b7b5a9',
+  accent: '#1a1915',
+  accentForeground: '#f5f4ee',
+  destructive: '#ef4444',
+  destructiveForeground: '#ffffff',
+  border: '#3e3e38',
+  input: '#52514a',
+  ring: '#207fde',
+
+  // Chart colors
+  chart1: '#b05730',
+  chart2: '#9c87f5',
+  chart3: '#1a1915',
+  chart4: '#2f2b48',
+  chart5: '#b4552d',
+
+  // Sidebar colors
+  sidebar: '#1f1e1d',
+  sidebarForeground: '#c3c0b6',
+  sidebarPrimary: '#343434',
+  sidebarPrimaryForeground: '#fbfbfb',
+  sidebarAccent: '#0f0f0e',
+  sidebarAccentForeground: '#c3c0b6',
+  sidebarBorder: '#ebebeb',
+  sidebarRing: '#b5b5b5',
+} as const;
+
+// Legacy colors for backward compatibility (will be deprecated)
+export const COLORS = {
+  primary: LIGHT_THEME.primary,
+  primaryDark: '#7a0505',
+  primaryLight: '#b91a1a',
+  secondary: LIGHT_THEME.chart1,
+  success: '#28A745',
+  warning: '#FFC107',
+  error: LIGHT_THEME.destructive,
+  info: LIGHT_THEME.ring,
+
+  // Grays - mapped to new theme
+  gray50: LIGHT_THEME.muted,
+  gray100: LIGHT_THEME.secondary,
+  gray200: LIGHT_THEME.border,
+  gray300: LIGHT_THEME.input,
+  gray400: LIGHT_THEME.mutedForeground,
+  gray500: LIGHT_THEME.secondaryForeground,
+  gray600: LIGHT_THEME.foreground,
+  gray700: LIGHT_THEME.cardForeground,
+  gray800: '#0f0f0e',
+  gray900: '#0a0a09',
+
+  // Background
+  background: LIGHT_THEME.background,
+  backgroundSecondary: LIGHT_THEME.secondary,
+  surface: LIGHT_THEME.card,
+
+  // Text
+  textPrimary: LIGHT_THEME.foreground,
+  textSecondary: LIGHT_THEME.mutedForeground,
+  textLight: LIGHT_THEME.input,
+  textInverse: LIGHT_THEME.primaryForeground,
+} as const;
+
+// Typography - Matching frontend-station design system
 export const TYPOGRAPHY = {
+  fontFamily: {
+    sans: 'SpaceGrotesk-Regular', // Will need to be loaded
+    sansMedium: 'SpaceGrotesk-Medium',
+    sansSemiBold: 'SpaceGrotesk-SemiBold',
+    sansBold: 'SpaceGrotesk-Bold',
+    mono: 'Menlo', // Fallback for monospace
+  },
   fontSizes: {
     xs: 12,
     sm: 14,
@@ -87,6 +173,8 @@ export const TYPOGRAPHY = {
     '2xl': 24,
     '3xl': 30,
     '4xl': 36,
+    '5xl': 48,
+    '6xl': 60,
   },
   fontWeights: {
     normal: '400',
@@ -99,9 +187,17 @@ export const TYPOGRAPHY = {
     normal: 1.5,
     relaxed: 1.75,
   },
+  letterSpacing: {
+    tighter: -0.05,
+    tight: -0.025,
+    normal: 0.05, // Matching frontend-station tracking-normal
+    wide: 0.075,
+    wider: 0.1,
+    widest: 0.15,
+  },
 } as const;
 
-// Spacing
+// Spacing - Enhanced to match design system
 export const SPACING = {
   xs: 4,
   sm: 8,
@@ -110,15 +206,73 @@ export const SPACING = {
   xl: 32,
   '2xl': 48,
   '3xl': 64,
+  '4xl': 80,
+  '5xl': 96,
+  '6xl': 128,
 } as const;
 
-// Border Radius
+// Border Radius - Matching frontend-station design system
 export const BORDER_RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 4,  // calc(0.5rem - 4px) = 4px
+  md: 6,  // calc(0.5rem - 2px) = 6px
+  lg: 8,  // 0.5rem = 8px
+  xl: 12, // calc(0.5rem + 4px) = 12px
+  '2xl': 16,
+  '3xl': 24,
   full: 9999,
+} as const;
+
+// Shadows - Matching frontend-station design system
+export const SHADOWS = {
+  '2xs': {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  xs: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  sm: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  lg: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  xl: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  '2xl': {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 6,
+  },
 } as const;
 
 // Fuel Types

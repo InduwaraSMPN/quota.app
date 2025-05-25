@@ -1,16 +1,16 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING } from '../../constants';
+import { useTheme, useThemedStyles } from '../../context/ThemeContext';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants';
+import { getButtonStyle, getTextStyle } from '../../utils/theme';
 
 interface ActionButtonProps {
   title: string;
   subtitle?: string;
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
-  backgroundColor?: string;
-  iconColor?: string;
-  textColor?: string;
+  variant?: 'primary' | 'secondary' | 'outline';
   disabled?: boolean;
   size?: 'small' | 'medium' | 'large';
 }
@@ -20,32 +20,13 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   subtitle,
   icon,
   onPress,
-  backgroundColor = COLORS.primary,
-  iconColor = COLORS.textInverse,
-  textColor = COLORS.textInverse,
+  variant = 'primary',
   disabled = false,
   size = 'medium',
 }) => {
-  const getButtonStyle = () => {
-    const baseStyle = [styles.container, { backgroundColor }];
-    
-    if (disabled) {
-      baseStyle.push(styles.disabled);
-    }
-    
-    switch (size) {
-      case 'small':
-        baseStyle.push(styles.small);
-        break;
-      case 'large':
-        baseStyle.push(styles.large);
-        break;
-      default:
-        baseStyle.push(styles.medium);
-    }
-    
-    return baseStyle;
-  };
+  const { theme } = useTheme();
+
+  const styles = useThemedStyles((theme) => createStyles(theme, variant, size));
 
   const getIconSize = () => {
     switch (size) {
@@ -58,73 +39,70 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     }
   };
 
-  const getTitleStyle = () => {
-    const baseStyle = [styles.title, { color: textColor }];
-    
-    switch (size) {
-      case 'small':
-        baseStyle.push(styles.titleSmall);
-        break;
-      case 'large':
-        baseStyle.push(styles.titleLarge);
-        break;
+  const getIconColor = () => {
+    switch (variant) {
+      case 'primary':
+        return theme.primaryForeground;
+      case 'secondary':
+        return theme.secondaryForeground;
+      case 'outline':
+        return theme.foreground;
       default:
-        baseStyle.push(styles.titleMedium);
+        return theme.primaryForeground;
     }
-    
-    return baseStyle;
+  };
+
+  const getTextColor = () => {
+    switch (variant) {
+      case 'primary':
+        return theme.primaryForeground;
+      case 'secondary':
+        return theme.secondaryForeground;
+      case 'outline':
+        return theme.foreground;
+      default:
+        return theme.primaryForeground;
+    }
   };
 
   return (
     <TouchableOpacity
-      style={getButtonStyle()}
+      style={[styles.container, disabled && styles.disabled]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.8}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={getIconSize()} color={iconColor} />
+        <Ionicons name={icon} size={getIconSize()} color={getIconColor()} />
       </View>
       <View style={styles.textContainer}>
-        <Text style={getTitleStyle()}>{title}</Text>
+        <Text style={[styles.title, { color: getTextColor() }]}>{title}</Text>
         {subtitle && (
-          <Text style={[styles.subtitle, { color: textColor }]}>{subtitle}</Text>
+          <Text style={[styles.subtitle, { color: getTextColor() }]}>{subtitle}</Text>
         )}
       </View>
-      <Ionicons name="chevron-forward" size={16} color={iconColor} />
+      <Ionicons name="chevron-forward" size={16} color={getIconColor()} />
     </TouchableOpacity>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, variant: string, size: string) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.lg,
     marginBottom: SPACING.md,
-    shadowColor: COLORS.textPrimary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  small: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    minHeight: 56,
-  },
-  medium: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    minHeight: 72,
-  },
-  large: {
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.lg,
-    minHeight: 88,
+    backgroundColor: variant === 'primary' ? theme.primary :
+                   variant === 'secondary' ? theme.secondary :
+                   'transparent',
+    borderWidth: variant === 'outline' ? 1 : 0,
+    borderColor: variant === 'outline' ? theme.border : 'transparent',
+    paddingHorizontal: size === 'small' ? SPACING.md :
+                      size === 'large' ? SPACING.xl : SPACING.lg,
+    paddingVertical: size === 'small' ? SPACING.sm :
+                    size === 'large' ? SPACING.lg : SPACING.md,
+    minHeight: size === 'small' ? 56 : size === 'large' ? 88 : 72,
+    ...SHADOWS.sm,
   },
   disabled: {
     opacity: 0.6,
@@ -137,20 +115,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: TYPOGRAPHY.fontWeights.semibold,
-  },
-  titleSmall: {
-    fontSize: TYPOGRAPHY.fontSizes.sm,
-  },
-  titleMedium: {
-    fontSize: TYPOGRAPHY.fontSizes.base,
-  },
-  titleLarge: {
-    fontSize: TYPOGRAPHY.fontSizes.lg,
+    fontSize: size === 'small' ? TYPOGRAPHY.fontSizes.sm :
+             size === 'large' ? TYPOGRAPHY.fontSizes.lg : TYPOGRAPHY.fontSizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.sansSemiBold,
+    letterSpacing: TYPOGRAPHY.letterSpacing.normal,
   },
   subtitle: {
     fontSize: TYPOGRAPHY.fontSizes.sm,
     opacity: 0.8,
     marginTop: 2,
+    fontFamily: TYPOGRAPHY.fontFamily.sans,
+    letterSpacing: TYPOGRAPHY.letterSpacing.normal,
   },
 });
 
