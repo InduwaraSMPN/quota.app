@@ -4,13 +4,10 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../constants';
-
-const { width, height } = Dimensions.get('window');
+import { Logo } from '../../components/ui';
 
 interface WelcomeScreenProps {
   onComplete: () => void;
@@ -62,9 +59,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
             },
           ]}
         >
-          <View style={styles.logoBackground}>
-            <Ionicons name="car" size={80} color={COLORS.primary} />
-          </View>
+          <Logo width={200} height={40} />
         </Animated.View>
 
         {/* App Title Animation */}
@@ -76,9 +71,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
               transform: [{ translateY: slideAnim }],
             },
           ]}
-        >
-          <Text style={styles.appTitle}>Quota.app</Text>
-          <Text style={styles.appSubtitle}>Fuel Station Operator</Text>
+        >              <Logo width={80} height={16} color={COLORS.primary} />
         </Animated.View>
 
         {/* Tagline Animation */}

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../constants';
+import { Logo } from '../../components/ui';
 
 const AboutScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -27,11 +28,11 @@ const AboutScreen: React.FC = () => {
     </View>
   );
 
-  const LinkItem = ({ 
-    icon, 
-    title, 
-    subtitle, 
-    onPress 
+  const LinkItem = ({
+    icon,
+    title,
+    subtitle,
+    onPress
   }: {
     icon: keyof typeof Ionicons.glyphMap;
     title: string;
@@ -61,13 +62,10 @@ const AboutScreen: React.FC = () => {
       <ScrollView style={styles.content}>
         {/* App Logo and Info */}
         <View style={styles.appSection}>
-          <View style={styles.appLogo}>
-            <Ionicons name="car" size={48} color={COLORS.primary} />
-          </View>
-          <Text style={styles.appName}>Quota.app</Text>
+          <Logo width={240} height={48} />
           <Text style={styles.appTagline}>Fuel Station Operator</Text>
           <Text style={styles.appDescription}>
-            Streamline your fuel dispensing operations with our comprehensive 
+            Streamline your fuel dispensing operations with our comprehensive
             quota management system designed specifically for fuel station operators.
           </Text>
         </View>

@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../constants';
 import { validateEmail } from '../../utils';
+import { Logo } from '../../components/ui';
 
 const LoginScreen: React.FC = () => {
   const { login, isLoading } = useAuth();
@@ -79,11 +79,9 @@ const LoginScreen: React.FC = () => {
         >
           {/* Logo Section */}
           <View style={styles.logoSection}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="car" size={60} color={COLORS.primary} />
-            </View>
-            <Text style={styles.appTitle}>Quota.app</Text>
-            <Text style={styles.appSubtitle}>Fuel Station Operator</Text>
+            <Logo width={240} height={48} />
+            <Text style={styles.appTitle}></Text>
+            <Text style={styles.appSubtitle}></Text>
           </View>
 
           {/* Form Section */}
