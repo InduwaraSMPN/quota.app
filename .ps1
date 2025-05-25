@@ -11,3 +11,6 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "bun run dev:stati
 
 # Step 4: Start bun dev:admin in new terminal
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "bun run dev:admin"
+
+# Step 5: Start bun run start in new terminal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "bun run dev:mobile"
