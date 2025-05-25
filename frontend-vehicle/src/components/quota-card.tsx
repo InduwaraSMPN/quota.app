@@ -6,6 +6,14 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/date-utils";
 
+/**
+ * Quota Card Component
+ *
+ * Displays fuel quota information for a vehicle including:
+ * - Remaining fuel amount with progress bar
+ * - Allocation and expiry dates
+ * - Quota status (active/inactive/expired)
+ */
 interface QuotaCardProps {
   vehicleId: number;
   registrationNumber: string;
@@ -30,22 +38,22 @@ export function QuotaCard({
   className,
 }: QuotaCardProps) {
   // Calculate percentage of remaining quota
-  const percentRemaining = allocatedAmount > 0 
-    ? Math.round((remainingAmount / allocatedAmount) * 100) 
+  const percentRemaining = allocatedAmount > 0
+    ? Math.round((remainingAmount / allocatedAmount) * 100)
     : 0;
-  
+
   // Determine progress color based on percentage
   const getProgressColor = (percent: number) => {
     if (percent <= 20) return "bg-destructive";
     if (percent <= 50) return "bg-warning";
     return "bg-primary";
   };
-  
+
   // Format dates
   const formattedAllocationDate = allocationDate ? formatDate(allocationDate) : "N/A";
   const formattedExpiryDate = expiryDate ? formatDate(expiryDate) : "N/A";
   const formattedNextAllocationDate = nextAllocationDate ? formatDate(nextAllocationDate) : "N/A";
-  
+
   return (
     <Card className={cn("shadow-md", className)}>
       <CardHeader className="pb-2">
@@ -63,8 +71,8 @@ export function QuotaCard({
                   <span className="text-muted-foreground">Remaining</span>
                   <span className="font-medium">{remainingAmount.toFixed(2)} L</span>
                 </div>
-                <Progress 
-                  value={percentRemaining} 
+                <Progress
+                  value={percentRemaining}
                   className="h-2"
                   indicatorClassName={getProgressColor(percentRemaining)}
                 />
@@ -73,7 +81,7 @@ export function QuotaCard({
                   <span className="text-muted-foreground">{allocatedAmount.toFixed(2)} L</span>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Allocation Date</p>
@@ -97,8 +105,8 @@ export function QuotaCard({
               <div>
                 <p className="font-medium">No Active Quota</p>
                 <p className="text-sm text-muted-foreground">
-                  {quotaStatus === "INACTIVE" 
-                    ? "You don't have an active fuel quota at the moment." 
+                  {quotaStatus === "INACTIVE"
+                    ? "You don't have an active fuel quota at the moment."
                     : "Your fuel quota has expired."}
                 </p>
               </div>

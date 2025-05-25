@@ -6,6 +6,12 @@ import { Logo } from "@/components/logo";
 import { VehicleAddForm } from "@/components/vehicle/VehicleAddForm";
 import { Toaster } from "@/components/ui/sonner";
 
+/**
+ * Add Vehicle Page
+ *
+ * Provides a form interface for users to register new vehicles
+ * in the fuel quota management system.
+ */
 export default function AddVehiclePage() {
   return (
     <div className="flex flex-col min-h-svh w-full relative bg-background">

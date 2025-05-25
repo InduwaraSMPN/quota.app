@@ -37,6 +37,15 @@ import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { toast } from "sonner";
 
+/**
+ * Vehicles Management Page
+ *
+ * Displays all user vehicles in a grid layout with options to:
+ * - View vehicle details and QR codes
+ * - Edit vehicle information
+ * - Delete vehicles
+ * - Add new vehicles
+ */
 export default function VehiclesPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -75,18 +84,18 @@ export default function VehiclesPage() {
     }
   }, [isAuthenticated, authLoading]);
 
-  // Function to handle vehicle deletion
+  // Handle vehicle deletion with confirmation
   const handleDeleteVehicle = async (id: string) => {
     try {
       setIsDeleting(true);
 
-      // In a real implementation, you would call an API to delete the vehicle
+      // TODO: Replace with actual API call when backend is ready
       // const response = await apiService.deleteVehicle(id);
 
-      // For now, we'll just simulate the API call with a timeout
+      // Simulate API call for now
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Update the local state
+      // Update local state after successful deletion
       setVehicles(vehicles.filter(vehicle => vehicle.id !== id));
       setVehicleToDelete(null);
       toast.success("Vehicle deleted successfully");

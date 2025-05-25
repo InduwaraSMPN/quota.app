@@ -8,6 +8,12 @@ import { formatDate, formatDateTime, formatDateTimeEnhanced } from "@/lib/date-u
 import { formatCurrency } from "@/lib/currency-utils";
 import { cn } from "@/lib/utils";
 
+/**
+ * Consumption History Component
+ *
+ * Displays a paginated list of fuel consumption transactions
+ * with details like station name, fuel type, amount, and cost.
+ */
 interface Transaction {
   id: number;
   vehicleId: number;

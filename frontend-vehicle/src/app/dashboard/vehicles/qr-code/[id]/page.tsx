@@ -11,7 +11,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Vehicle } from "@/types/vehicle";
 import { toast } from "sonner";
 
-// Define the page component with properly typed params
+/**
+ * Vehicle QR Code Page
+ *
+ * Displays a QR code for a specific vehicle that can be scanned
+ * at fuel stations for quick identification and quota verification.
+ *
+ * @param params - Contains the vehicle ID from the URL
+ */
 export default function VehicleQRCodePage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   // Unwrap the params Promise using React.use()
   const unwrappedParams = 'then' in params ? use(params) : params;
@@ -22,6 +29,7 @@ export default function VehicleQRCodePage({ params }: { params: Promise<{ id: st
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch vehicle data for QR code generation
   useEffect(() => {
     const fetchVehicle = async () => {
       // Check if we have a valid ID and authentication
@@ -37,8 +45,8 @@ export default function VehicleQRCodePage({ params }: { params: Promise<{ id: st
       try {
         setIsLoading(true);
 
-        // In a real implementation, you would have an API endpoint to get a single vehicle by ID
-        // For now, we'll fetch all vehicles and find the one with matching ID
+        // TODO: Replace with specific vehicle API endpoint when available
+        // For now, fetch all vehicles and find the matching one
         const response = await apiService.getVehicleDetails();
 
         if (response.error) {

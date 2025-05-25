@@ -28,19 +28,31 @@ import { toast } from "sonner";
 import { QuotaCard } from "@/components/quota-card";
 import { ConsumptionHistory } from "@/components/consumption-history";
 
-
-
+/**
+ * Main Dashboard Component
+ *
+ * Displays user profile, vehicles, fuel quota, and consumption history
+ * in a responsive grid layout with real-time data fetching.
+ */
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
+
+  // State for different data sections
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [quotaData, setQuotaData] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+
+  // Loading states for each data section
   const [isLoading, setIsLoading] = useState(true);
   const [isQuotaLoading, setIsQuotaLoading] = useState(true);
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
+
+  // Error states for each data section
   const [error, setError] = useState<string | null>(null);
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
+
+  // Pagination for consumption history
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
