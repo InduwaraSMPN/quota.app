@@ -38,6 +38,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { Bar, BarChart, Line, LineChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
 
+// Analytics data structure from API
 interface FuelConsumptionAnalytics {
   totalConsumption: number;
   consumptionByFuelType: Record<string, number>;
@@ -60,6 +61,7 @@ export default function FuelConsumptionPage() {
   const [selectedFuelType, setSelectedFuelType] = useState("all");
   const [selectedStationId, setSelectedStationId] = useState("");
 
+  // Fetch analytics data with optional filters
   const fetchAnalytics = async () => {
     if (!isAuthenticated) return;
 
@@ -67,6 +69,7 @@ export default function FuelConsumptionPage() {
       setIsLoading(true);
       setError(null);
 
+      // Build filter object from current state
       const filters: any = {};
       if (startDate) filters.startDate = startDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       if (endDate) filters.endDate = endDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
@@ -92,16 +95,19 @@ export default function FuelConsumptionPage() {
     }
   };
 
+  // Load data on auth state change
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       fetchAnalytics();
     }
   }, [isAuthenticated, authLoading]);
 
+  // Apply current filter settings
   const handleApplyFilters = () => {
     fetchAnalytics();
   };
 
+  // Reset all filters and reload data
   const handleClearFilters = () => {
     setStartDate(undefined);
     setEndDate(undefined);
@@ -111,7 +117,7 @@ export default function FuelConsumptionPage() {
     setTimeout(() => fetchAnalytics(), 100);
   };
 
-  // Prepare chart data
+  // Transform API data for chart components
   const fuelTypeChartData = analytics?.consumptionByFuelType
     ? Object.entries(analytics.consumptionByFuelType).map(([type, amount]) => ({
         fuelType: type.replace(/_/g, ' '),
@@ -119,6 +125,7 @@ export default function FuelConsumptionPage() {
       }))
     : [];
 
+  // Sort monthly data chronologically
   const monthlyChartData = analytics?.monthlyConsumption
     ? Object.entries(analytics.monthlyConsumption)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -128,6 +135,7 @@ export default function FuelConsumptionPage() {
         }))
     : [];
 
+  // Top 10 stations by consumption
   const stationChartData = analytics?.consumptionByStation
     ? Object.entries(analytics.consumptionByStation)
         .sort(([, a], [, b]) => Number(b) - Number(a))
@@ -138,6 +146,7 @@ export default function FuelConsumptionPage() {
         }))
     : [];
 
+  // Chart styling configuration
   const chartConfig = {
     amount: {
       label: "Consumption (L)",
@@ -153,6 +162,7 @@ export default function FuelConsumptionPage() {
     },
   };
 
+  // Color palette for pie chart segments
   const COLORS = [
     "var(--color-chart-1)",
     "var(--color-chart-2)",

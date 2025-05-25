@@ -4,52 +4,50 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Logo } from "@/components/logo";
 
+/**
+ * Landing page for the Admin Portal
+ * Provides login/signup options with responsive layout
+ */
 export default function Home() {
   return (
-    // Main container with min height and flex column layout
+    // Root container with full viewport height
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Theme toggle button - fixed for easy access */}
+      {/* Theme toggle - persistent across all viewport sizes */}
       <div className="fixed bottom-6 right-6 z-50">
         <ModeToggle />
       </div>
 
-      {/* Main content area with split layout on medium screens and up */}
-      <div className="flex flex-col md:flex-row flex-1"> {/* Use flex-1 to ensure content pushes footer (if any) down, though min-h-screen on parent achieves full height */}
+      {/* Responsive layout - stacked on mobile, side-by-side on desktop */}
+      <div className="flex flex-col md:flex-row flex-1">
 
-        {/* Left side - Content area */}
-        <div className="w-full md:w-1/2 bg-background flex flex-col p-6 md:p-12 lg:p-16"> {/* Added padding */}
+        {/* Content panel - full width on mobile, half width on desktop */}
+        <div className="w-full md:w-1/2 bg-background flex flex-col p-6 md:p-12 lg:p-16">
 
-          {/* Logo - Positioned at the top-left */}
-          {/* Assuming Logo component has its own padding/margins or we add them here */}
-          <div> {/* Added margin below logo */}
+          {/* Brand identity */}
+          <div>
              <Logo />
           </div>
 
+          {/* Main content container - vertically centered with controlled width */}
+          <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full space-y-8">
 
-          {/* Content block (Title, Subtitle, Buttons) - Centered vertically and horizontally */}
-          {/* Added max-width and auto margins for better readability on large screens */}
-          {/* Added generous vertical space using space-y */}
-          <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full space-y-8"> {/* Increased space-y */}
-
-            {/* Text Content - Enhancing Visual Hierarchy */}
-            {/* Added main heading and subtitle */}
-            <div className="space-y-4 text-center md:text-left"> {/* Added space between text elements, centered text on mobile */}
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground"> {/* Prominent Heading */}
+            {/* Value proposition - centered on mobile, left-aligned on desktop */}
+            <div className="space-y-4 text-center md:text-left">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
                 Admin Portal
               </h1>
-              <p className="text-lg text-muted-foreground"> {/* Descriptive Subtitle */}
+              <p className="text-lg text-muted-foreground">
                 Manage fuel quotas, monitor consumption data, and oversee
                 the entire fuel distribution system from a central dashboard.
               </p>
             </div>
 
-            {/* Buttons Container - Clear Call to Actions */}
-            {/* Using consistent spacing for buttons */}
-            <div className="space-y-6"> {/* Space between buttons */}
+            {/* Authentication options */}
+            <div className="space-y-6">
               <Button
                 asChild
-                variant="default" // Assuming 'default' uses primary colors
-                className="h-14 text-2xl font-medium w-full" // Slightly smaller size, medium font, added hover effect
+                variant="default"
+                className="h-14 text-2xl font-medium w-full"
               >
                 <Link href="/auth/login" className="flex items-center justify-center">
                   Login
@@ -57,8 +55,8 @@ export default function Home() {
               </Button>
               <Button
                 asChild
-                variant="outline" // Using outline variant for secondary action
-                className="h-14 text-2xl font-medium w-full" // Slightly smaller size, medium font, added hover effect
+                variant="outline"
+                className="h-14 text-2xl font-medium w-full"
               >
                 <Link href="/auth/signup" className="flex items-center justify-center">
                   Signup
@@ -69,33 +67,30 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right side - Desktop Background Image */}
-        {/* Hidden on small screens, takes up half width on medium+ */}
+        {/* Desktop hero image - hidden on mobile */}
         <div className="hidden md:block w-1/2 relative">
           <Image
             src="/home.jpg"
-            alt="Car interior dashboard" // Keep alt text
+            alt="Car interior dashboard"
             fill
             priority
-            className="object-cover" // Ensure image covers the area
-            sizes="50vw" // Optimize image loading
-            quality={90} // Maintain quality
+            className="object-cover"
+            sizes="50vw"
+            quality={90}
           />
         </div>
 
-        {/* Mobile Background Image - Only visible on small screens */}
-        {/* Added a slight overlay for better text readability */}
+        {/* Mobile background image with overlay for text legibility */}
         <div className="absolute inset-0 -z-10 md:hidden">
-           {/* Semi-transparent overlay */}
            <div className="absolute inset-0 bg-background opacity-70"></div>
            <Image
              src="/home.jpg"
-             alt="Car interior dashboard" // Keep alt text
+             alt="Car interior dashboard"
              fill
              priority
-             className="object-cover" // Ensure image covers the area
-             sizes="100vw" // Optimize image loading
-             quality={80} // Maintain quality
+             className="object-cover"
+             sizes="100vw"
+             quality={80}
            />
         </div>
       </div>
