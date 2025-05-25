@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, ChevronRight, ChevronLeft, Droplet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate, formatDateTime } from "@/lib/date-utils";
+import { formatDate, formatDateTime, formatDateTimeEnhanced } from "@/lib/date-utils";
 import { formatCurrency } from "@/lib/currency-utils";
 import { cn } from "@/lib/utils";
 
@@ -91,7 +91,7 @@ export function ConsumptionHistory({
                     <div>
                       <h4 className="font-medium">{transaction.stationName}</h4>
                       <p className="text-xs text-muted-foreground">
-                        {formatDateTime(transaction.transactionDate)}
+                        {formatDateTimeEnhanced(transaction.transactionDate)}
                       </p>
                     </div>
                     <div className="text-right">
