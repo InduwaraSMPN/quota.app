@@ -28,13 +28,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, User } from "lucide-react";
+// Services and hooks
 import { apiService } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { Loading } from "@/components/ui/loading";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { toast } from "sonner";
 
-// Define the form schema with Zod
+/**
+ * Profile Edit Form Schema
+ *
+ * Validates:
+ * - Full name (3-100 chars)
+ * - Address (5-200 chars)
+ * - Contact number (Sri Lankan format)
+ */
 const formSchema = z.object({
   fullName: z
     .string()
@@ -56,7 +64,6 @@ const formSchema = z.object({
     ),
 });
 
-// Define the form values type
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ProfileEditPage() {
