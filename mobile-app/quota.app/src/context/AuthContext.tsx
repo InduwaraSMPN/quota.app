@@ -8,12 +8,13 @@ interface AuthContextType {
   isLoading: boolean;
   user: User | null;
   station: FuelStation | null;
-  
+
   // Actions
   login: (credentials: AuthRequest) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
   checkAuthStatus: () => Promise<void>;
+  refreshStationData: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuthStatus = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      
+
       const token = await storageService.getAuthToken();
       if (!token) {
         setIsAuthenticated(false);
@@ -71,19 +72,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: AuthRequest): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
+
       const response = await apiService.login(credentials);
-      
+
       if (response.error || !response.data) {
         notificationService.showLoginError(response.error || 'Login failed');
         return false;
       }
 
       const authData = response.data;
-      
+
       // Save tokens
       await apiService.saveTokens(authData);
-      
+
       // Get station details
       const stationResponse = await apiService.getStationDetails();
       if (stationResponse.error || !stationResponse.data) {
@@ -92,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const stationData = stationResponse.data;
-      
+
       // Create user object from auth response and station data
       const userData: User = {
         id: stationData.owner.user.id,
@@ -125,16 +126,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      
+
       // Clear tokens and data
       await apiService.clearTokens();
       await storageService.logout();
-      
+
       // Update state
       setIsAuthenticated(false);
       setUser(null);
       setStation(null);
-      
+
       notificationService.showLogoutSuccess();
     } catch (error) {
       console.error('Logout error:', error);
@@ -151,16 +152,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const response = await apiService.refreshToken(refreshTokenValue);
-      
+
       if (response.error || !response.data) {
         return false;
       }
 
       const authData = response.data;
-      
+
       // Save new tokens
       await apiService.saveTokens(authData);
-      
+
       // Get fresh station details
       const stationResponse = await apiService.getStationDetails();
       if (stationResponse.error || !stationResponse.data) {
@@ -168,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const stationData = stationResponse.data;
-      
+
       // Create user object
       const userData: User = {
         id: stationData.owner.user.id,
@@ -194,6 +195,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshStationData = async (): Promise<boolean> => {
+    try {
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+        return false;
+      }
+
+      // Get fresh station details
+      const stationResponse = await apiService.getStationDetails();
+      if (stationResponse.error || !stationResponse.data) {
+        console.error('Failed to refresh station data:', stationResponse.error);
+        return false;
+      }
+
+      const stationData = stationResponse.data;
+      console.log('Refreshed station data:', {
+        verificationStatus: stationData.verificationStatus,
+        businessAddress: stationData.businessAddress,
+        stationName: stationData.stationName,
+      });
+
+      // Update user data with fresh info from station response
+      if (user) {
+        const updatedUser: User = {
+          ...user,
+          id: stationData.owner.user.id,
+          email: stationData.owner.user.email,
+          isActive: stationData.owner.user.isActive,
+          lastLogin: stationData.owner.user.lastLogin,
+        };
+
+        // Save updated data
+        await storageService.saveUserData(updatedUser);
+        await storageService.saveStationData(stationData);
+
+        // Update state
+        setUser(updatedUser);
+        setStation(stationData);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error refreshing station data:', error);
+      return false;
+    }
+  };
+
   const value: AuthContextType = {
     isAuthenticated,
     isLoading,
@@ -203,6 +251,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     refreshToken,
     checkAuthStatus,
+    refreshStationData,
   };
 
   return (

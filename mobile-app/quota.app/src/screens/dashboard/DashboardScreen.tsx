@@ -26,7 +26,7 @@ interface DashboardStats {
 
 const DashboardScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { user, station, logout } = useAuth();
+  const { user, station, logout, refreshStationData } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     todayTransactions: 0,
     todayRevenue: 0,
@@ -38,14 +38,21 @@ const DashboardScreen: React.FC = () => {
 
   useFocusEffect(
     React.useCallback(() => {
+      console.log('Dashboard focused, current station data:', {
+        verificationStatus: station?.verificationStatus,
+        businessAddress: station?.businessAddress,
+        stationName: station?.stationName,
+      });
       loadDashboardData();
-    }, [])
+    }, [station])
   );
 
   const loadDashboardData = async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setIsRefreshing(true);
+        // Only refresh station data when user manually pulls to refresh
+        await refreshStationData();
       } else {
         setIsLoading(true);
       }
@@ -248,7 +255,7 @@ const DashboardScreen: React.FC = () => {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Location:</Text>
               <Text style={styles.infoValue}>
-                {station?.districtName}, {station?.provinceName}
+                {station?.district}, {station?.province}
               </Text>
             </View>
           </View>
