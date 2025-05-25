@@ -1,41 +1,95 @@
-import { API_CONFIG, API_ENDPOINTS, STORAGE_KEYS } from '../constants';
-import { 
-  ApiResponse, 
-  AuthRequest, 
-  AuthResponse, 
-  FuelStation, 
-  TransactionCreate, 
-  TransactionDetails, 
+import { API_CONFIG, API_ENDPOINTS, STORAGE_KEYS, LOGGING_CONFIG } from '../constants';
+import {
+  ApiResponse,
+  AuthRequest,
+  AuthResponse,
+  FuelStation,
+  TransactionCreate,
+  TransactionDetails,
   VehicleValidation,
   QuotaDetails,
   Notification
 } from '../types';
 import { getErrorMessage } from '../utils';
 import * as SecureStore from 'expo-secure-store';
+import logger, { LogCategory } from '../utils/logger';
+import apiLogger from './apiLogger';
+import jwtLogger from './jwtLogger';
+import networkMonitor from './networkMonitor';
 
 class ApiService {
   private baseURL: string;
   private timeout: number;
+  private isInitialized: boolean = false;
 
   constructor() {
     this.baseURL = API_CONFIG.BASE_URL;
     this.timeout = API_CONFIG.TIMEOUT;
+    this.initialize();
+  }
+
+  // Initialize logging and monitoring
+  private async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    try {
+      // Initialize network monitoring
+      if (LOGGING_CONFIG.LOG_NETWORK_CHANGES) {
+        await networkMonitor.startMonitoring();
+        logger.info(LogCategory.API, '🚀 API Service initialized with network monitoring');
+      }
+
+      // Log JWT token status on initialization
+      await jwtLogger.logTokenRetrieved();
+
+      this.isInitialized = true;
+      logger.info(LogCategory.API, '✅ API Service fully initialized', {
+        baseURL: this.baseURL,
+        timeout: this.timeout,
+        networkMonitoring: LOGGING_CONFIG.LOG_NETWORK_CHANGES,
+      });
+    } catch (error) {
+      logger.error(LogCategory.API, '❌ Failed to initialize API Service', error);
+    }
   }
 
   // Helper method to get auth headers
   private async getAuthHeaders(): Promise<Record<string, string>> {
     const token = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
-    return {
+
+    // Log token retrieval and validation
+    if (token && LOGGING_CONFIG.LOG_TOKEN_VALIDATION) {
+      try {
+        // Check if token should be refreshed
+        const shouldRefresh = await jwtLogger.shouldRefreshToken();
+        if (shouldRefresh) {
+          logger.warn(LogCategory.AUTH, '⚠️ Token refresh recommended before API call');
+        }
+      } catch (error) {
+        logger.error(LogCategory.AUTH, '❌ Error checking token status', error);
+      }
+    }
+
+    const headers = {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
     };
+
+    if (LOGGING_CONFIG.LOG_REQUEST_HEADERS) {
+      logger.debug(LogCategory.API, '🔑 Auth headers prepared', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+      });
+    }
+
+    return headers;
   }
 
   // Helper method to handle API responses
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     try {
       const data = await response.json();
-      
+
       if (response.ok) {
         return {
           data: data.data || data,
@@ -65,25 +119,82 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    let requestId: string | null = null;
+    const startTime = Date.now();
+
     try {
-      const url = `${this.baseURL}${endpoint}`;
+      // Check network connectivity
+      if (!networkMonitor.isConnected()) {
+        logger.warn(LogCategory.NETWORK, '📴 No network connection available');
+        throw new Error('No network connection');
+      }
+
       const headers = await this.getAuthHeaders();
-      
+
       const config: RequestInit = {
         ...options,
         headers: {
           ...headers,
           ...options.headers,
         },
-        timeout: this.timeout,
+        // Note: fetch doesn't support timeout directly, we'll implement it with AbortController
       };
 
+      // Log API request
+      if (LOGGING_CONFIG.LOG_API_REQUESTS) {
+        requestId = apiLogger.logRequest(url, config);
+      }
+
+      // Implement timeout with AbortController
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+      config.signal = controller.signal;
+
       const response = await fetch(url, config);
-      return this.handleResponse<T>(response);
+      clearTimeout(timeoutId);
+
+      // Log API response
+      if (requestId && LOGGING_CONFIG.LOG_API_RESPONSES) {
+        apiLogger.logResponse(requestId, response);
+      }
+
+      // Check for slow requests
+      const duration = Date.now() - startTime;
+      if (LOGGING_CONFIG.LOG_SLOW_REQUESTS && duration > LOGGING_CONFIG.SLOW_REQUEST_THRESHOLD) {
+        logger.warn(LogCategory.API, `🐌 Slow API request detected: ${duration}ms`, {
+          url,
+          method: options.method || 'GET',
+          duration,
+        });
+      }
+
+      const apiResponse = await this.handleResponse<T>(response);
+
+      // Log API response wrapper
+      if (requestId && LOGGING_CONFIG.LOG_API_RESPONSES) {
+        apiLogger.logApiResponse(requestId, apiResponse);
+      }
+
+      return apiResponse;
     } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMessage = getErrorMessage(error);
+
+      // Log API error
+      if (requestId && LOGGING_CONFIG.LOG_API_ERRORS) {
+        apiLogger.logError(requestId, errorMessage, url, options.method || 'GET');
+      } else if (LOGGING_CONFIG.LOG_API_ERRORS) {
+        logger.error(LogCategory.API, `❌ API request failed: ${options.method || 'GET'} ${url}`, {
+          error: errorMessage,
+          duration,
+        });
+      }
+
       return {
         data: null,
-        error: getErrorMessage(error),
+        error: errorMessage,
         status: 0,
       };
     }
@@ -98,12 +209,26 @@ class ApiService {
   }
 
   async refreshToken(refreshToken: string): Promise<ApiResponse<AuthResponse>> {
-    return this.makeRequest<AuthResponse>(
+    // Log refresh token attempt
+    jwtLogger.logTokenRefreshStarted('Explicit refresh token call');
+
+    const response = await this.makeRequest<AuthResponse>(
       `${API_ENDPOINTS.REFRESH_TOKEN}?refreshToken=${refreshToken}`,
       {
         method: 'POST',
       }
     );
+
+    // Log refresh result
+    if (response.error) {
+      jwtLogger.logTokenRefreshFailed(response.error);
+    } else if (response.data) {
+      jwtLogger.logTokenRefreshSuccess(response.data.token, response.data.refreshToken);
+      // Automatically save new tokens
+      await this.saveTokens(response.data);
+    }
+
+    return response;
   }
 
   async sendVerificationCode(email: string): Promise<ApiResponse<{ sent: boolean }>> {
@@ -206,12 +331,26 @@ class ApiService {
   // Utility Methods
   async checkConnection(): Promise<boolean> {
     try {
+      // Use AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(`${this.baseURL}/api/auth/test`, {
         method: 'GET',
-        timeout: 5000,
+        signal: controller.signal,
       });
-      return response.ok;
+
+      clearTimeout(timeoutId);
+
+      const isConnected = response.ok;
+      logger.info(LogCategory.NETWORK, `🔍 Connection test: ${isConnected ? 'success' : 'failed'}`, {
+        status: response.status,
+        url: `${this.baseURL}/api/auth/test`,
+      });
+
+      return isConnected;
     } catch (error) {
+      logger.warn(LogCategory.NETWORK, '⚠️ Connection test failed', error);
       return false;
     }
   }
@@ -221,8 +360,14 @@ class ApiService {
     try {
       await SecureStore.setItemAsync(STORAGE_KEYS.AUTH_TOKEN, authResponse.token);
       await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, authResponse.refreshToken);
+
+      // Log token storage
+      jwtLogger.logTokenStored(authResponse.token, authResponse.refreshToken);
+
+      logger.info(LogCategory.AUTH, '💾 JWT tokens saved successfully');
     } catch (error) {
-      console.error('Error saving tokens:', error);
+      logger.error(LogCategory.AUTH, '❌ Error saving tokens', error);
+      throw error;
     }
   }
 
@@ -230,8 +375,14 @@ class ApiService {
     try {
       await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
       await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+
+      // Log token clearing
+      jwtLogger.logTokenCleared('Manual logout');
+
+      logger.info(LogCategory.AUTH, '🗑️ JWT tokens cleared successfully');
     } catch (error) {
-      console.error('Error clearing tokens:', error);
+      logger.error(LogCategory.AUTH, '❌ Error clearing tokens', error);
+      throw error;
     }
   }
 

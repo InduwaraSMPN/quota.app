@@ -233,3 +233,48 @@ export const SUCCESS_MESSAGES = {
   PROFILE_UPDATED: 'Profile updated successfully!',
   NOTIFICATION_SENT: 'Notification sent successfully!',
 } as const;
+
+// Logging Configuration
+export const LOGGING_CONFIG = {
+  ENABLED: __DEV__, // Only enable in development
+  LEVEL: __DEV__ ? 'DEBUG' : 'ERROR',
+  ENABLE_COLORS: true,
+  ENABLE_TIMESTAMPS: true,
+  ENABLE_STACK_TRACE: true,
+  MAX_LOG_ENTRIES: 1000,
+
+  // API Logging
+  LOG_API_REQUESTS: true,
+  LOG_API_RESPONSES: true,
+  LOG_API_ERRORS: true,
+  LOG_REQUEST_HEADERS: __DEV__,
+  LOG_REQUEST_BODY: __DEV__,
+  LOG_RESPONSE_HEADERS: __DEV__,
+  LOG_RESPONSE_DATA: __DEV__,
+
+  // Network Logging
+  LOG_NETWORK_CHANGES: true,
+  LOG_NETWORK_DETAILS: __DEV__,
+  NETWORK_CHECK_INTERVAL: 5000, // 5 seconds
+  NETWORK_TIMEOUT: 5000, // 5 seconds
+
+  // JWT Token Logging
+  LOG_TOKEN_VALIDATION: __DEV__,
+  LOG_TOKEN_REFRESH: true,
+  LOG_TOKEN_EXPIRATION: true,
+
+  // Performance Logging
+  LOG_PERFORMANCE_METRICS: __DEV__,
+  LOG_SLOW_REQUESTS: true,
+  SLOW_REQUEST_THRESHOLD: 3000, // 3 seconds
+} as const;
+
+// Debug Configuration
+export const DEBUG_CONFIG = {
+  ENABLED: __DEV__,
+  SHOW_PERFORMANCE_OVERLAY: false,
+  SHOW_NETWORK_STATUS: __DEV__,
+  SHOW_API_LOGS: __DEV__,
+  ENABLE_FLIPPER: __DEV__,
+  ENABLE_REACTOTRON: __DEV__,
+} as const;
