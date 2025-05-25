@@ -134,7 +134,7 @@ const DashboardScreen: React.FC = () => {
           <View style={styles.stationDetails}>
             <Text style={styles.stationAddress}>{station?.businessAddress}</Text>
             <Text style={styles.stationStatus}>
-              Status: {station?.verificationStatus === 'VERIFIED' ? '✅ Verified' : '⏳ Pending'}
+              Status: {station?.verificationStatus === 'VERIFIED' ? 'Verified' : 'Pending'}
             </Text>
           </View>
         </View>
@@ -167,7 +167,7 @@ const DashboardScreen: React.FC = () => {
               <View style={styles.statsItem}>
                 <StatsCard
                   title="Fuel Dispensed"
-                  value={`${stats.fuelDispensed.toFixed(1)}L`}
+                  value={`${(stats.fuelDispensed || 0).toFixed(1)}L`}
                   icon="car-outline"
                   iconColor={COLORS.warning}
                   isLoading={isLoading}
@@ -189,7 +189,7 @@ const DashboardScreen: React.FC = () => {
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
+
           <ActionButton
             title="Scan QR Code"
             subtitle="Scan vehicle QR code to start fuel dispensing"
@@ -198,7 +198,7 @@ const DashboardScreen: React.FC = () => {
             backgroundColor={COLORS.primary}
             size="large"
           />
-          
+
           <ActionButton
             title="Manual Entry"
             subtitle="Enter vehicle registration number manually"
@@ -207,7 +207,7 @@ const DashboardScreen: React.FC = () => {
             backgroundColor={COLORS.secondary}
             size="medium"
           />
-          
+
           <ActionButton
             title="Transaction History"
             subtitle="View all fuel dispensing transactions"
@@ -216,7 +216,7 @@ const DashboardScreen: React.FC = () => {
             backgroundColor={COLORS.info}
             size="medium"
           />
-          
+
           <ActionButton
             title="Notifications"
             subtitle="Check system alerts and messages"

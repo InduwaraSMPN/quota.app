@@ -6,20 +6,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, SCREEN_NAMES } from '../../constants';
 import { formatLiters, formatCurrency } from '../../utils';
 import { apiService, notificationService } from '../../services';
+import { useAuth } from '../../context/AuthContext';
 
 const DispensingConfirmationScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { station } = useAuth();
   const { vehicleId, registrationNumber, amount, unitPrice, totalCost, quotaDetails } = route.params as any;
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleConfirmTransaction = async () => {
     try {
       setIsProcessing(true);
-      
+
+      // Check if station data is available
+      if (!station || !station.id) {
+        notificationService.showTransactionError('Station information not available. Please try logging in again.');
+        return;
+      }
+
       const response = await apiService.dispenseFuel({
         vehicleId,
-        stationId: 1, // This would come from auth context
+        stationId: station.id,
         fuelType: quotaDetails.fuelType,
         amount,
         unitPrice,
@@ -31,11 +39,12 @@ const DispensingConfirmationScreen: React.FC = () => {
       }
 
       notificationService.showTransactionSuccess(amount, registrationNumber);
-      
-      navigation.navigate(SCREEN_NAMES.TRANSACTION_SUCCESS as never, {
+
+      // @ts-ignore - Navigation type issue with dynamic screen names
+      navigation.navigate(SCREEN_NAMES.TRANSACTION_SUCCESS, {
         transactionData: response.data,
         registrationNumber,
-      } as never);
+      });
     } catch (error) {
       console.error('Transaction error:', error);
       notificationService.showTransactionError('Failed to process transaction');

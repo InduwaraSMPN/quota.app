@@ -34,13 +34,15 @@ const QuotaValidationScreen: React.FC = () => {
 
   const getStatusColor = () => {
     if (!isValid) return COLORS.error;
-    if (quotaDetails?.remainingAmount > quotaDetails?.totalQuota * 0.25) return COLORS.success;
+    if (quotaDetails?.remainingAmount && quotaDetails?.totalQuota &&
+        quotaDetails.remainingAmount > quotaDetails.totalQuota * 0.25) return COLORS.success;
     return COLORS.warning;
   };
 
   const getStatusIcon = () => {
     if (!isValid) return 'close-circle';
-    if (quotaDetails?.remainingAmount > quotaDetails?.totalQuota * 0.25) return 'checkmark-circle';
+    if (quotaDetails?.remainingAmount && quotaDetails?.totalQuota &&
+        quotaDetails.remainingAmount > quotaDetails.totalQuota * 0.25) return 'checkmark-circle';
     return 'warning';
   };
 
@@ -63,7 +65,7 @@ const QuotaValidationScreen: React.FC = () => {
             {isValid ? 'Quota Available' : 'Quota Unavailable'}
           </Text>
           <Text style={styles.statusSubtitle}>
-            {isValid 
+            {isValid
               ? 'Vehicle is eligible for fuel dispensing'
               : validationData?.message || 'No active quota found'
             }

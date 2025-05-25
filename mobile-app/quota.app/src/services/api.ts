@@ -7,7 +7,6 @@ import {
   TransactionCreate,
   TransactionDetails,
   VehicleValidation,
-  QuotaDetails,
   Notification
 } from '../types';
 import { getErrorMessage } from '../utils';
@@ -36,20 +35,20 @@ class ApiService {
       // Initialize network monitoring
       if (LOGGING_CONFIG.LOG_NETWORK_CHANGES) {
         await networkMonitor.startMonitoring();
-        logger.info(LogCategory.API, '🚀 API Service initialized with network monitoring');
+        logger.info(LogCategory.API, 'API Service initialized with network monitoring');
       }
 
       // Log JWT token status on initialization
       await jwtLogger.logTokenRetrieved();
 
       this.isInitialized = true;
-      logger.info(LogCategory.API, '✅ API Service fully initialized', {
+      logger.info(LogCategory.API, 'API Service fully initialized', {
         baseURL: this.baseURL,
         timeout: this.timeout,
         networkMonitoring: LOGGING_CONFIG.LOG_NETWORK_CHANGES,
       });
     } catch (error) {
-      logger.error(LogCategory.API, '❌ Failed to initialize API Service', error);
+      logger.error(LogCategory.API, 'Failed to initialize API Service', error);
     }
   }
 
@@ -63,20 +62,22 @@ class ApiService {
         // Check if token should be refreshed
         const shouldRefresh = await jwtLogger.shouldRefreshToken();
         if (shouldRefresh) {
-          logger.warn(LogCategory.AUTH, '⚠️ Token refresh recommended before API call');
+          logger.warn(LogCategory.AUTH, 'Token refresh recommended before API call');
         }
       } catch (error) {
-        logger.error(LogCategory.AUTH, '❌ Error checking token status', error);
+        logger.error(LogCategory.AUTH, 'Error checking token status', error);
       }
     }
 
     const headers = {
       'Content-Type': 'application/json',
+      'X-Mobile-App': 'quota-app',
+      'X-App-Version': '1.0.0',
       ...(token && { Authorization: `Bearer ${token}` }),
     };
 
     if (LOGGING_CONFIG.LOG_REQUEST_HEADERS) {
-      logger.debug(LogCategory.API, '🔑 Auth headers prepared', {
+      logger.debug(LogCategory.API, 'Auth headers prepared', {
         hasToken: !!token,
         tokenLength: token?.length,
       });
@@ -126,7 +127,7 @@ class ApiService {
     try {
       // Check network connectivity
       if (!networkMonitor.isConnected()) {
-        logger.warn(LogCategory.NETWORK, '📴 No network connection available');
+        logger.warn(LogCategory.NETWORK, 'No network connection available');
         throw new Error('No network connection');
       }
 
@@ -163,7 +164,7 @@ class ApiService {
       // Check for slow requests
       const duration = Date.now() - startTime;
       if (LOGGING_CONFIG.LOG_SLOW_REQUESTS && duration > LOGGING_CONFIG.SLOW_REQUEST_THRESHOLD) {
-        logger.warn(LogCategory.API, `🐌 Slow API request detected: ${duration}ms`, {
+        logger.warn(LogCategory.API, `Slow API request detected: ${duration}ms`, {
           url,
           method: options.method || 'GET',
           duration,
@@ -186,7 +187,7 @@ class ApiService {
       if (requestId && LOGGING_CONFIG.LOG_API_ERRORS) {
         apiLogger.logError(requestId, errorMessage, url, options.method || 'GET');
       } else if (LOGGING_CONFIG.LOG_API_ERRORS) {
-        logger.error(LogCategory.API, `❌ API request failed: ${options.method || 'GET'} ${url}`, {
+        logger.error(LogCategory.API, `API request failed: ${options.method || 'GET'} ${url}`, {
           error: errorMessage,
           duration,
         });
@@ -293,10 +294,39 @@ class ApiService {
   }
 
   async dispenseFuel(transactionData: TransactionCreate): Promise<ApiResponse<TransactionDetails>> {
-    return this.makeRequest<TransactionDetails>(API_ENDPOINTS.DISPENSE_FUEL, {
-      method: 'POST',
-      body: JSON.stringify(transactionData),
-    });
+    // Convert numeric values to strings for BigDecimal compatibility
+    const formattedData = {
+      ...transactionData,
+      amount: transactionData.amount.toString(),
+      unitPrice: transactionData.unitPrice.toString(),
+    };
+
+    // Log the formatted data for debugging
+    if (LOGGING_CONFIG.LOG_API_REQUESTS) {
+      logger.debug(LogCategory.API, 'Dispensing fuel with data:', formattedData);
+      logger.debug(LogCategory.API, 'Target endpoint:', `${this.baseURL}${API_ENDPOINTS.DISPENSE_FUEL}`);
+    }
+
+    try {
+      const result = await this.makeRequest<TransactionDetails>(API_ENDPOINTS.DISPENSE_FUEL, {
+        method: 'POST',
+        body: JSON.stringify(formattedData),
+      });
+
+      // Log the result for debugging
+      if (LOGGING_CONFIG.LOG_API_RESPONSES) {
+        logger.debug(LogCategory.API, 'Dispense fuel result:', {
+          success: !result.error,
+          error: result.error,
+          hasData: !!result.data
+        });
+      }
+
+      return result;
+    } catch (error) {
+      logger.error(LogCategory.API, 'Dispense fuel error:', error);
+      throw error;
+    }
   }
 
   // Registration Methods (for station owners)
@@ -343,14 +373,14 @@ class ApiService {
       clearTimeout(timeoutId);
 
       const isConnected = response.ok;
-      logger.info(LogCategory.NETWORK, `🔍 Connection test: ${isConnected ? 'success' : 'failed'}`, {
+      logger.info(LogCategory.NETWORK, `Connection test: ${isConnected ? 'success' : 'failed'}`, {
         status: response.status,
         url: `${this.baseURL}/api/auth/test`,
       });
 
       return isConnected;
     } catch (error) {
-      logger.warn(LogCategory.NETWORK, '⚠️ Connection test failed', error);
+      logger.warn(LogCategory.NETWORK, 'Connection test failed', error);
       return false;
     }
   }
@@ -364,9 +394,9 @@ class ApiService {
       // Log token storage
       jwtLogger.logTokenStored(authResponse.token, authResponse.refreshToken);
 
-      logger.info(LogCategory.AUTH, '💾 JWT tokens saved successfully');
+      logger.info(LogCategory.AUTH, 'JWT tokens saved successfully');
     } catch (error) {
-      logger.error(LogCategory.AUTH, '❌ Error saving tokens', error);
+      logger.error(LogCategory.AUTH, 'Error saving tokens', error);
       throw error;
     }
   }
@@ -379,9 +409,9 @@ class ApiService {
       // Log token clearing
       jwtLogger.logTokenCleared('Manual logout');
 
-      logger.info(LogCategory.AUTH, '🗑️ JWT tokens cleared successfully');
+      logger.info(LogCategory.AUTH, 'JWT tokens cleared successfully');
     } catch (error) {
-      logger.error(LogCategory.AUTH, '❌ Error clearing tokens', error);
+      logger.error(LogCategory.AUTH, 'Error clearing tokens', error);
       throw error;
     }
   }

@@ -13,18 +13,18 @@ const QRScannerScreen: React.FC = () => {
   useFocusEffect(
     React.useCallback(() => {
       setIsActive(true);
-      
+
       // Handle Android back button
       const onBackPress = () => {
         handleClose();
         return true;
       };
 
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      
+      const backHandlerSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
       return () => {
         setIsActive(false);
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        backHandlerSubscription.remove();
       };
     }, [])
   );
@@ -33,10 +33,10 @@ const QRScannerScreen: React.FC = () => {
     try {
       // Save to recent searches
       await storageService.saveRecentSearch(registrationNumber);
-      
+
       // Get vehicle details by registration number
       const response = await apiService.getVehicleByRegistration(registrationNumber);
-      
+
       if (response.error || !response.data) {
         // Navigate to manual entry with the scanned registration number
         navigation.navigate(SCREEN_NAMES.MANUAL_ENTRY as never, {
@@ -47,7 +47,7 @@ const QRScannerScreen: React.FC = () => {
       }
 
       const vehicleData = response.data;
-      
+
       // Navigate to vehicle details
       navigation.navigate(SCREEN_NAMES.VEHICLE_DETAILS as never, {
         vehicleId: vehicleData.vehicleId,

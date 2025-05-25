@@ -34,7 +34,7 @@ const FuelDispensingScreen: React.FC = () => {
 
   const handleConfirm = () => {
     const amountNum = parseFloat(amount);
-    
+
     if (!amount || amountNum <= 0) {
       setError('Please enter a valid amount');
       return;
@@ -60,9 +60,11 @@ const FuelDispensingScreen: React.FC = () => {
   };
 
   const setQuickAmount = (percentage: number) => {
-    const quickAmount = (maxAmount * percentage / 100).toFixed(1);
-    setAmount(quickAmount);
-    if (error) setError('');
+    if (maxAmount && maxAmount > 0) {
+      const quickAmount = (maxAmount * percentage / 100).toFixed(1);
+      setAmount(quickAmount);
+      if (error) setError('');
+    }
   };
 
   return (

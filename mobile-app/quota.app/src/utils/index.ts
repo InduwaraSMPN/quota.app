@@ -31,7 +31,10 @@ export const formatTime = (date: string | Date): string => {
 };
 
 // Number Utilities
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (amount: number | undefined | null): string => {
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return 'LKR 0.00';
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'LKR',
@@ -39,11 +42,14 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-export const formatNumber = (num: number, decimals: number = 2): string => {
+export const formatNumber = (num: number | undefined | null, decimals: number = 2): string => {
+  if (num === undefined || num === null || isNaN(num)) {
+    return '0.00';
+  }
   return num.toFixed(decimals);
 };
 
-export const formatLiters = (liters: number): string => {
+export const formatLiters = (liters: number | undefined | null): string => {
   return `${formatNumber(liters)} L`;
 };
 
@@ -55,7 +61,7 @@ export const capitalizeFirst = (str: string): string => {
 export const formatRegistrationNumber = (regNumber: string): string => {
   // Remove any existing hyphens and convert to uppercase
   const clean = regNumber.replace(/-/g, '').toUpperCase();
-  
+
   // Add hyphen after 3 characters if length > 3
   if (clean.length > 3) {
     return `${clean.slice(0, 3)}-${clean.slice(3)}`;
@@ -89,14 +95,14 @@ export const parseQRCode = (qrData: string): QRCodeData | null => {
   try {
     // Expected format: VEHICLE:{registrationNumber}:OWNER:{ownerId}
     const parts = qrData.split(':');
-    
+
     if (parts.length === 4 && parts[0] === 'VEHICLE' && parts[2] === 'OWNER') {
       return {
         registrationNumber: parts[1],
         ownerId: parts[3],
       };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error parsing QR code:', error);
@@ -118,7 +124,7 @@ export const validateRegistrationNumber = (regNumber: string): boolean => {
   // Sri Lankan vehicle registration format: ABC1234 or ABC-1234
   const regexWithHyphen = /^[A-Z]{2,3}-?[0-9]{4}$/;
   const regexWithoutHyphen = /^[A-Z]{2,3}[0-9]{4}$/;
-  
+
   const clean = regNumber.replace(/-/g, '').toUpperCase();
   return regexWithHyphen.test(regNumber) || regexWithoutHyphen.test(clean);
 };
@@ -132,19 +138,19 @@ export const getErrorMessage = (error: any): string => {
   if (typeof error === 'string') {
     return error;
   }
-  
+
   if (error?.message) {
     return error.message;
   }
-  
+
   if (error?.response?.data?.message) {
     return error.response.data.message;
   }
-  
+
   if (error?.response?.data?.error) {
     return error.response.data.error;
   }
-  
+
   return 'An unexpected error occurred';
 };
 
@@ -153,7 +159,7 @@ export const safeJsonParse = <T>(jsonString: string | null, defaultValue: T): T 
   if (!jsonString) {
     return defaultValue;
   }
-  
+
   try {
     return JSON.parse(jsonString);
   } catch (error) {
@@ -177,7 +183,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   delay: number
 ): ((...args: Parameters<T>) => void) => {
   let timeoutId: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
@@ -190,7 +196,7 @@ export const throttle = <T extends (...args: any[]) => any>(
   delay: number
 ): ((...args: Parameters<T>) => void) => {
   let lastCall = 0;
-  
+
   return (...args: Parameters<T>) => {
     const now = Date.now();
     if (now - lastCall >= delay) {
