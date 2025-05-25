@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://192.168.71.74:8888',
-  TIMEOUT: 10000,
+  BASE_URL: 'http://192.168.133.111:8888',
+  TIMEOUT: 60000, // Increased to 60 seconds for debugging
   RETRY_ATTEMPTS: 3,
 };
 

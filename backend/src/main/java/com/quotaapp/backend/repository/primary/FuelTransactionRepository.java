@@ -108,7 +108,7 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
      * @param pageable the pagination information
      * @return a page of fuel transactions
      */
-    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId ORDER BY t.transactionDate DESC")
+    @Query("SELECT t FROM FuelTransaction t JOIN FETCH t.vehicle JOIN FETCH t.station WHERE t.station.id = :stationId ORDER BY t.transactionDate DESC")
     Page<FuelTransaction> findByStationId(@Param("stationId") Long stationId, Pageable pageable);
 
     /**
@@ -198,7 +198,7 @@ public interface FuelTransactionRepository extends JpaRepository<FuelTransaction
      * @param pageable the pagination information
      * @return a page of fuel transactions
      */
-    @Query("SELECT t FROM FuelTransaction t WHERE t.station.id = :stationId AND t.transactionDate BETWEEN :startDate AND :endDate ORDER BY t.transactionDate DESC")
+    @Query("SELECT t FROM FuelTransaction t JOIN FETCH t.vehicle JOIN FETCH t.station WHERE t.station.id = :stationId AND t.transactionDate BETWEEN :startDate AND :endDate ORDER BY t.transactionDate DESC")
     Page<FuelTransaction> findByStationIdAndTransactionDateBetween(
             @Param("stationId") Long stationId,
             @Param("startDate") LocalDateTime startDate,

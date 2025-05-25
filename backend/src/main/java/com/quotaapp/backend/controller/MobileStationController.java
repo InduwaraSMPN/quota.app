@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -302,5 +303,30 @@ public class MobileStationController {
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                 .build();
+    }
+
+    /**
+     * Parse ISO date-time string to LocalDateTime
+     * Handles formats like "2025-05-24T18:30:00.000Z"
+     */
+    private LocalDateTime parseISODateTime(String dateTimeString) {
+        try {
+            // Handle ISO format with 'Z' suffix (UTC)
+            if (dateTimeString.endsWith("Z")) {
+                OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeString);
+                return offsetDateTime.toLocalDateTime();
+            }
+            // Handle ISO format without timezone
+            else if (dateTimeString.contains("T")) {
+                return LocalDateTime.parse(dateTimeString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+            // Handle date-only format
+            else {
+                return LocalDate.parse(dateTimeString).atStartOfDay();
+            }
+        } catch (Exception e) {
+            log.error("Error parsing date-time string: {}", dateTimeString, e);
+            throw new IllegalArgumentException("Invalid date-time format: " + dateTimeString);
+        }
     }
 }

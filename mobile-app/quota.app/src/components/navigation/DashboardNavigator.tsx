@@ -14,7 +14,7 @@ const DashboardNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen
-        name={SCREEN_NAMES.DASHBOARD}
+        name="DashboardMain"
         component={DashboardScreen}
       />
     </Stack.Navigator>
