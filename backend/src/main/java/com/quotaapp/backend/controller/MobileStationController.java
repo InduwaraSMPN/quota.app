@@ -24,6 +24,7 @@ import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -145,8 +146,9 @@ public class MobileStationController {
             // Get transactions
             Page<FuelTransaction> transactions;
             if (startDate != null && endDate != null) {
-                LocalDateTime start = LocalDateTime.parse(startDate);
-                LocalDateTime end = LocalDateTime.parse(endDate);
+                // Parse ISO format dates (e.g., "2025-05-24T18:30:00.000Z")
+                LocalDateTime start = parseISODateTime(startDate);
+                LocalDateTime end = parseISODateTime(endDate);
                 transactions = fuelTransactionRepository.findByStationIdAndTransactionDateBetween(
                     station.getId(), start, end, pageable);
             } else {
